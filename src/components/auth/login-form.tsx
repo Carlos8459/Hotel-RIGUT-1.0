@@ -57,7 +57,8 @@ export function LoginForm() {
         setIsPending(false);
         return;
       }
-      emailForAuth = 'admin@hotel-rigut.app';
+      // Using a new email to avoid conflicts with previously created (and possibly broken) admin users.
+      emailForAuth = 'admin-login@hotel-rigut.app';
       passwordForAuth = '123456';
     } else {
       emailForAuth = values.username;
