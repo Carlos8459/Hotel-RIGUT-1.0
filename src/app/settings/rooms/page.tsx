@@ -63,6 +63,18 @@ export default function RoomSettingsPage() {
                                 <Label htmlFor="price-matrimonial-ac">Matrimonial con A/C</Label>
                                 <Input id="price-matrimonial-ac" type="number" defaultValue="800" />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="price-dobles">Habitaciones dobles</Label>
+                                <Input id="price-dobles" type="number" defaultValue="600" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="price-triples">Habitaciones triples</Label>
+                                <Input id="price-triples" type="number" defaultValue="700" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="price-quintuples">Habitaciones quintuples</Label>
+                                <Input id="price-quintuples" type="number" defaultValue="1000" />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
