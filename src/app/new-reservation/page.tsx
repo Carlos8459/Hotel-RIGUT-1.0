@@ -38,8 +38,6 @@ import { CalendarIcon, ArrowLeft, Car, Bike, Truck } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 
 
 const reservationFormSchema = z.object({
@@ -357,60 +355,50 @@ export default function NewReservationPage() {
                 <FormItem>
                   <FormLabel>Tipo de Vehículo (Opcional)</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="grid grid-cols-3 gap-4 pt-2"
-                    >
-                      <div>
-                        <RadioGroupItem value="car" id="car" className="peer sr-only" />
-                        <Label
-                          htmlFor="car"
-                           onClick={(e) => {
-                                if (field.value === 'car') {
-                                    e.preventDefault();
-                                    form.setValue('vehicle', undefined, { shouldValidate: true });
-                                }
-                            }}
-                          className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
-                        >
-                          <Car className="mb-3 h-6 w-6" />
-                          Carro
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="bike" id="bike" className="peer sr-only" />
-                        <Label
-                          htmlFor="bike"
-                          onClick={(e) => {
-                            if (field.value === 'bike') {
-                                e.preventDefault();
-                                form.setValue('vehicle', undefined, { shouldValidate: true });
-                            }
-                          }}
-                          className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
-                        >
-                          <Bike className="mb-3 h-6 w-6" />
-                          Moto
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="truck" id="truck" className="peer sr-only" />
-                        <Label
-                          htmlFor="truck"
-                          onClick={(e) => {
-                            if (field.value === 'truck') {
-                                e.preventDefault();
-                                form.setValue('vehicle', undefined, { shouldValidate: true });
-                            }
-                          }}
-                          className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
-                        >
-                          <Truck className="mb-3 h-6 w-6" />
-                          Camión
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                    <div className="grid grid-cols-3 gap-4 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => field.onChange(field.value === 'car' ? undefined : 'car')}
+                        className={cn(
+                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          field.value === 'car'
+                            ? 'border-primary'
+                            : 'border-muted bg-transparent'
+                        )}
+                      >
+                        <Car className="mb-3 h-6 w-6" />
+                        Carro
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => field.onChange(field.value === 'bike' ? undefined : 'bike')}
+                        className={cn(
+                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          field.value === 'bike'
+                            ? 'border-primary'
+                            : 'border-muted bg-transparent'
+                        )}
+                      >
+                        <Bike className="mb-3 h-6 w-6" />
+                        Moto
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => field.onChange(field.value === 'truck' ? undefined : 'truck')}
+                        className={cn(
+                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          field.value === 'truck'
+                            ? 'border-primary'
+                            : 'border-muted bg-transparent'
+                        )}
+                      >
+                        <Truck className="mb-3 h-6 w-6" />
+                        Camión
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
