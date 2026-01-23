@@ -238,17 +238,28 @@ export default function RoomsDashboard() {
     <div className="dark min-h-screen bg-background text-foreground pb-24">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
-        <Link href="/notifications">
-            <Button variant="ghost" size="icon">
-                <Bell className="h-6 w-6" />
-                <span className="sr-only">Notificaciones</span>
-            </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+            <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Buscar por huésped..."
+                    className="bg-card border-border pl-10 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <Link href="/notifications">
+                <Button variant="ghost" size="icon">
+                    <Bell className="h-6 w-6" />
+                    <span className="sr-only">Notificaciones</span>
+                </Button>
+            </Link>
+        </div>
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
-          <div className="flex-grow">
+        <div className="mb-4">
             <div className="flex space-x-1 rounded-lg bg-card p-1 max-w-min">
               {fiveDates.map((date) => (
                 <Button
@@ -264,17 +275,6 @@ export default function RoomsDashboard() {
                 </Button>
               ))}
             </div>
-          </div>
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por huésped..."
-              className="bg-card border-border pl-10 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-6 mb-6">
