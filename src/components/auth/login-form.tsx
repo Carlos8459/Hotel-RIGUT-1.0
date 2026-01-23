@@ -18,9 +18,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
-import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Por favor, introduce un nombre de usuario." }),
@@ -44,7 +44,7 @@ export function LoginForm() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setErrorMessage("");
     setIsPending(true);
 
@@ -66,36 +66,46 @@ export function LoginForm() {
       passwordForAuth = values.password;
     }
     
-    signInWithEmailAndPassword(auth, emailForAuth, passwordForAuth)
-      .then(() => {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, emailForAuth, passwordForAuth);
+        if (isAdminLogin) {
+            const user = userCredential.user;
+            // Await these writes to prevent a race condition on the next page
+            const adminRoleRef = doc(firestore, "roles_admin", user.uid);
+            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
+            
+            const userProfile = {
+                username: 'Carlos (Admin)',
+                email: emailForAuth,
+                registrationDate: new Date().toISOString(),
+            };
+            const userDocRef = doc(firestore, "users", user.uid);
+            await setDoc(userDocRef, userProfile, { merge: true });
+        }
         router.push('/dashboard');
-      })
-      .catch((error) => {
+    } catch (error: any) {
         if (error.code === 'auth/user-not-found' && isAdminLogin) {
-          // Admin user doesn't exist, so create it and then log in.
-          createUserWithEmailAndPassword(auth, emailForAuth, passwordForAuth)
-            .then((userCredential) => {
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, emailForAuth, passwordForAuth);
                 const user = userCredential.user;
+
+                // Await these writes to ensure they complete before navigation
                 const userProfile = {
                     username: 'Carlos (Admin)',
                     email: emailForAuth,
                     registrationDate: new Date().toISOString(),
                 };
                 const userDocRef = doc(firestore, "users", user.uid);
-                setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+                await setDoc(userDocRef, userProfile, { merge: true });
 
                 const adminRoleRef = doc(firestore, "roles_admin", user.uid);
-                setDocumentNonBlocking(adminRoleRef, { isAdmin: true }, { merge: true });
+                await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
 
                 router.push("/dashboard");
-            })
-            .catch(creationError => {
+            } catch (creationError: any) {
                 console.error("Admin user creation error:", creationError);
                 setErrorMessage('No se pudo crear el usuario admin. Por favor, inténtalo de nuevo.');
-            })
-            .finally(() => {
-                setIsPending(false);
-            });
+            }
         } else {
             if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
                 setErrorMessage('Usuario o PIN incorrecto.');
@@ -104,9 +114,10 @@ export function LoginForm() {
             } else {
                 setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
             }
-            setIsPending(false);
         }
-      });
+    } finally {
+        setIsPending(false);
+    }
   };
 
   return (
