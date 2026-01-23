@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { LoginForm } from '@/components/auth/login-form';
+import { Hotel } from 'lucide-react';
 
 export default function LoginPage() {
   const loginImage = PlaceHolderImages.find(p => p.id === 'login-background');
@@ -21,7 +22,8 @@ export default function LoginPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
-        <div className="flex items-center justify-center p-8 lg:p-12">
+        <div className="relative flex items-center justify-center p-8 lg:p-12">
+          <Hotel className="absolute inset-0 -z-10 m-auto h-1/2 w-1/2 text-secondary opacity-10" />
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
             <div className="flex flex-col space-y-2 text-center">
               <h1 className="font-headline text-4xl font-semibold tracking-tight text-secondary-foreground">
