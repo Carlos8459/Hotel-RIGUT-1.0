@@ -43,6 +43,7 @@ type Room = {
         avatar: string;
     }[];
     vehicle?: 'car' | 'bike' | 'truck';
+    price?: number;
 }
 
 type RoomDetailModalProps = {
@@ -51,9 +52,21 @@ type RoomDetailModalProps = {
     onClose: () => void;
 }
 
+const getRoomDescription = (price?: number) => {
+    if (!price) return null;
+    switch (price) {
+        case 400: return 'Unipersonal';
+        case 500: return 'Matrimonial';
+        case 700: return 'Unipersonal con aíre acondicionado';
+        case 800: return 'Matrimonial con aíre acondicionado';
+        default: return null;
+    }
+}
+
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   if (!room) return null;
 
+  const roomDescription = getRoomDescription(room.price);
   const canCheckout = room.statusText === 'Ocupada';
 
   function handleCheckout() {
@@ -69,6 +82,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       <DialogContent className="bg-card text-foreground max-w-xs border-border flex flex-col max-h-[85vh] rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
+          {roomDescription && <p className="text-lg text-muted-foreground -mt-1 mb-2">{roomDescription}</p>}
           <DialogDescription>
             Detalles de la habitación y el huésped actual.
           </DialogDescription>
@@ -160,7 +174,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             Check-out
                         </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="max-w-[320px] rounded-3xl">
                         <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -179,3 +193,5 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     </Dialog>
   );
 }
+
+    

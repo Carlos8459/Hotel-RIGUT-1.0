@@ -13,12 +13,13 @@ const roomsData = [
   {
     id: 1,
     title: "Habitación 1",
+    price: 800,
     guest: "Ricardo Gomez",
     phone: "11 5555-1234",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "23 Ene - 26 Ene (3 noches)",
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [ { name: "Mariana Lopez", date: "19 Ene - 22 Ene", avatar: "ML" } ],
     vehicle: 'truck'
@@ -26,12 +27,13 @@ const roomsData = [
   {
     id: 2,
     title: "Habitación 2",
+    price: 700,
     guest: "Juan Pérez",
     phone: "11 1234-5678",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 25 Ene (3 noches)",
-    payment: { status: "Pendiente", amount: 50, color: "text-red-400" },
+    payment: { status: "Pendiente", amount: 500, color: "text-red-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [
       { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT" },
@@ -43,6 +45,7 @@ const roomsData = [
   {
     id: 3,
     title: "Habitación 3",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -57,6 +60,7 @@ const roomsData = [
   {
     id: 4,
     title: "Habitación 4",
+    price: 500,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -71,6 +75,7 @@ const roomsData = [
   {
     id: 5,
     title: "Habitación 5",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -80,12 +85,13 @@ const roomsData = [
   {
     id: 6,
     title: "Habitación 6",
+    price: 800,
     guest: "Laura Sanchez",
     phone: "11 2233-4455",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "24 Ene - 28 Ene (4 noches)",
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [ { name: "Pedro Ramirez", date: "20 Ene - 23 Ene", avatar: "PR" } ],
     vehicle: 'bike'
@@ -93,6 +99,7 @@ const roomsData = [
   {
     id: 7,
     title: "Habitación 7",
+    price: 400,
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Pintura",
@@ -103,6 +110,7 @@ const roomsData = [
   {
     id: 8,
     title: "Habitación 8",
+    price: 500,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -112,12 +120,13 @@ const roomsData = [
   {
     id: 9,
     title: "Habitación 9",
+    price: 700,
     guest: "Maria Garcia",
     phone: "11 8765-4321",
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 27 Ene (3 noches)",
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver check-in" },
     history: [
       { name: "George Harris", date: "18 Ene - 22 Ene", avatar: "GH" },
@@ -129,12 +138,13 @@ const roomsData = [
   {
     id: 10,
     title: "Habitación 10",
+    price: 500,
     guest: "Reservada",
     statusText: "Reservada",
     statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
     details: "Revisión de plomería",
     detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver reporte" },
     history: [
       { name: "Jack King", date: "19 Ene - 22 Ene", avatar: "JK" },
@@ -145,6 +155,7 @@ const roomsData = [
   {
     id: 11,
     title: "Habitación 11",
+    price: 800,
     guest: "Mantenimiento",
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
@@ -161,6 +172,7 @@ const roomsData = [
   {
     id: 12,
     title: "Habitación 12",
+    price: 800,
     guest: "Familia Rodriguez",
     phone: "11 9988-7766",
     statusText: "Ocupada",
@@ -174,6 +186,7 @@ const roomsData = [
   {
     id: 13,
     title: "Habitación 13",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -183,6 +196,7 @@ const roomsData = [
   {
     id: 14,
     title: "Habitación 14",
+    price: 500,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -193,12 +207,13 @@ const roomsData = [
   {
     id: 15,
     title: "Habitación 15",
+    price: 700,
     guest: "Ernesto Padilla",
     phone: "11 1122-3344",
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 25 Ene (1 noche)",
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver check-in" },
     history: [],
     vehicle: 'car'
@@ -206,6 +221,7 @@ const roomsData = [
   {
     id: 16,
     title: "Habitación 16",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -215,12 +231,13 @@ const roomsData = [
   {
     id: 17,
     title: "Habitación 17",
+    price: 800,
     guest: "Sofia Loren",
     phone: "11 8888-9999",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 24 Ene (2 noches)",
-    payment: { status: "Cancelado", color: "text-green-400" },
+    payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [],
     vehicle: 'car'
@@ -228,6 +245,7 @@ const roomsData = [
   {
     id: 18,
     title: "Habitación 18",
+    price: 500,
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Aire acondicionado",
@@ -238,6 +256,7 @@ const roomsData = [
   {
     id: 19,
     title: "Habitación 19",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -247,6 +266,7 @@ const roomsData = [
   {
     id: 20,
     title: "Habitación 20",
+    price: 700,
     guest: "Carlos Vives",
     phone: "11 7777-6666",
     statusText: "Acomodada",
@@ -260,6 +280,7 @@ const roomsData = [
   {
     id: 21,
     title: "Habitación 21",
+    price: 500,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -270,6 +291,7 @@ const roomsData = [
   {
     id: 22,
     title: "Habitación 22",
+    price: 400,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -277,6 +299,17 @@ const roomsData = [
     history: []
   }
 ];
+
+const getRoomDescription = (price?: number) => {
+  if (!price) return null;
+  switch (price) {
+    case 400: return 'Unipersonal';
+    case 500: return 'Matrimonial';
+    case 700: return 'Unipersonal con aíre acondicionado';
+    case 800: return 'Matrimonial con aíre acondicionado';
+    default: return null;
+  }
+};
 
 
 export default function RoomsDashboard() {
@@ -331,7 +364,7 @@ export default function RoomsDashboard() {
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">{room.title}</CardTitle>
-                  {room.guest && <p className="font-bold text-xl">{room.guest}</p>}
+                  <p className="font-bold text-xl">{getRoomDescription(room.price)}</p>
                 </div>
                 {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
               </div>
@@ -440,3 +473,5 @@ export default function RoomsDashboard() {
     </div>
   );
 }
+
+    
