@@ -24,7 +24,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-6">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-login-gradient p-6">
       <div className="z-10 w-full max-w-sm space-y-16">
         <div className="text-center">
           <h1 className="font-headline text-5xl font-bold text-white">

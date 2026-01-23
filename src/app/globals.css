@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 190 20% 98% / 0;
+    --background: 190 20% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100% / 0.3;
     --card-foreground: 222.2 84% 4.9%;
@@ -31,7 +31,7 @@
     --radius: 0.75rem;
   }
   .dark {
-    --background: 204 30% 12% / 0;
+    --background: 204 30% 12%;
     --foreground: 210 40% 98%;
     --card: 204 30% 16% / 0.4;
     --card-foreground: 210 40% 98%;
@@ -59,10 +59,6 @@
     @apply border-border;
   }
   body {
-    @apply text-foreground;
-    background-image: url('https://storage.googleapis.com/monorepo-prod-project-resources/4803952210/background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    @apply bg-background text-foreground;
   }
 }

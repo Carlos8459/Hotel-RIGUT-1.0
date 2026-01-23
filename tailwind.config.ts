@@ -15,7 +15,7 @@ export default {
         code: ['monospace'],
       },
       backgroundImage: {
-        'login-gradient': 'linear-gradient(to bottom right, hsl(190, 85%, 45%), hsl(160, 70%, 40%))',
+        'login-gradient': 'linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)))',
         'button-gradient': 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))',
       },
       colors: {
