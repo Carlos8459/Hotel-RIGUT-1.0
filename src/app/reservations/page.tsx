@@ -201,7 +201,7 @@ export default function ReservationsPage() {
           <Link href="/reservations">
             <Button
               variant="ghost"
-              className="flex flex-col h-auto items-center text-primary px-2 py-1"
+              className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1"
             >
               <CalendarIcon className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Reservas</span>

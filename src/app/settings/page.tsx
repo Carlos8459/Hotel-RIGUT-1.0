@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LayoutGrid, Calendar, Users, Settings, Wrench, User as UserIcon, BarChart2 } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Wrench, User as UserIcon, BarChart2 } from 'lucide-react';
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
@@ -76,7 +76,7 @@ export default function SettingsPage() {
                     </Link>
                     <Link href="/reservations">
                         <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-                            <Calendar className="h-5 w-5 mb-1" />
+                            <CalendarIcon className="h-5 w-5 mb-1" />
                             <span className="text-xs font-medium">Reservas</span>
                         </Button>
                     </Link>
@@ -93,7 +93,7 @@ export default function SettingsPage() {
                         </Button>
                     </Link>
                     <Link href="/settings">
-                        <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
+                        <Button variant="ghost" className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1">
                             <Settings className="h-5 w-5 mb-1" />
                             <span className="text-xs font-medium">Ajustes</span>
                         </Button>

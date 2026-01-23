@@ -219,7 +219,7 @@ export default function CustomersPage() {
                     <div className="flex-grow">
                         <p className="font-bold text-base">{customer.name}</p>
                         {customer.phone && (
-                            <div className="flex items-center text-sm text-muted-foreground">
+                            <div className="flex items-center text-sm text-foreground">
                             <Phone className="mr-2 h-4 w-4" />
                             <span>{customer.phone}</span>
                             </div>
@@ -263,7 +263,7 @@ export default function CustomersPage() {
             </Button>
           </Link>
           <Link href="/customers">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1">
               <Users className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Clientes</span>
             </Button>
