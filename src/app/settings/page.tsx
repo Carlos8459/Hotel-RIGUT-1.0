@@ -147,16 +147,13 @@ export default function SettingsPage() {
                 </Card>
 
                 {isAdmin && (
-                    <Card
-                        onClick={() => router.push('/admin')}
-                        className="cursor-pointer hover:border-primary transition-colors"
-                    >
+                    <Card>
                         <CardHeader>
                             <CardTitle>Administración</CardTitle>
                             <CardDescription>Gestionar usuarios, roles y permisos de la aplicación.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-muted-foreground">Acceso exclusivo para administradores.</p>
+                           <Button onClick={() => router.push('/admin')}>Administración</Button>
                         </CardContent>
                     </Card>
                 )}
