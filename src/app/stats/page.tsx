@@ -16,6 +16,7 @@ import {
   eachMonthOfInterval,
   startOfYear,
   endOfYear,
+  subMonths,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -114,6 +115,19 @@ export default function StatsPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const setThisMonth = () => {
+    setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+  };
+
+  const setLastMonth = () => {
+    const lastMonth = subMonths(new Date(), 1);
+    setDateRange({ from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) });
+  };
+  
+  const setThisYear = () => {
+      setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) });
+  };
+
   const paidReservations = useMemo(() => {
     if (!reservations) return [];
     return reservations.filter(
@@ -203,9 +217,16 @@ export default function StatsPage() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
-        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+        <div className="flex flex-wrap items-center gap-2">
+            <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+            <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={setThisMonth}>Este Mes</Button>
+                <Button variant="outline" size="sm" onClick={setLastMonth}>Mes Pasado</Button>
+                <Button variant="outline" size="sm" onClick={setThisYear}>Este Año</Button>
+            </div>
+        </div>
       </header>
 
       <main className="space-y-8">
