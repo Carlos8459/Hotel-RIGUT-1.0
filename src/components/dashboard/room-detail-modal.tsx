@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RoomHistoryModal } from "./room-history-modal";
+import type { PastGuest } from "./customer-detail-modal";
 
 type Room = {
     id: number;
@@ -39,11 +40,7 @@ type Room = {
         color: string;
     };
     mainText?: string;
-    history?: {
-        name: string;
-        date: string;
-        avatar: string;
-    }[];
+    history?: PastGuest[];
     vehicle?: 'car' | 'bike' | 'truck';
     price?: number;
 }
@@ -101,19 +98,19 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="flex-grow min-h-0 pr-6 -mr-6">
-          <div className="space-y-1 py-1">
+          <div className="space-y-2 py-1">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Estado</span>
-              {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
+              <span className="text-muted-foreground text-xs">Estado</span>
+              {room.statusText && <Badge className={`${room.statusColor} text-xs`}>{room.statusText}</Badge>}
             </div>
 
             {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
               <>
                 <Separator />
-                <h3 className="font-semibold text-base pt-1">Huésped Actual</h3>
+                <h3 className="font-semibold text-sm pt-1">Huésped Actual</h3>
                 <div className="flex items-center">
-                  <Avatar className="h-8 w-8 mr-3">
-                    <AvatarFallback>{room.guest.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <Avatar className="h-8 w-8 mr-2">
+                    <AvatarFallback className="text-xs">{room.guest.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold text-sm">{room.guest}</p>
@@ -125,7 +122,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     )}
                   </div>
                 </div>
-                <div className="space-y-0.5 pl-11">
+                <div className="space-y-0.5 pl-10">
                   {room.date && (
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Calendar className="mr-1 h-3 w-3" />
@@ -163,7 +160,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
               <>
                 <Separator />
                 <div className="flex justify-between items-center pt-1">
-                  <h3 className="font-semibold text-base">Historial de Huéspedes</h3>
+                  <h3 className="font-semibold text-sm">Historial</h3>
                   <Button variant="link" className="text-xs p-0 h-auto" onClick={() => setIsHistoryModalOpen(true)}>
                     Ver más
                   </Button>
@@ -171,8 +168,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 <div className="space-y-1">
                   {room.history.slice(0, 1).map((pastGuest, index) => (
                     <div key={index} className="flex items-center">
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarFallback>{pastGuest.avatar}</AvatarFallback>
+                      <Avatar className="h-8 w-8 mr-2">
+                        <AvatarFallback className="text-xs">{pastGuest.avatar}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-sm">{pastGuest.name}</p>

@@ -21,7 +21,7 @@ const roomsData = [
     date: "23 Ene - 26 Ene (3 noches)",
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
-    history: [ { name: "Mariana Lopez", date: "19 Ene - 22 Ene", avatar: "ML" } ],
+    history: [ { name: "Mariana Lopez", date: "19 Ene - 22 Ene", avatar: "ML", vehicle: 'car', phone: '11 5555-5555', payment: { status: 'Cancelado', amount: 2400 } } ],
     vehicle: 'truck'
   },
   {
@@ -36,9 +36,9 @@ const roomsData = [
     payment: { status: "Pendiente", amount: 500, color: "text-red-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [
-      { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT" },
-      { name: "Carlos Rivas", date: "10 Ene - 12 Ene", avatar: "CR" },
-      { name: "Beatriz Mella", date: "05 Ene - 08 Ene", avatar: "BM" },
+      { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT", vehicle: 'bike', phone: '11-1111-1111', payment: { status: 'Cancelado', amount: 2100 } },
+      { name: "Carlos Rivas", date: "10 Ene - 12 Ene", avatar: "CR", vehicle: 'truck', phone: '11-2222-2222', payment: { status: 'Cancelado', amount: 1400 } },
+      { name: "Beatriz Mella", date: "05 Ene - 08 Ene", avatar: "BM", vehicle: 'car', phone: '11-3333-3333', payment: { status: 'Cancelado', amount: 2100 } },
     ],
     vehicle: 'car'
   },
@@ -52,9 +52,9 @@ const roomsData = [
     action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
     secondaryAction: { icon: <KeyRound className="h-5 w-5" /> },
     history: [
-      { name: "Luisa Fernandez", date: "18 Ene - 21 Ene", avatar: "LF" },
-      { name: "Mario Gomez", date: "14 Ene - 17 Ene", avatar: "MG" },
-      { name: "Sofia Castro", date: "10 Ene - 13 Ene", avatar: "SC" },
+      { name: "Luisa Fernandez", date: "18 Ene - 21 Ene", avatar: "LF", vehicle: 'car' },
+      { name: "Mario Gomez", date: "14 Ene - 17 Ene", avatar: "MG", vehicle: 'bike' },
+      { name: "Sofia Castro", date: "10 Ene - 13 Ene", avatar: "SC", vehicle: 'car' },
     ]
   },
   {
@@ -67,9 +67,9 @@ const roomsData = [
     date: "24 Ene",
     action: { text: "Check-in", icon: <Check className="mr-2 h-4 w-4" /> },
     history: [
-      { name: "David Choi", date: "20 Ene - 23 Ene", avatar: "DC" },
-      { name: "Emily White", date: "15 Ene - 19 Ene", avatar: "EW" },
-      { name: "Frank Black", date: "11 Ene - 14 Ene", avatar: "FB" },
+      { name: "David Choi", date: "20 Ene - 23 Ene", avatar: "DC", vehicle: 'truck' },
+      { name: "Emily White", date: "15 Ene - 19 Ene", avatar: "EW", vehicle: 'car' },
+      { name: "Frank Black", date: "11 Ene - 14 Ene", avatar: "FB", vehicle: 'car' },
     ]
   },
   {
@@ -93,7 +93,7 @@ const roomsData = [
     date: "24 Ene - 28 Ene (4 noches)",
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
-    history: [ { name: "Pedro Ramirez", date: "20 Ene - 23 Ene", avatar: "PR" } ],
+    history: [ { name: "Pedro Ramirez", date: "20 Ene - 23 Ene", avatar: "PR", vehicle: 'bike' } ],
     vehicle: 'bike'
   },
   {
@@ -115,7 +115,7 @@ const roomsData = [
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
     action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
-    history: [ { name: "Julia Roberts", date: "15 Ene - 18 Ene", avatar: "JR" } ]
+    history: [ { name: "Julia Roberts", date: "15 Ene - 18 Ene", avatar: "JR", vehicle: 'car' } ]
   },
   {
     id: 9,
@@ -129,9 +129,9 @@ const roomsData = [
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver check-in" },
     history: [
-      { name: "George Harris", date: "18 Ene - 22 Ene", avatar: "GH" },
-      { name: "Helen Ivanova", date: "12 Ene - 16 Ene", avatar: "HI" },
-      { name: "Ian Jacobs", date: "07 Ene - 11 Ene", avatar: "IJ" },
+      { name: "George Harris", date: "18 Ene - 22 Ene", avatar: "GH", vehicle: 'truck' },
+      { name: "Helen Ivanova", date: "12 Ene - 16 Ene", avatar: "HI", vehicle: 'car' },
+      { name: "Ian Jacobs", date: "07 Ene - 11 Ene", avatar: "IJ", vehicle: 'bike' },
     ],
     vehicle: 'bike'
   },
@@ -147,9 +147,9 @@ const roomsData = [
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver reporte" },
     history: [
-      { name: "Jack King", date: "19 Ene - 22 Ene", avatar: "JK" },
-      { name: "Karen Lee", date: "14 Ene - 17 Ene", avatar: "KL" },
-      { name: "Leo Miller", date: "09 Ene - 12 Ene", avatar: "LM" },
+      { name: "Jack King", date: "19 Ene - 22 Ene", avatar: "JK", vehicle: 'car' },
+      { name: "Karen Lee", date: "14 Ene - 17 Ene", avatar: "KL", vehicle: 'bike' },
+      { name: "Leo Miller", date: "09 Ene - 12 Ene", avatar: "LM", vehicle: 'truck' },
     ]
   },
   {
@@ -164,9 +164,9 @@ const roomsData = [
     subDetails: "Incidencia: Fuga de agua",
     action: { text: "Ver reporte" },
     history: [
-      { name: "Nora Nelson", date: "16 Ene - 20 Ene", avatar: "NN" },
-      { name: "Oscar Price", date: "11 Ene - 15 Ene", avatar: "OP" },
-      { name: "Pamela Queen", date: "06 Ene - 10 Ene", avatar: "PQ" },
+      { name: "Nora Nelson", date: "16 Ene - 20 Ene", avatar: "NN", vehicle: 'car' },
+      { name: "Oscar Price", date: "11 Ene - 15 Ene", avatar: "OP", vehicle: 'bike' },
+      { name: "Pamela Queen", date: "06 Ene - 10 Ene", avatar: "PQ", vehicle: 'car' },
     ]
   },
   {
@@ -191,7 +191,7 @@ const roomsData = [
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
     action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
-    history: [ { name: "Sandra Bullock", date: "10 Ene - 12 Ene", avatar: "SB" } ]
+    history: [ { name: "Sandra Bullock", date: "10 Ene - 12 Ene", avatar: "SB", vehicle: 'car' } ]
   },
   {
     id: 14,
