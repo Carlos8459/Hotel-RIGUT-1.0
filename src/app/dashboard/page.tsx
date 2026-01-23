@@ -185,6 +185,10 @@ export default function RoomsDashboard() {
         />
       )}
 
+      <div className="text-center text-sm text-muted-foreground mt-12">
+        <p>desarrollado por Carlos Rivera</p>
+      </div>
+
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
         <div className="flex justify-around">
           <Link href="/dashboard">
