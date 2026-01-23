@@ -14,6 +14,10 @@ export default {
         headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
       },
+      backgroundImage: {
+        'login-gradient': 'linear-gradient(to bottom, hsl(340, 100%, 97%), hsl(210, 100%, 95%))',
+        'button-gradient': 'linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))',
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

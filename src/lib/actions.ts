@@ -22,13 +22,13 @@ export async function authenticate(
     if (parsedData.username === 'admin' && parsedData.pin === '1234') {
       console.log('Authentication successful');
     } else {
-        throw new Error('Usuario o PIN incorrecto.');
+        throw new Error('Incorrect username or PIN.');
     }
   } catch (error) {
     if (error instanceof Error) {
         return error.message;
     }
-    return 'Algo salió mal. Por favor, inténtelo de nuevo.';
+    return 'Something went wrong. Please try again.';
   }
 
   redirect('/dashboard');

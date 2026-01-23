@@ -5,10 +5,10 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
       <div className="w-full max-w-md space-y-4 text-center">
-        <h1 className="font-headline text-3xl font-semibold text-secondary-foreground">Registro</h1>
-        <p className="text-muted-foreground">Esta página está en construcción.</p>
+        <h1 className="font-headline text-3xl font-semibold text-secondary-foreground">Register</h1>
+        <p className="text-muted-foreground">This page is under construction.</p>
         <Button asChild>
-          <Link href="/">Volver al inicio de sesión</Link>
+          <Link href="/">Back to Login</Link>
         </Button>
       </div>
     </div>
