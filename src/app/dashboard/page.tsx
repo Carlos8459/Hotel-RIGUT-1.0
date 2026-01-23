@@ -64,7 +64,7 @@ export default function RoomsDashboard() {
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">{room.title}</CardTitle>
-                  <p className="text-base">{getRoomDescription(room.price, room.id)}</p>
+                  <p className="text-sm text-muted-foreground">{getRoomDescription(room.price, room.id)}</p>
                 </div>
                 {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
               </div>
@@ -158,10 +158,12 @@ export default function RoomsDashboard() {
               <span className="text-xs font-medium">Habitaciones</span>
             </Button>
           </Link>
-          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-            <Calendar className="h-5 w-5 mb-1" />
-            <span className="text-xs font-medium">Reservas</span>
-          </Button>
+          <Link href="/reservations">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <Calendar className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Reservas</span>
+            </Button>
+          </Link>
           <Link href="/customers">
             <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
               <Users className="h-5 w-5 mb-1" />
@@ -177,5 +179,3 @@ export default function RoomsDashboard() {
     </div>
   );
 }
-
-    

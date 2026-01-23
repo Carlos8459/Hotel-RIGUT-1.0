@@ -99,10 +99,12 @@ export default function CustomersPage() {
               <span className="text-xs font-medium">Habitaciones</span>
             </Button>
           </Link>
-          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-            <Calendar className="h-5 w-5 mb-1" />
-            <span className="text-xs font-medium">Reservas</span>
-          </Button>
+          <Link href="/reservations">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <Calendar className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Reservas</span>
+            </Button>
+          </Link>
           <Link href="/customers">
             <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
               <Users className="h-5 w-5 mb-1" />
@@ -118,5 +120,3 @@ export default function CustomersPage() {
     </div>
   );
 }
-
-    
