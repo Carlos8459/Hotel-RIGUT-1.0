@@ -36,6 +36,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { roomsData, getRoomDescription } from "@/lib/hotel-data";
 import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
+import { useUser } from "@/firebase";
 
 const reservationFormSchema = z.object({
   guestName: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
@@ -52,6 +54,7 @@ const reservationFormSchema = z.object({
 });
 
 export default function NewReservationPage() {
+    const { user, isUserLoading } = useUser();
     const router = useRouter();
     const { toast } = useToast();
     const form = useForm<z.infer<typeof reservationFormSchema>>({
@@ -62,6 +65,20 @@ export default function NewReservationPage() {
             hasVehicle: false,
         },
     });
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+        router.push('/');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+                <p>Cargando...</p>
+            </div>
+        );
+    }
 
     function onSubmit(data: z.infer<typeof reservationFormSchema>) {
         console.log(data);

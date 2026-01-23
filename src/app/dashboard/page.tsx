@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,29 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Phone, Car, Bike, Truck, LayoutGrid, Users, Settings } from "lucide-react";
 import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
 import { roomsData, getRoomDescription } from "@/lib/hotel-data";
+import { useUser } from "@/firebase";
+import { useRouter } from "next/navigation";
 
 
 export default function RoomsDashboard() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+     return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+            <p>Cargando...</p>
+        </div>
+    );
+  }
 
   const handleCardClick = (room: any) => {
     setSelectedRoom(room);

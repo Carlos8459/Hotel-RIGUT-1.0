@@ -60,8 +60,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false; // CRITICAL: Prevents listing all users
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDocument() && request.resource.data.id == resource.data.id;
+      allow create: if isOwner(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDocument();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDocument();
     }
 

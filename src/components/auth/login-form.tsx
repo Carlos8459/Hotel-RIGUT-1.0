@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { authenticate } from "@/lib/actions";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,39 +18,47 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
-  pin: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
+  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  password: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
 });
 
 export function LoginForm() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>("");
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [showPin, setShowPin] = useState(false);
+
+  const auth = useAuth();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
-      pin: "",
+      email: "",
+      password: "",
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setErrorMessage("");
-    startTransition(() => {
-        const formData = new FormData();
-        Object.entries(values).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
-
-        authenticate(undefined, formData).then((res) => {
-            if (res) {
-                setErrorMessage(res);
-            }
-        });
-    });
+    setIsPending(true);
+    signInWithEmailAndPassword(auth, values.email, values.password)
+      .then(() => {
+        router.push('/dashboard');
+      })
+      .catch((error) => {
+        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {
+            setErrorMessage('Usuario o PIN incorrecto.');
+        } else {
+            setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
+        }
+      })
+      .finally(() => {
+        setIsPending(false);
+      });
   };
 
   return (
@@ -59,11 +67,11 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="username"
+            name="email"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Usuario" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Usuario (correo electrónico)" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -71,7 +79,7 @@ export function LoginForm() {
           />
           <FormField
             control={form.control}
-            name="pin"
+            name="password"
             render={({ field }) => (
               <FormItem className="relative">
                 <FormControl>
@@ -104,9 +112,15 @@ export function LoginForm() {
       </Form>
       
       <div className="mt-6 text-center">
-        <Link href="/forgot-password" className="text-sm text-muted-foreground hover:underline">
-          ¿Olvidaste tu PIN?
-        </Link>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/forgot-password" className="hover:underline">
+            ¿Olvidaste tu PIN?
+          </Link>
+          {' | '}
+          <Link href="/register" className="font-semibold text-primary hover:underline">
+            Crear una cuenta
+          </Link>
+        </p>
       </div>
     </div>
   );

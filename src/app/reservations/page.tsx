@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { roomsData } from "@/lib/hotel-data";
 import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, User, PlusCircle } from "lucide-react";
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 // Helper to parse dates like "24 Ene" or "23 Ene - ..."
 const parseReservationDate = (dateStr: string): Date | null => {
@@ -37,7 +39,23 @@ const reservationDates = reservations.map(r => r.reservationDate).filter((d): d 
 
 
 export default function ReservationsPage() {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
     const [date, setDate] = useState<Date | undefined>(new Date());
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+        router.push('/');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+                <p>Cargando...</p>
+            </div>
+        );
+    }
 
     const selectedDateStr = date ? format(date, 'yyyy-MM-dd') : '';
 

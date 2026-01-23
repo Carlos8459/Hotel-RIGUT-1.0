@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ import { format, parse, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 // Helper to parse dates like "24 Ene" or "23 Ene - 26 Ene"
 const parseDate = (dateStr: string, position: 'start' | 'end'): Date | null => {
@@ -94,11 +96,27 @@ const allCustomers: Customer[] = Object.values(guestVisits).map(visits => {
 
 
 export default function CustomersPage() {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
     const [selectedGuest, setSelectedGuest] = useState<PastGuest | null>(null);
     const [filter, setFilter] = useState('all');
     const [date, setDate] = useState<Date | undefined>();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRoom, setSelectedRoom] = useState('');
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+        router.push('/');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+                <p>Cargando...</p>
+            </div>
+        );
+    }
 
     const handleGuestClick = (guest: PastGuest) => {
         setSelectedGuest(guest);
