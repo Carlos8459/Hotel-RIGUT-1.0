@@ -46,11 +46,11 @@ export default function RoomSettingsPage() {
                         <CardDescription>Agrega o elimina habitaciones existentes en el hotel.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex gap-4">
-                        <Button>
+                        <Button size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Agregar Habitación
                         </Button>
-                        <Button variant="destructive">
+                        <Button variant="destructive" size="sm">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Eliminar Habitación
                         </Button>
