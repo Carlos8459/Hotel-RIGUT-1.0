@@ -35,10 +35,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 
 const reservationFormSchema = z.object({
@@ -363,9 +365,9 @@ export default function NewReservationPage() {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>¿El cliente tiene vehículo?</FormLabel>
+                    <FormLabel>¿El cliente trae vehículo?</FormLabel>
                     <FormDescription>
-                      Selecciona si el cliente registrará un vehículo.
+                      Selecciona para registrar un vehículo.
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -379,21 +381,44 @@ export default function NewReservationPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Vehículo</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar tipo de vehículo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="car">Carro</SelectItem>
-                        <SelectItem value="bike">Moto</SelectItem>
-                        <SelectItem value="truck">Camión</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-3 gap-4 pt-2"
+                      >
+                        <div>
+                          <RadioGroupItem value="car" id="car" className="peer sr-only" />
+                          <Label
+                            htmlFor="car"
+                            className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                          >
+                            <Car className="mb-3 h-6 w-6" />
+                            Carro
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem value="bike" id="bike" className="peer sr-only" />
+                          <Label
+                            htmlFor="bike"
+                            className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                          >
+                            <Bike className="mb-3 h-6 w-6" />
+                            Moto
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem value="truck" id="truck" className="peer sr-only" />
+                          <Label
+                            htmlFor="truck"
+                            className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                          >
+                            <Truck className="mb-3 h-6 w-6" />
+                            Camión
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
