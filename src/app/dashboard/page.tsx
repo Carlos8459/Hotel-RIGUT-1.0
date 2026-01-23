@@ -1,4 +1,6 @@
+"use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check, Phone } from "lucide-react";
+import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
 
 const roomsData = [
   {
@@ -26,7 +29,12 @@ const roomsData = [
     action: {
       text: "Checkout",
       icon: <LogOut className="mr-2 h-4 w-4" />
-    }
+    },
+    history: [
+      { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT" },
+      { name: "Carlos Rivas", date: "10 Ene - 12 Ene", avatar: "CR" },
+      { name: "Beatriz Mella", date: "05 Ene - 08 Ene", avatar: "BM" },
+    ]
   },
   {
     id: 103,
@@ -40,7 +48,12 @@ const roomsData = [
     },
     secondaryAction: {
       icon: <KeyRound className="h-5 w-5" />
-    }
+    },
+    history: [
+      { name: "Luisa Fernandez", date: "18 Ene - 21 Ene", avatar: "LF" },
+      { name: "Mario Gomez", date: "14 Ene - 17 Ene", avatar: "MG" },
+      { name: "Sofia Castro", date: "10 Ene - 13 Ene", avatar: "SC" },
+    ]
   },
   {
     id: 104,
@@ -52,7 +65,12 @@ const roomsData = [
     action: {
       text: "Check-in",
       icon: <Check className="mr-2 h-4 w-4" />
-    }
+    },
+    history: [
+      { name: "David Choi", date: "20 Ene - 23 Ene", avatar: "DC" },
+      { name: "Emily White", date: "15 Ene - 19 Ene", avatar: "EW" },
+      { name: "Frank Black", date: "11 Ene - 14 Ene", avatar: "FB" },
+    ]
   },
   {
     id: 201,
@@ -70,7 +88,12 @@ const roomsData = [
     },
     action: {
       text: "Ver check-in",
-    }
+    },
+    history: [
+      { name: "George Harris", date: "18 Ene - 22 Ene", avatar: "GH" },
+      { name: "Helen Ivanova", date: "12 Ene - 16 Ene", avatar: "HI" },
+      { name: "Ian Jacobs", date: "07 Ene - 11 Ene", avatar: "IJ" },
+    ]
   },
   {
     id: 202,
@@ -86,7 +109,12 @@ const roomsData = [
     },
     action: {
       text: "Ver reporte",
-    }
+    },
+    history: [
+      { name: "Jack King", date: "19 Ene - 22 Ene", avatar: "JK" },
+      { name: "Karen Lee", date: "14 Ene - 17 Ene", avatar: "KL" },
+      { name: "Leo Miller", date: "09 Ene - 12 Ene", avatar: "LM" },
+    ]
   },
   {
     id: 203,
@@ -99,11 +127,26 @@ const roomsData = [
     subDetails: "Incidencia: Fuga de agua",
     action: {
       text: "Ver reporte",
-    }
+    },
+    history: [
+      { name: "Nora Nelson", date: "16 Ene - 20 Ene", avatar: "NN" },
+      { name: "Oscar Price", date: "11 Ene - 15 Ene", avatar: "OP" },
+      { name: "Pamela Queen", date: "06 Ene - 10 Ene", avatar: "PQ" },
+    ]
   }
 ];
 
 export default function RoomsDashboard() {
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+
+  const handleCardClick = (room: any) => {
+    setSelectedRoom(room);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedRoom(null);
+  };
+
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
@@ -140,7 +183,7 @@ export default function RoomsDashboard() {
 
       <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {roomsData.map((room) => (
-          <Card key={room.id} className="bg-card border-border text-foreground flex flex-col">
+          <Card key={room.id} onClick={() => handleCardClick(room)} className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
@@ -218,6 +261,14 @@ export default function RoomsDashboard() {
           </Card>
         ))}
       </main>
+
+      {selectedRoom && (
+        <RoomDetailModal
+          room={selectedRoom}
+          isOpen={!!selectedRoom}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
