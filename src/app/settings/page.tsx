@@ -46,9 +46,11 @@ export default function SettingsPage() {
                         <CardDescription>Administra los precios y otros detalles de las habitaciones.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <Button>
-                           <Wrench className="mr-2 h-4 w-4" />
-                           Habitaciones
+                       <Button asChild>
+                           <Link href="/settings/rooms">
+                               <Wrench className="mr-2 h-4 w-4" />
+                               Habitaciones
+                           </Link>
                        </Button>
                     </CardContent>
                 </Card>
