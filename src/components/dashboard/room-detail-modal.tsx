@@ -4,11 +4,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User } from "lucide-react";
+import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +27,8 @@ import {
 import { RoomHistoryModal } from "./room-history-modal";
 import type { PastGuest } from "./customer-detail-modal";
 import { getRoomDescription } from "@/lib/hotel-data";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 type Room = {
     id: number;
@@ -53,6 +57,9 @@ type RoomDetailModalProps = {
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedGuest, setEditedGuest] = useState({ name: '', phone: '' });
+
   if (!room) return null;
 
   const roomDescription = getRoomDescription(room.price, room.id);
@@ -65,6 +72,19 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     console.log(`Checking out room ${room.id}`);
     onClose(); // Close the modal after checkout.
   }
+  
+  const handleOpenEditModal = () => {
+    setEditedGuest({ name: room.guest || '', phone: room.phone || '' });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveChanges = () => {
+    console.log("Saving changes for guest:", editedGuest);
+    // This is where you would update the database with the new guest info.
+    // For now, it just closes the modal as the dashboard data is static.
+    setIsEditModalOpen(false);
+  };
+
 
   return (
     <>
@@ -84,7 +104,13 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             <div className="space-y-6 pb-6">
                 {isGuestPresent && (
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
+                            <Button variant="ghost" size="icon" onClick={handleOpenEditModal}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Editar datos del cliente</span>
+                            </Button>
+                        </div>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
                                 <AvatarFallback className="text-2xl">{room.guest!.split(' ').map(n => n[0]).join('')}</AvatarFallback>
@@ -207,6 +233,44 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         onClose={() => setIsHistoryModalOpen(false)}
         room={room}
       />
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Editar Datos del Huésped</DialogTitle>
+                <DialogDescription>
+                    Realiza cambios en la información del huésped. Haz clic en guardar cuando termines.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="guest-name" className="text-right">
+                        Nombre
+                    </Label>
+                    <Input 
+                        id="guest-name" 
+                        value={editedGuest.name}
+                        onChange={(e) => setEditedGuest(prev => ({...prev, name: e.target.value}))}
+                        className="col-span-3"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="guest-phone" className="text-right">
+                        Teléfono
+                    </Label>
+                    <Input 
+                        id="guest-phone" 
+                        value={editedGuest.phone}
+                        onChange={(e) => setEditedGuest(prev => ({...prev, phone: e.target.value}))}
+                        className="col-span-3"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
