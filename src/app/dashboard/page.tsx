@@ -80,7 +80,7 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
-      <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+      <header className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <div className="relative flex-grow">
@@ -105,7 +105,7 @@ export default function RoomsDashboard() {
         </div>
       </header>
 
-      <div className="flex items-center gap-6 mb-8">
+      <div className="flex items-center gap-6 mb-4">
         <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-green-400"></div>
             <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Libres</span></p>
@@ -116,7 +116,7 @@ export default function RoomsDashboard() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <Tabs defaultValue="ene24">
           <TabsList className="bg-card border border-border">
             <TabsTrigger value="ene22">Ene 22</TabsTrigger>
