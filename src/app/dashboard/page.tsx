@@ -94,26 +94,15 @@ export default function RoomsDashboard() {
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
-        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar clientes..."
-              className="bg-card border-border pl-10 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button
-            asChild
-            className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0"
-          >
-            <Link href="/new-reservation">
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Nueva Reserva
-            </Link>
-          </Button>
+        <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar clientes..."
+            className="bg-card border-border pl-10 w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </header>
 
@@ -308,6 +297,16 @@ export default function RoomsDashboard() {
           </div>
         )}
       </main>
+
+      <Link href="/new-reservation">
+        <Button
+          size="icon"
+          className="fixed z-20 bottom-24 right-4 h-16 w-16 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8"
+          aria-label="Nueva Reserva"
+        >
+          <PlusCircle className="h-8 w-8" />
+        </Button>
+      </Link>
 
       {selectedRoom && (
         <RoomDetailModal
