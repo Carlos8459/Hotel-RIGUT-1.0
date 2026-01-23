@@ -3,16 +3,14 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutGrid, Calendar, Users, Settings, Wrench } from 'lucide-react';
+import { LayoutGrid, Calendar, Users, Settings, Wrench, User as UserIcon } from 'lucide-react';
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
-    const auth = useAuth();
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -20,10 +18,6 @@ export default function SettingsPage() {
         }
     }, [user, isUserLoading, router]);
 
-    const handleLogout = async () => {
-        await signOut(auth);
-        router.push('/');
-    };
 
     if (isUserLoading || !user) {
         return (
@@ -54,15 +48,19 @@ export default function SettingsPage() {
                        </Button>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cuenta</CardTitle>
-                         <CardDescription>Hola, {user.email}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Button variant="destructive" onClick={handleLogout}>Cerrar sesión</Button>
-                    </CardContent>
-                </Card>
+
+                <Link href="/settings/account" className="block w-full">
+                    <Card className="hover:border-primary transition-colors cursor-pointer">
+                         <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                             <UserIcon className="h-6 w-6 text-muted-foreground" />
+                             <div>
+                                <CardTitle className="text-lg">Cuenta</CardTitle>
+                                <CardDescription>Gestiona los detalles de tu cuenta y la seguridad.</CardDescription>
+                             </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
+                
                  <Card>
                     <CardHeader>
                         <CardTitle>Próximamente</CardTitle>
