@@ -71,7 +71,7 @@ export default function AccountSettingsPage() {
         router.push('/');
     };
     
-    const onSubmitPinChange = async (values: z.infer<typeof changePinSchema>>) => {
+    const onSubmitPinChange = async (values: z.infer<typeof changePinSchema>) => {
         setIsPending(true);
         setErrorMessage(null);
 
