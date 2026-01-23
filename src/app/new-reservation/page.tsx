@@ -34,7 +34,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
@@ -197,9 +197,12 @@ export default function NewReservationPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre del Huésped</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Juan Pérez" {...field} />
-                  </FormControl>
+                   <div className="relative flex items-center">
+                    <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input placeholder="Ej: Juan Pérez" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -210,9 +213,12 @@ export default function NewReservationPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cédula (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: 001-000000-0000A" {...field} />
-                  </FormControl>
+                  <div className="relative flex items-center">
+                    <Fingerprint className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input placeholder="Ej: 001-000000-0000A" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -223,9 +229,12 @@ export default function NewReservationPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Teléfono (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="tel" placeholder="Ej: 88888888" {...field} />
-                  </FormControl>
+                   <div className="relative flex items-center">
+                    <Phone className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input type="tel" placeholder="Ej: 88888888" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -242,9 +251,9 @@ export default function NewReservationPage() {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={'outline'}
+                            variant={'ghost'}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
+                              'w-full justify-start text-left font-normal bg-transparent border-0 border-b border-input rounded-none hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
                               !field.value && 'text-muted-foreground'
                             )}
                           >
@@ -284,9 +293,9 @@ export default function NewReservationPage() {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={'outline'}
+                            variant={'ghost'}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
+                              'w-full justify-start text-left font-normal bg-transparent border-0 border-b border-input rounded-none hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
                               !field.value && 'text-muted-foreground'
                             )}
                           >
@@ -332,9 +341,12 @@ export default function NewReservationPage() {
                     disabled={!checkInDate || !checkOutDate}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación disponible"} />
-                      </SelectTrigger>
+                       <div className="relative flex items-center">
+                        <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                        <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus:ring-0 focus:ring-offset-0 focus:border-primary">
+                          <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación disponible"} />
+                        </SelectTrigger>
+                      </div>
                     </FormControl>
                     <SelectContent>
                       {availableRooms.map((room) => (
@@ -355,19 +367,19 @@ export default function NewReservationPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Vehículo (Opcional)</FormLabel>
-                    <div className="grid grid-cols-3 gap-4 pt-2">
+                    <div className="grid grid-cols-3 gap-2 pt-2">
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => field.onChange(field.value === 'car' ? undefined : 'car')}
                         className={cn(
-                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          "h-auto flex-col items-center justify-between p-3 border-2 rounded-lg",
                           field.value === 'car'
-                            ? 'border-primary'
+                            ? 'border-primary bg-primary/10'
                             : 'border-muted bg-transparent'
                         )}
                       >
-                        <Car className="mb-3 h-6 w-6" />
+                        <Car className="mb-2 h-5 w-5" />
                         Carro
                       </Button>
                       <Button
@@ -375,13 +387,13 @@ export default function NewReservationPage() {
                         variant="ghost"
                         onClick={() => field.onChange(field.value === 'bike' ? undefined : 'bike')}
                         className={cn(
-                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          "h-auto flex-col items-center justify-between p-3 border-2 rounded-lg",
                           field.value === 'bike'
-                            ? 'border-primary'
+                            ? 'border-primary bg-primary/10'
                             : 'border-muted bg-transparent'
                         )}
                       >
-                        <Bike className="mb-3 h-6 w-6" />
+                        <Bike className="mb-2 h-5 w-5" />
                         Moto
                       </Button>
                       <Button
@@ -389,13 +401,13 @@ export default function NewReservationPage() {
                         variant="ghost"
                         onClick={() => field.onChange(field.value === 'truck' ? undefined : 'truck')}
                         className={cn(
-                          "h-auto flex-col items-center justify-between p-4 border-2 rounded-md",
+                          "h-auto flex-col items-center justify-between p-3 border-2 rounded-lg",
                           field.value === 'truck'
-                            ? 'border-primary'
+                            ? 'border-primary bg-primary/10'
                             : 'border-muted bg-transparent'
                         )}
                       >
-                        <Truck className="mb-3 h-6 w-6" />
+                        <Truck className="mb-2 h-5 w-5" />
                         Camión
                       </Button>
                     </div>
@@ -406,7 +418,7 @@ export default function NewReservationPage() {
 
             <Button
               type="submit"
-              className="w-full sm:w-auto"
+              className="w-full"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Creando...' : 'Crear Reserva'}
