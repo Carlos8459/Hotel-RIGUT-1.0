@@ -45,6 +45,13 @@ export default function RoomsDashboard() {
     }
   }, [user, isUserLoading, router]);
 
+  const ocupadasCount = roomsData.filter(
+    (room) => room.statusText === 'Ocupada' || room.statusText === 'Acomodada'
+  ).length;
+  const disponiblesCount = roomsData.filter(
+    (room) => room.statusText === 'Disponible'
+  ).length;
+
   if (isUserLoading || !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
@@ -97,6 +104,17 @@ export default function RoomsDashboard() {
           </Button>
         </div>
       </header>
+
+      <div className="flex items-center gap-6 mb-8">
+        <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-green-400"></div>
+            <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Libres</span></p>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-red-400"></div>
+            <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
+        </div>
+      </div>
 
       <div className="flex justify-between items-center mb-8">
         <Tabs defaultValue="ene24">
