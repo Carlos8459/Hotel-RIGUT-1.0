@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,15 +26,32 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RoomHistoryModal } from "./room-history-modal";
 import type { PastGuest } from "./customer-detail-modal";
-import { getRoomDescription } from "@/lib/hotel-data";
+import { getRoomDescription, roomsData } from "@/lib/hotel-data";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, parse } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type Room = {
     id: number;
     title: string;
     guest?: string;
     phone?: string;
+    cedula?: string;
     statusText?: string;
     statusColor?: string;
     date?: string;
@@ -58,7 +75,14 @@ type RoomDetailModalProps = {
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editedGuest, setEditedGuest] = useState({ name: '', phone: '' });
+  const [editedGuest, setEditedGuest] = useState({
+    name: "",
+    cedula: "",
+    phone: "",
+    roomId: "",
+    vehicle: undefined as 'car' | 'bike' | 'truck' | undefined,
+    checkOutDate: undefined as Date | undefined,
+  });
 
   if (!room) return null;
 
@@ -74,12 +98,32 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   }
   
   const handleOpenEditModal = () => {
-    setEditedGuest({ name: room.guest || '', phone: room.phone || '' });
+    const parseCheckoutDate = (dateStr?: string): Date | undefined => {
+        if (!dateStr) return undefined;
+        try {
+            const currentYear = new Date().getFullYear();
+            const datePart = dateStr.split(' - ')[1]?.split(' (')[0];
+            if (!datePart) return undefined;
+            return parse(`${datePart} ${currentYear}`, 'd LLL yyyy', { locale: es });
+        } catch (e) {
+            console.error("Error parsing checkout date:", e)
+            return undefined;
+        }
+    };
+
+    setEditedGuest({
+      name: room.guest || '',
+      phone: room.phone || '',
+      cedula: room.cedula || '',
+      roomId: String(room.id),
+      vehicle: room.vehicle,
+      checkOutDate: parseCheckoutDate(room.date),
+    });
     setIsEditModalOpen(true);
   };
 
   const handleSaveChanges = () => {
-    console.log("Saving changes for guest:", editedGuest);
+    console.log("Saving changes:", editedGuest);
     // This is where you would update the database with the new guest info.
     // For now, it just closes the modal as the dashboard data is static.
     setIsEditModalOpen(false);
@@ -132,7 +176,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
                 {isGuestPresent && (
                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center"><Calendar className="mr-2 h-5 w-5" />Estadía</h3>
+                        <h3 className="font-semibold text-lg flex items-center"><CalendarIcon className="mr-2 h-5 w-5" />Estadía</h3>
                         <div className="grid gap-2 text-sm">
                             {room.date && (
                                 <div className="flex items-center text-muted-foreground">
@@ -233,39 +277,106 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         onClose={() => setIsHistoryModalOpen(false)}
         room={room}
       />
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Editar Datos del Huésped</DialogTitle>
+                <DialogTitle>Editar Datos de Estadía</DialogTitle>
                 <DialogDescription>
-                    Realiza cambios en la información del huésped. Haz clic en guardar cuando termines.
+                    Realiza cambios en la información del huésped y su estadía.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guest-name" className="text-right">
-                        Nombre
-                    </Label>
-                    <Input 
-                        id="guest-name" 
-                        value={editedGuest.name}
-                        onChange={(e) => setEditedGuest(prev => ({...prev, name: e.target.value}))}
-                        className="col-span-3"
-                    />
+            <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+                <div className="space-y-4 py-4 px-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="guest-name">Nombre del Huésped</Label>
+                        <Input 
+                            id="guest-name" 
+                            value={editedGuest.name}
+                            onChange={(e) => setEditedGuest(prev => ({...prev, name: e.target.value}))}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="guest-cedula">Cédula</Label>
+                        <Input 
+                            id="guest-cedula" 
+                            placeholder="001-000000-0000X"
+                            value={editedGuest.cedula}
+                            onChange={(e) => setEditedGuest(prev => ({...prev, cedula: e.target.value}))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="guest-phone">Teléfono</Label>
+                        <Input 
+                            id="guest-phone" 
+                            value={editedGuest.phone}
+                            onChange={(e) => setEditedGuest(prev => ({...prev, phone: e.target.value}))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="room-select">Cambiar Habitación</Label>
+                        <Select
+                            value={editedGuest.roomId}
+                            onValueChange={(value) => setEditedGuest(prev => ({...prev, roomId: value}))}
+                        >
+                            <SelectTrigger id="room-select">
+                                <SelectValue placeholder="Seleccionar habitación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={String(room.id)}>{room.title} (Actual)</SelectItem>
+                                {roomsData
+                                    .filter(r => r.statusText === 'Disponible')
+                                    .map(r => (
+                                        <SelectItem key={r.id} value={String(r.id)}>{r.title} - {getRoomDescription(r.price, r.id)}</SelectItem>
+                                    ))
+                                }
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="vehicle-select">Tipo de Vehículo</Label>
+                        <Select
+                            value={editedGuest.vehicle}
+                            onValueChange={(value: 'car' | 'bike' | 'truck') => setEditedGuest(prev => ({...prev, vehicle: value}))}
+                        >
+                            <SelectTrigger id="vehicle-select">
+                                <SelectValue placeholder="Seleccionar vehículo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="car">Carro</SelectItem>
+                                <SelectItem value="bike">Moto</SelectItem>
+                                <SelectItem value="truck">Camión</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Extender Estadía (Fecha de Check-out)</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={'outline'}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !editedGuest.checkOutDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {editedGuest.checkOutDate ? format(editedGuest.checkOutDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={editedGuest.checkOutDate}
+                                    onSelect={(date) => setEditedGuest(prev => ({...prev, checkOutDate: date as Date}))}
+                                    initialFocus
+                                    locale={es}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guest-phone" className="text-right">
-                        Teléfono
-                    </Label>
-                    <Input 
-                        id="guest-phone" 
-                        value={editedGuest.phone}
-                        onChange={(e) => setEditedGuest(prev => ({...prev, phone: e.target.value}))}
-                        className="col-span-3"
-                    />
-                </div>
-            </div>
-            <DialogFooter>
+            </ScrollArea>
+            <DialogFooter className="mt-4">
                 <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
             </DialogFooter>

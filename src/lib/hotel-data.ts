@@ -9,6 +9,7 @@ export const roomsData = [
     title: "Habitación 1",
     price: 800,
     guest: "Ricardo Gomez",
+    cedula: "001-123456-0001A",
     phone: "11 5555-1234",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
