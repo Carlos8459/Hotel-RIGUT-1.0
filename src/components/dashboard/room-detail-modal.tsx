@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, DollarSign, Phone } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Room = {
     id: number;
@@ -43,14 +44,15 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card text-foreground sm:max-w-[425px] border-border">
+      <DialogContent className="bg-card text-foreground sm:max-w-sm border-border flex flex-col max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
           <DialogDescription>
             Detalles de la habitación y el huésped actual.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <ScrollArea className="pr-6 -mr-6">
+        <div className="grid gap-6 py-4">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Estado</span>
             {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
@@ -102,7 +104,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             <>
               <Separator />
               <h3 className="font-semibold">Historial de Huéspedes</h3>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {room.history.map((pastGuest, index) => (
                   <div key={index} className="flex items-center">
                     <Avatar className="h-9 w-9 mr-4">
@@ -118,6 +120,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             </>
           )}
         </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
