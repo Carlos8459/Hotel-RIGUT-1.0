@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, PlusCircle, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 
@@ -40,6 +40,23 @@ export default function RoomSettingsPage() {
             </header>
 
             <main className="max-w-4xl mx-auto space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Gestionar Habitaciones</CardTitle>
+                        <CardDescription>Agrega o elimina habitaciones existentes en el hotel.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex gap-4">
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Agregar Habitación
+                        </Button>
+                        <Button variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar Habitación
+                        </Button>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Precios de Habitaciones</CardTitle>
