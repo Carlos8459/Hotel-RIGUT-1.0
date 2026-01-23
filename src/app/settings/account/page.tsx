@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, KeyRound, LogOut, AlertCircle } from 'lucide-react';
+import { ArrowLeft, KeyRound, LogOut, AlertCircle, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -71,7 +71,7 @@ export default function AccountSettingsPage() {
         router.push('/');
     };
     
-    const onSubmitPinChange = async (values: z.infer<typeof changePinSchema>) => {
+    const onSubmitPinChange = async (values: z.infer<typeof changePinSchema>>) => {
         setIsPending(true);
         setErrorMessage(null);
 
@@ -228,6 +228,21 @@ export default function AccountSettingsPage() {
                                 </Form>
                             </DialogContent>
                         </Dialog>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Gestión de Socios</CardTitle>
+                        <CardDescription>Agrega o administra las cuentas de tus socios.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <Button asChild>
+                           <Link href="/admin/users">
+                               <Users className="mr-2 h-4 w-4" />
+                               Gestionar Socios
+                           </Link>
+                       </Button>
                     </CardContent>
                 </Card>
 
