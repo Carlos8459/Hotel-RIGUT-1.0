@@ -26,10 +26,10 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-login-gradient p-6">
       
-      <div className="absolute top-[15%] left-[10%] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rotate-12 transform rounded-[3rem] bg-pink-300/40 opacity-50 blur-2xl" />
-      <div className="absolute bottom-[15%] right-[10%] h-56 w-56 translate-x-1/2 translate-y-1/2 rotate-12 transform rounded-[3rem] bg-blue-300/40 opacity-50 blur-2xl" />
-      <div className="absolute top-[5%] right-[20%] h-24 w-24 rounded-full bg-pink-200/50 opacity-80 blur-lg" />
-      <div className="absolute bottom-[10%] left-[20%] h-24 w-24 rounded-full bg-blue-200/50 opacity-80 blur-lg" />
+      <div className="absolute top-[15%] left-[10%] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rotate-12 transform rounded-[3rem] bg-primary/20 opacity-50 blur-2xl" />
+      <div className="absolute bottom-[15%] right-[10%] h-56 w-56 translate-x-1/2 translate-y-1/2 rotate-12 transform rounded-[3rem] bg-accent/20 opacity-50 blur-2xl" />
+      <div className="absolute top-[5%] right-[20%] h-24 w-24 rounded-full bg-primary/30 opacity-80 blur-lg" />
+      <div className="absolute bottom-[10%] left-[20%] h-24 w-24 rounded-full bg-accent/30 opacity-80 blur-lg" />
 
       <div className="z-10 w-full max-w-sm space-y-16">
         <div className="text-center">
