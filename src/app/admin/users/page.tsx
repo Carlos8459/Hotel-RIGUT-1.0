@@ -1,13 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseConfig } from '@/firebase/config';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useToast } from '@/hooks/use-toast';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, MoreVertical, Trash2, AlertCircle } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,6 +41,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     Select,
@@ -41,6 +51,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 type User = {
@@ -50,27 +64,59 @@ type User = {
     role: string;
 };
 
-// Placeholder data for users. In a real app, this would come from Firestore.
-const initialUsers: User[] = [
-    { id: '1', name: 'Socio Uno', email: 'socio1@example.com', role: 'Socio' },
-    { id: '2', name: 'Socio Dos', email: 'socio2@example.com', role: 'Socio' },
-    { id: '3', name: 'Admin Principal', email: 'admin@example.com', role: 'Admin' },
-];
+type UserDocument = {
+    username: string;
+    email: string;
+    role: 'Admin' | 'Socio';
+    registrationDate: string;
+}
+
+const addPartnerSchema = z.object({
+  name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
+  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
+});
+
 
 export default function ManageUsersPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
-    const [users, setUsers] = useState<User[]>(initialUsers);
+    const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+    const { data: usersData, isLoading: usersLoading, error: usersError } = useCollection<UserDocument>(usersCollection);
+    
+    const users = useMemo<User[]>(() => {
+        if (!usersData) return [];
+        return usersData.map(u => ({
+            id: u.id,
+            name: u.username,
+            email: u.email,
+            role: u.role,
+        }));
+    }, [usersData]);
+
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [newRole, setNewRole] = useState('');
+    const [isAddPartnerDialogOpen, setIsAddPartnerDialogOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const form = useForm<z.infer<typeof addPartnerSchema>>({
+        resolver: zodResolver(addPartnerSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+        },
+    });
 
     useEffect(() => {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-        // Note: For a real implementation, we would add role-based access control here
-        // to ensure only administrators can access this page.
+        // Note: For a real implementation, we depend on Firestore security rules
+        // to ensure only administrators can access this page's data.
     }, [user, isUserLoading, router]);
 
     const handleEditRoleClick = (userToEdit: User) => {
@@ -78,15 +124,76 @@ export default function ManageUsersPage() {
         setNewRole(userToEdit.role);
     };
 
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         if (editingUser) {
-            setUsers(users.map(u => (u.id === editingUser.id ? { ...u, role: newRole } : u)));
-            setEditingUser(null);
+            const userDocRef = doc(firestore, "users", editingUser.id);
+            try {
+                await updateDoc(userDocRef, { role: newRole });
+                toast({
+                    title: "Rol actualizado",
+                    description: `El rol de ${editingUser.name} ha sido cambiado a ${newRole}.`,
+                });
+            } catch (error) {
+                console.error("Error updating role:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "No se pudo actualizar el rol del socio.",
+                });
+            } finally {
+                setEditingUser(null);
+            }
         }
     };
 
     const handleCloseDialog = () => {
         setEditingUser(null);
+    };
+
+    const onAddPartnerSubmit = async (values: z.infer<typeof addPartnerSchema>) => {
+        setIsSaving(true);
+        form.clearErrors();
+        let tempApp;
+        try {
+            const tempAppName = `temp-user-creation-${Date.now()}`;
+            tempApp = initializeApp(firebaseConfig, tempAppName);
+            const tempAuth = getTempAuth(tempApp);
+
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, values.email, values.password);
+            const newUser = userCredential.user;
+
+            const userProfile = {
+                username: values.name,
+                email: values.email,
+                registrationDate: new Date().toISOString(),
+                role: 'Socio'
+            };
+
+            await setDoc(doc(firestore, "users", newUser.uid), userProfile);
+            
+            await deleteApp(tempApp);
+
+            toast({
+                title: "Socio agregado",
+                description: `${values.name} ha sido agregado exitosamente.`,
+            });
+            setIsAddPartnerDialogOpen(false);
+            form.reset();
+
+        } catch (error: any) {
+            console.error("Error creating partner:", error);
+            if (tempApp) await deleteApp(tempApp);
+            
+            if (error.code === 'auth/email-already-in-use') {
+                form.setError("email", { message: "Este correo electrónico ya está en uso." });
+            } else if (error.code === 'auth/weak-password') {
+                form.setError("password", { message: "El PIN es demasiado débil. Debe tener al menos 6 caracteres." });
+            } else {
+                form.setError("root", { message: "Algo salió mal. Por favor, inténtalo de nuevo." });
+            }
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (isUserLoading || !user) {
@@ -108,17 +215,96 @@ export default function ManageUsersPage() {
                     <h1 className="text-2xl font-bold">Gestionar Socios</h1>
                     <p className="text-muted-foreground">Agrega, elimina o edita los socios de tu equipo.</p>
                 </div>
-                <Button>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Agregar Socio
-                </Button>
+                <Dialog open={isAddPartnerDialogOpen} onOpenChange={setIsAddPartnerDialogOpen}>
+                    <DialogTrigger asChild>
+                         <Button>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Agregar Socio
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Agregar Nuevo Socio</DialogTitle>
+                            <DialogDescription>
+                                Crea una cuenta para que el nuevo socio pueda acceder a la aplicación.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onAddPartnerSubmit)} className="space-y-4 pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nombre de Usuario</FormLabel>
+                                            <FormControl><Input placeholder="Ej: Socio Uno" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Correo Electrónico</FormLabel>
+                                            <FormControl><Input type="email" placeholder="socio@example.com" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>PIN de Acceso</FormLabel>
+                                            <FormControl><Input type="password" placeholder="6+ caracteres" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                {form.formState.errors.root && (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Error</AlertTitle>
+                                        <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+                                    </Alert>
+                                )}
+                                <DialogFooter>
+                                    <Button type="submit" disabled={isSaving}>
+                                        {isSaving ? "Creando..." : "Crear Socio"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
             </header>
 
             <main className="max-w-4xl mx-auto">
                 <Card>
                     <CardContent className="p-0">
                         <div className="divide-y divide-border">
-                            {users.map((member) => (
+                            {usersLoading && (
+                                <div className="space-y-2 p-4">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className="flex items-center gap-4">
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-4 w-[250px]" />
+                                                <Skeleton className="h-4 w-[200px]" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {usersError && (
+                                <div className="p-4 text-center text-destructive">
+                                    <p>Error al cargar los socios. Es posible que no tengas permisos para ver esta información.</p>
+                                </div>
+                            )}
+                            {!usersLoading && !usersError && users.map((member) => (
                                 <div key={member.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <Avatar>
@@ -133,7 +319,7 @@ export default function ManageUsersPage() {
                                         <p className="text-sm font-medium text-muted-foreground hidden sm:block">{member.role}</p>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
+                                                <Button variant="ghost" size="icon" disabled={member.id === user.uid}>
                                                     <MoreVertical className="h-4 w-4" />
                                                     <span className="sr-only">Opciones</span>
                                                 </Button>
@@ -153,7 +339,7 @@ export default function ManageUsersPage() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta del socio.
+                                                                Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta del socio. La eliminación de la autenticación del usuario no es compatible desde el cliente.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
@@ -170,13 +356,10 @@ export default function ManageUsersPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <p className="text-center text-sm text-muted-foreground mt-8">
-                    * Esta es una vista de demostración. Se necesita implementar roles y permisos para la funcionalidad completa.
-                </p>
             </main>
 
             <Dialog open={!!editingUser} onOpenChange={(isOpen) => !isOpen && handleCloseDialog()}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Editar rol de {editingUser?.name}</DialogTitle>
                         <DialogDescription>

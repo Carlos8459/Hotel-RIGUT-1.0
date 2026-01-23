@@ -10,12 +10,27 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    match /users/{userId} {
-      // A user can create their own profile
-      allow create: if isOwner(userId);
+    function getRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
 
-      // A user can read, update, and delete their own profile
-      allow read, update, delete: if isOwner(userId);
+    function isAdmin() {
+      // Check if the user is signed in and their role is 'Admin' in their user document
+      return isSignedIn() && getRole(request.auth.uid) == 'Admin';
+    }
+
+    match /users/{userId} {
+      // A user can create their own profile, or an admin can create any user profile
+      allow create: if isOwner(userId) || isAdmin();
+
+      // An admin can list and read any user profile. A user can read their own.
+      allow list, read: if isAdmin() || isOwner(userId);
+      
+      // A user can update their own profile. An admin can also update any user's profile (e.g., to change a role).
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Only a user can delete their own profile. Admins cannot delete users from the client.
+      allow delete: if isOwner(userId);
     }
   }
 }

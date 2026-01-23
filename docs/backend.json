@@ -19,6 +19,11 @@
           "type": "string",
           "description": "The date and time when the user registered.",
           "format": "date-time"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user.",
+          "enum": ["Admin", "Socio"]
         }
       },
       "required": [

@@ -56,6 +56,7 @@ export default function RegisterPage() {
           username: values.username,
           email: values.email,
           registrationDate: new Date().toISOString(),
+          role: "Socio", // Default role for new users
         };
         
         // Create user document in Firestore
