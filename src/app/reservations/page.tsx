@@ -58,12 +58,11 @@ export default function ReservationsPage() {
             <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <Card className="bg-card border-border">
-                        <CardContent className="p-0 sm:p-0">
+                        <CardContent className="flex justify-center p-4">
                             <Calendar
                                 mode="single"
                                 selected={date}
                                 onSelect={setDate}
-                                className="w-full"
                                 locale={es}
                                 modifiers={{ reserved: reservationDates }}
                                 modifiersClassNames={{
