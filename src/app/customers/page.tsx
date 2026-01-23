@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home, BarChart2 } from 'lucide-react';
 import { CustomerDetailModal } from '@/components/dashboard/customer-detail-modal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -266,6 +266,12 @@ export default function CustomersPage() {
             <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
               <Users className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Clientes</span>
+            </Button>
+          </Link>
+          <Link href="/stats">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <BarChart2 className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Estadísticas</span>
             </Button>
           </Link>
           <Link href="/settings">

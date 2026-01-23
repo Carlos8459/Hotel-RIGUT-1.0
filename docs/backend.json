@@ -140,9 +140,14 @@
               ]
             },
             "amount": {
-              "type": "number"
+              "type": "number",
+              "description": "The total amount for the reservation."
             }
-          }
+          },
+          "required": [
+            "status",
+            "amount"
+          ]
         },
         "createdAt": {
           "type": "string",
@@ -160,6 +165,7 @@
         "checkOutDate",
         "roomId",
         "status",
+        "payment",
         "createdAt",
         "createdBy"
       ]

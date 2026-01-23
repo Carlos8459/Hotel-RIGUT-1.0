@@ -54,6 +54,7 @@ import {
   LogOut,
   Wrench,
   Check,
+  BarChart2,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -352,11 +353,11 @@ export default function RoomsDashboard() {
       <Link href="/new-reservation">
         <Button
           size="lg"
-          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8"
+          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8 flex items-center gap-2"
           aria-label="Nueva Reserva"
         >
           <PlusCircle className="h-6 w-6" />
-          Nueva Reserva
+          <span>Nueva Reserva</span>
         </Button>
       </Link>
 
@@ -399,6 +400,12 @@ export default function RoomsDashboard() {
             >
               <Users className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Clientes</span>
+            </Button>
+          </Link>
+          <Link href="/stats">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <BarChart2 className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Estadísticas</span>
             </Button>
           </Link>
           <Link href="/settings">

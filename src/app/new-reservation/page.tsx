@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { collection, addDoc, serverTimestamp, where, query, getDocs } from 'firebase/firestore';
 
@@ -122,10 +122,14 @@ export default function NewReservationPage() {
   }, [user, isUserLoading, router]);
 
   async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
-    if (!firestore || !user) return;
+    if (!firestore || !user || !roomsData) return;
     setIsSubmitting(true);
 
     try {
+      const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
+      const room = roomsData.find(r => r.id === data.roomId);
+      const totalAmount = room && nights > 0 ? room.price * nights : 0;
+
       const reservationData = {
         guestName: data.guestName,
         cedula: data.cedula || '',
@@ -133,8 +137,12 @@ export default function NewReservationPage() {
         checkInDate: data.checkInDate.toISOString(),
         checkOutDate: data.checkOutDate.toISOString(),
         roomId: data.roomId,
-        vehicle: data.hasVehicle ? data.vehicle : null,
+        vehicle: data.hasVehicle ? data.vehicle : undefined,
         status: 'Confirmed',
+        payment: {
+          status: 'Pendiente',
+          amount: totalAmount,
+        },
         createdAt: new Date().toISOString(),
         createdBy: user.uid,
       };

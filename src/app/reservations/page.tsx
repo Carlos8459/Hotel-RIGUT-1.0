@@ -14,6 +14,7 @@ import {
   User,
   PlusCircle,
   AlertCircle,
+  BarChart2,
 } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -213,6 +214,12 @@ export default function ReservationsPage() {
             >
               <Users className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Clientes</span>
+            </Button>
+          </Link>
+          <Link href="/stats">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <BarChart2 className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Estadísticas</span>
             </Button>
           </Link>
           <Link href="/settings">
