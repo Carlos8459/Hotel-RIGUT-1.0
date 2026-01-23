@@ -233,15 +233,13 @@ export default function StatsPage() {
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center justify-start sm:justify-end gap-2 flex-wrap">
             <DateRangePicker date={dateRange} onDateChange={setDateRange} />
-            <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={setToday}>Hoy</Button>
-                <Button variant="outline" size="sm" onClick={setThisWeek}>Esta Semana</Button>
-                <Button variant="outline" size="sm" onClick={setThisMonth}>Este Mes</Button>
-                <Button variant="outline" size="sm" onClick={setLastMonth}>Mes Pasado</Button>
-                <Button variant="outline" size="sm" onClick={setThisYear}>Este Año</Button>
-            </div>
+            <Button variant="outline" size="sm" onClick={setToday}>Hoy</Button>
+            <Button variant="outline" size="sm" onClick={setThisWeek}>Semana</Button>
+            <Button variant="outline" size="sm" onClick={setThisMonth}>Mes</Button>
+            <Button variant="outline" size="sm" onClick={setLastMonth}>Mes Pasado</Button>
+            <Button variant="outline" size="sm" onClick={setThisYear}>Año</Button>
         </div>
       </header>
 
