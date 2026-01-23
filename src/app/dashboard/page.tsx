@@ -14,6 +14,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Calendar,
   User,
   DollarSign,
@@ -27,6 +38,7 @@ import {
   LayoutGrid,
   Users,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { roomsData, getRoomDescription } from '@/lib/hotel-data';
@@ -222,12 +234,60 @@ export default function RoomsDashboard() {
                 )}
               </CardContent>
               <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                {room.action && (
-                  <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                    {room.action.icon}
-                    {room.action.text}
-                  </Button>
-                )}
+                {room.action &&
+                  (room.action.text === 'Checkout' && (room.statusText === 'Ocupada' || room.statusText === 'Acomodada') ? (
+                    <>
+                      {room.payment?.status === 'Pendiente' ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
+                              <DollarSign className="mr-2 h-4 w-4" />
+                              Registrar Pago
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción marcará la cuenta de {room.guest} como pagada.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction>Confirmar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Checkout
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esto finalizará la estadía de {room.guest} y marcará la habitación como disponible.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction>Confirmar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </>
+                  ) : (
+                    <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                      {room.action.icon}
+                      {room.action.text}
+                    </Button>
+                  ))}
+
                 {room.secondaryAction && (
                   <div className="flex justify-end w-full">
                     <Button
