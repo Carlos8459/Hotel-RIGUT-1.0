@@ -11,8 +11,8 @@ import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
 
 const roomsData = [
   {
-    id: 101,
-    title: "Habitación 101",
+    id: 1,
+    title: "Habitación 1",
     guest: "Ricardo Gomez",
     phone: "11 5555-1234",
     statusText: "Ocupada",
@@ -24,8 +24,8 @@ const roomsData = [
     vehicle: 'truck'
   },
   {
-    id: 102,
-    title: "Habitación 102",
+    id: 2,
+    title: "Habitación 2",
     guest: "Juan Pérez",
     phone: "11 1234-5678",
     statusText: "Ocupada",
@@ -41,8 +41,8 @@ const roomsData = [
     vehicle: 'car'
   },
   {
-    id: 103,
-    title: "Habitación 103",
+    id: 3,
+    title: "Habitación 3",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -55,8 +55,8 @@ const roomsData = [
     ]
   },
   {
-    id: 104,
-    title: "Habitación 104",
+    id: 4,
+    title: "Habitación 4",
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -69,8 +69,8 @@ const roomsData = [
     ]
   },
   {
-    id: 105,
-    title: "Habitación 105",
+    id: 5,
+    title: "Habitación 5",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -78,8 +78,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 106,
-    title: "Habitación 106",
+    id: 6,
+    title: "Habitación 6",
     guest: "Laura Sanchez",
     phone: "11 2233-4455",
     statusText: "Ocupada",
@@ -91,8 +91,8 @@ const roomsData = [
     vehicle: 'bike'
   },
   {
-    id: 107,
-    title: "Habitación 107",
+    id: 7,
+    title: "Habitación 7",
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Pintura",
@@ -101,8 +101,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 108,
-    title: "Habitación 108",
+    id: 8,
+    title: "Habitación 8",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -110,8 +110,8 @@ const roomsData = [
     history: [ { name: "Julia Roberts", date: "15 Ene - 18 Ene", avatar: "JR" } ]
   },
   {
-    id: 201,
-    title: "Habitación 201",
+    id: 9,
+    title: "Habitación 9",
     guest: "Maria Garcia",
     phone: "11 8765-4321",
     statusText: "Acomodada",
@@ -127,8 +127,8 @@ const roomsData = [
     vehicle: 'bike'
   },
   {
-    id: 202,
-    title: "Habitación 202",
+    id: 10,
+    title: "Habitación 10",
     guest: "Reservada",
     statusText: "Reservada",
     statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
@@ -143,8 +143,8 @@ const roomsData = [
     ]
   },
   {
-    id: 203,
-    title: "Habitación 203",
+    id: 11,
+    title: "Habitación 11",
     guest: "Mantenimiento",
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
@@ -159,8 +159,8 @@ const roomsData = [
     ]
   },
   {
-    id: 204,
-    title: "Habitación 204",
+    id: 12,
+    title: "Habitación 12",
     guest: "Familia Rodriguez",
     phone: "11 9988-7766",
     statusText: "Ocupada",
@@ -172,8 +172,8 @@ const roomsData = [
     vehicle: 'truck'
   },
   {
-    id: 205,
-    title: "Habitación 205",
+    id: 13,
+    title: "Habitación 13",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -181,8 +181,8 @@ const roomsData = [
     history: [ { name: "Sandra Bullock", date: "10 Ene - 12 Ene", avatar: "SB" } ]
   },
   {
-    id: 206,
-    title: "Habitación 206",
+    id: 14,
+    title: "Habitación 14",
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -191,8 +191,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 207,
-    title: "Habitación 207",
+    id: 15,
+    title: "Habitación 15",
     guest: "Ernesto Padilla",
     phone: "11 1122-3344",
     statusText: "Acomodada",
@@ -204,8 +204,8 @@ const roomsData = [
     vehicle: 'car'
   },
   {
-    id: 208,
-    title: "Habitación 208",
+    id: 16,
+    title: "Habitación 16",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -213,8 +213,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 301,
-    title: "Habitación 301",
+    id: 17,
+    title: "Habitación 17",
     guest: "Sofia Loren",
     phone: "11 8888-9999",
     statusText: "Ocupada",
@@ -226,8 +226,8 @@ const roomsData = [
     vehicle: 'car'
   },
   {
-    id: 302,
-    title: "Habitación 302",
+    id: 18,
+    title: "Habitación 18",
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Aire acondicionado",
@@ -236,8 +236,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 303,
-    title: "Habitación 303",
+    id: 19,
+    title: "Habitación 19",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -245,8 +245,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 304,
-    title: "Habitación 304",
+    id: 20,
+    title: "Habitación 20",
     guest: "Carlos Vives",
     phone: "11 7777-6666",
     statusText: "Acomodada",
@@ -258,8 +258,8 @@ const roomsData = [
     vehicle: 'bike'
   },
   {
-    id: 305,
-    title: "Habitación 305",
+    id: 21,
+    title: "Habitación 21",
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -268,8 +268,8 @@ const roomsData = [
     history: []
   },
   {
-    id: 306,
-    title: "Habitación 306",
+    id: 22,
+    title: "Habitación 22",
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -360,7 +360,9 @@ export default function RoomsDashboard() {
                   {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
                   {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
                   {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                  <span>Vehículo</span>
+                  <span>
+                    {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                  </span>
                 </div>
               )}
               {room.mainText && (
@@ -416,6 +418,8 @@ export default function RoomsDashboard() {
       )}
     </div>
   );
+
+    
 
     
 
