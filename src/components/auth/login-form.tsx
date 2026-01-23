@@ -58,7 +58,7 @@ export function LoginForm() {
         return;
       }
       emailForAuth = 'admin@hotel-rigut.app';
-      passwordForAuth = '1234';
+      passwordForAuth = '123456';
     } else {
       emailForAuth = values.username;
       passwordForAuth = values.password;

@@ -24,7 +24,7 @@ import { doc } from "firebase/firestore";
 const formSchema = z.object({
   username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
-  password: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
+  password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
 });
 
 export default function RegisterPage() {
@@ -67,7 +67,10 @@ export default function RegisterPage() {
       .catch((error) => {
         if (error.code === 'auth/email-already-in-use') {
             setErrorMessage('Este correo electrónico ya está en uso.');
-        } else {
+        } else if (error.code === 'auth/weak-password') {
+            setErrorMessage('El PIN es demasiado débil. Debe tener al menos 6 caracteres.');
+        }
+        else {
             setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
         }
       })
@@ -120,7 +123,7 @@ export default function RegisterPage() {
                 render={({ field }) => (
                 <FormItem className="relative">
                     <FormControl>
-                    <Input type={showPin ? "text" : "password"} placeholder="PIN (4+ caracteres)" {...field} autoComplete="new-password" className="h-14 rounded-full px-6 pr-12 text-base" />
+                    <Input type={showPin ? "text" : "password"} placeholder="PIN (6+ caracteres)" {...field} autoComplete="new-password" className="h-14 rounded-full px-6 pr-12 text-base" />
                     </FormControl>
                     <button
                     type="button"
