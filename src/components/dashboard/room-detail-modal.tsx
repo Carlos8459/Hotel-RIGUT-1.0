@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +27,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RoomHistoryModal } from "./room-history-modal";
-import type { PastGuest } from "./customer-detail-modal";
-import { getRoomDescription, roomsData } from "@/lib/hotel-data";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import {
@@ -42,95 +42,103 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-
-type Room = {
-    id: number;
-    title: string;
-    guest?: string;
-    phone?: string;
-    cedula?: string;
-    statusText?: string;
-    statusColor?: string;
-    date?: string;
-    payment?: {
-        status: string;
-        amount?: number;
-        color: string;
-    };
-    mainText?: string;
-    history?: PastGuest[];
-    vehicle?: 'car' | 'bike' | 'truck';
-    price?: number;
-}
+import type { ProcessedRoom } from "@/app/dashboard/page";
+import type { Room, Reservation } from "@/lib/types";
 
 type RoomDetailModalProps = {
-    room: Room;
+    room: ProcessedRoom;
     isOpen: boolean;
     onClose: () => void;
 }
 
+type EditableGuestData = {
+    name: string;
+    cedula: string;
+    phone: string;
+    roomId: string;
+    vehicle: 'car' | 'bike' | 'truck' | undefined;
+    checkOutDate: Date | undefined;
+}
+
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
+  const firestore = useFirestore();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editedGuest, setEditedGuest] = useState({
+  const [editedGuest, setEditedGuest] = useState<EditableGuestData>({
     name: "",
     cedula: "",
     phone: "",
     roomId: "",
-    vehicle: undefined as 'car' | 'bike' | 'truck' | undefined,
-    checkOutDate: undefined as Date | undefined,
+    vehicle: undefined,
+    checkOutDate: undefined,
   });
 
+  // Fetch available rooms for the select dropdown
+  const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
+  const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
+  
   if (!room) return null;
 
-  const roomDescription = getRoomDescription(room.price, room.id);
-  const canCheckout = room.statusText === 'Ocupada' || room.statusText === 'Acomodada';
-  const isGuestPresent = room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest);
-
-  function handleCheckout() {
-    // Here you would typically handle the checkout logic,
-    // like updating the database.
-    console.log(`Checking out room ${room.id}`);
-    onClose(); // Close the modal after checkout.
+  const getStayDate = (reservation?: Reservation) => {
+      if (!reservation) return null;
+      const checkIn = parseISO(reservation.checkInDate);
+      const checkOut = parseISO(reservation.checkOutDate);
+      const nights = differenceInCalendarDays(checkOut, checkIn);
+      return `${format(checkIn, 'd LLL', {locale: es})} - ${format(checkOut, 'd LLL', {locale: es})} (${nights} ${nights === 1 ? 'noche' : 'noches'})`;
   }
+
+  const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
+      if (!firestore) return;
+      const resDocRef = doc(firestore, 'reservations', reservationId);
+      try {
+          if (action === 'checkout') {
+              await updateDoc(resDocRef, { status: 'Checked-Out' });
+          } else if (action === 'confirm_payment') {
+              await updateDoc(resDocRef, { 'payment.status': 'Cancelado' });
+          }
+          onClose(); // Close modal after action
+      } catch (error) {
+          console.error(`Error performing action ${action}:`, error);
+      }
+  };
   
   const handleOpenEditModal = () => {
-    const parseCheckoutDate = (dateStr?: string): Date | undefined => {
-        if (!dateStr) return undefined;
-        try {
-            const currentYear = new Date().getFullYear();
-            const datePart = dateStr.split(' - ')[1]?.split(' (')[0];
-            if (!datePart) return undefined;
-            const parsedDate = parse(`${datePart} ${currentYear}`, 'd LLL yyyy', { locale: es });
-            if (Number.isNaN(parsedDate.getTime())) {
-                return undefined;
-            }
-            return parsedDate;
-        } catch (e) {
-            console.error("Error parsing checkout date:", e)
-            return undefined;
-        }
-    };
-
+    if (!room.reservation) return;
     setEditedGuest({
-      name: room.guest || '',
-      phone: room.phone || '',
-      cedula: room.cedula || '',
-      roomId: String(room.id),
-      vehicle: room.vehicle,
-      checkOutDate: parseCheckoutDate(room.date),
+      name: room.reservation.guestName,
+      phone: room.reservation.phone || '',
+      cedula: room.reservation.cedula || '',
+      roomId: room.reservation.roomId,
+      vehicle: room.reservation.vehicle,
+      checkOutDate: parseISO(room.reservation.checkOutDate),
     });
     setIsEditModalOpen(true);
   };
 
-  const handleSaveChanges = () => {
-    console.log("Saving changes:", editedGuest);
-    // This is where you would update the database with the new guest info.
-    // For now, it just closes the modal as the dashboard data is static.
-    setIsEditModalOpen(false);
+  const handleSaveChanges = async () => {
+    if (!firestore || !room.reservation?.id) return;
+    
+    const resDocRef = doc(firestore, 'reservations', room.reservation.id);
+    
+    const updatedData: Partial<Reservation> = {
+        guestName: editedGuest.name,
+        cedula: editedGuest.cedula,
+        phone: editedGuest.phone,
+        roomId: editedGuest.roomId,
+        vehicle: editedGuest.vehicle,
+        checkOutDate: editedGuest.checkOutDate?.toISOString(),
+    };
+
+    try {
+        await updateDoc(resDocRef, updatedData);
+        setIsEditModalOpen(false);
+        onClose(); // Close main modal after saving
+    } catch (error) {
+        console.error("Error updating reservation:", error);
+    }
   };
 
 
@@ -142,15 +150,16 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             <div className="flex items-start justify-between">
                 <div>
                     <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
-                    {roomDescription && <p className="text-base text-muted-foreground">{roomDescription}</p>}
+                    <p className="text-base text-muted-foreground">{room.type}</p>
                 </div>
-                {room.statusText && <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>}
+                <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
             </div>
           </DialogHeader>
 
           <ScrollArea className="flex-grow min-h-0 px-6">
             <div className="space-y-6 pb-6">
-                {isGuestPresent && (
+                {room.statusText === 'Ocupada' && room.reservation && (
+                    <>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
@@ -161,95 +170,66 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                         </div>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
-                                <AvatarFallback className="text-2xl">{room.guest!.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarFallback className="text-2xl">{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <div className="space-y-1">
-                                <p className="font-semibold text-lg">{room.guest}</p>
-                                {room.phone && (
+                                <p className="font-semibold text-lg">{room.reservation.guestName}</p>
+                                {room.reservation.phone && (
                                 <div className="flex items-center text-sm text-muted-foreground">
                                     <Phone className="mr-2 h-4 w-4" />
-                                    <span>{room.phone}</span>
+                                    <span>{room.reservation.phone}</span>
                                 </div>
                                 )}
                             </div>
                         </div>
                     </div>
-                )}
-
-                {(isGuestPresent || room.date) && <Separator />}
-
-                {isGuestPresent && (
+                     <Separator />
                      <div className="space-y-4">
                         <h3 className="font-semibold text-lg flex items-center"><CalendarIcon className="mr-2 h-5 w-5" />Estadía</h3>
                         <div className="grid gap-2 text-sm">
-                            {room.date && (
-                                <div className="flex items-center text-muted-foreground">
-                                    <span className="w-28 font-medium text-foreground">Duración:</span>
-                                    <span>{room.date}</span>
-                                </div>
-                            )}
-                            {room.payment && (
+                            <div className="flex items-center text-muted-foreground">
+                                <span className="w-28 font-medium text-foreground">Duración:</span>
+                                <span>{getStayDate(room.reservation)}</span>
+                            </div>
+                            {room.reservation.payment && (
                                 <div className={`flex items-center`}>
                                     <span className="w-28 font-medium text-foreground">Pago:</span>
-                                    <span className={room.payment.color}>
-                                        {room.payment.status}
-                                        {room.payment.amount && ` (C$${room.payment.amount})`}
+                                    <span className={room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}>
+                                        {room.reservation.payment.status}
+                                        {room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}
                                     </span>
                                 </div>
                             )}
-                            {room.vehicle && (
+                            {room.reservation.vehicle && (
                                 <div className="flex items-center text-muted-foreground">
                                     <span className="w-28 font-medium text-foreground">Vehículo:</span>
                                     <div className="flex items-center">
-                                        {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                                        {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                                        {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                                        {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                                        {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                                        {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
                                         <span>
-                                            {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                                            {room.reservation.vehicle === 'car' ? 'Carro' : room.reservation.vehicle === 'bike' ? 'Moto' : 'Camión'}
                                         </span>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
+                    </>
                 )}
             
-                {room.mainText && (
-                <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
-                    <p className="text-muted-foreground text-lg">{room.mainText}</p>
+                {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento') && (
+                    <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
+                        {room.statusText === 'Disponible' && <p className="text-muted-foreground text-lg">Limpia y lista</p>}
+                        {room.statusText === 'Mantenimiento' && <p className="text-muted-foreground text-lg flex items-center"><Wrench className="mr-2 h-5 w-5"/>En Mantenimiento</p>}
                     </div>
                 )}
 
-                {room.history && room.history.length > 0 && (
-                    <>
-                        <Separator />
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="font-semibold text-lg flex items-center"><History className="mr-2 h-5 w-5" />Historial Reciente</h3>
-                                <Button variant="link" className="text-sm p-0 h-auto" onClick={() => setIsHistoryModalOpen(true)}>
-                                    Ver todo
-                                </Button>
-                            </div>
-                            <div className="space-y-3">
-                            {room.history.slice(0, 2).map((pastGuest, index) => (
-                                <div key={index} className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-3">
-                                    <AvatarFallback>{pastGuest.avatar}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-sm">{pastGuest.name}</p>
-                                    <p className="text-xs text-muted-foreground">{pastGuest.date}</p>
-                                </div>
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                    </>
-                )}
+                {/* Historial (simplified, can be expanded) */}
             </div>
           </ScrollArea>
           
-          {canCheckout && (
+          {room.statusText === 'Ocupada' && room.reservation && (
               <div className="p-6 pt-0 mt-auto">
                    <Separator className="mb-4" />
                   <AlertDialog>
@@ -268,7 +248,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleCheckout}>Confirmar</AlertDialogAction>
+                          <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
@@ -276,11 +256,14 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
           )}
         </DialogContent>
       </Dialog>
-      <RoomHistoryModal
+
+      {/* History Modal remains the same for now */}
+      {/* <RoomHistoryModal
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
         room={room}
-      />
+      /> */}
+
        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -328,9 +311,9 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             <SelectContent>
                                 <SelectItem value={String(room.id)}>{room.title} (Actual)</SelectItem>
                                 {roomsData
-                                    .filter(r => r.statusText === 'Disponible')
+                                    ?.filter(r => r.status === 'Disponible')
                                     .map(r => (
-                                        <SelectItem key={r.id} value={String(r.id)}>{r.title} - {getRoomDescription(r.price, r.id)}</SelectItem>
+                                        <SelectItem key={r.id} value={String(r.id)}>{r.title} - {r.type}</SelectItem>
                                     ))
                                 }
                             </SelectContent>

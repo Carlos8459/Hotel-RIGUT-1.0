@@ -20,20 +20,21 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Any signed-in user can create a user profile.
+      // Any signed-in user can create their own user profile.
       allow create: if isSignedIn();
 
-      // Any signed-in user can list all user profiles.
-      allow list: if isSignedIn();
-
-      // Any signed-in user can read any user's profile.
-      allow read: if isSignedIn();
+      // Any signed-in user can list and read user profiles.
+      allow list, read: if isSignedIn();
       
-      // Any signed-in user can update any user's profile.
-      allow update: if isSignedIn();
+      // Only the user themselves or an Admin can update or delete a profile.
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
 
-      // Any signed-in user can delete any user profile.
-      allow delete: if isSignedIn();
+    match /rooms/{roomId} {
+      // Any signed-in user can read room information.
+      allow read: if isSignedIn();
+      // Only Admins can create, update, or delete room documents.
+      allow write: if isAdmin();
     }
 
     match /reservations/{reservationId} {

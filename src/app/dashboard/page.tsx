@@ -1,7 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { collection, doc, updateDoc } from 'firebase/firestore';
+import {
+  isToday,
+  isFuture,
+  parseISO,
+  format,
+  differenceInCalendarDays,
+} from 'date-fns';
+import { es } from 'date-fns/locale';
+
+import type { Room, Reservation } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import {
   Calendar,
   User,
@@ -39,17 +52,32 @@ import {
   Users,
   Settings,
   LogOut,
+  Wrench,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
-import { roomsData, getRoomDescription } from '@/lib/hotel-data';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Combined type for display purposes
+export interface ProcessedRoom extends Room {
+  reservation?: Reservation;
+  statusText: string;
+  statusColor: string;
+}
 
 export default function RoomsDashboard() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const firestore = useFirestore();
+
+  const [selectedRoom, setSelectedRoom] = useState<ProcessedRoom | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Fetch data from Firestore
+  const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
+  const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
+
+  const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
+  const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -57,14 +85,53 @@ export default function RoomsDashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  const ocupadasCount = roomsData.filter(
-    (room) => room.statusText === 'Ocupada' || room.statusText === 'Acomodada'
+
+  const processedRooms = useMemo((): ProcessedRoom[] => {
+    if (!roomsData || !reservationsData) return [];
+
+    return roomsData.map((room) => {
+      // Find the most relevant reservation for this room
+      const activeReservation = reservationsData.find(
+        (res) => res.roomId === room.id && (res.status === 'Checked-In' || res.status === 'Confirmed')
+      );
+
+      let statusText = 'Disponible';
+      let statusColor = 'bg-green-500/20 text-green-400 border-green-500/50';
+
+      if (room.status === 'Mantenimiento') {
+        statusText = 'Mantenimiento';
+        statusColor = 'bg-orange-500/20 text-orange-400 border-orange-500/50';
+      } else if (activeReservation) {
+        const checkIn = parseISO(activeReservation.checkInDate);
+        if (activeReservation.status === 'Checked-In') {
+           statusText = 'Ocupada'; // Can also be "Acomodada" based on your logic
+           statusColor = 'bg-red-500/20 text-red-400 border-red-500/50';
+        } else if (activeReservation.status === 'Confirmed' && (isToday(checkIn) || isFuture(checkIn))) {
+           statusText = 'Reserva';
+           statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+        }
+      }
+      
+      return {
+        ...room,
+        id: room.id,
+        reservation: activeReservation as Reservation | undefined,
+        statusText,
+        statusColor,
+      };
+    });
+  }, [roomsData, reservationsData]);
+
+
+  const ocupadasCount = processedRooms.filter(
+    (room) => room.statusText === 'Ocupada'
   ).length;
-  const disponiblesCount = roomsData.filter(
+  const disponiblesCount = processedRooms.filter(
     (room) => room.statusText === 'Disponible'
   ).length;
 
-  if (isUserLoading || !user) {
+
+  if (isUserLoading || !user || roomsLoading || reservationsLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
@@ -72,7 +139,7 @@ export default function RoomsDashboard() {
     );
   }
 
-  const handleCardClick = (room: any) => {
+  const handleCardClick = (room: ProcessedRoom) => {
     setSelectedRoom(room);
   };
 
@@ -80,15 +147,33 @@ export default function RoomsDashboard() {
     setSelectedRoom(null);
   };
 
-  const filteredRooms = roomsData.filter((room) => {
+  const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
+      if (!firestore) return;
+      const resDocRef = doc(firestore, 'reservations', reservationId);
+      try {
+          if (action === 'checkout') {
+              await updateDoc(resDocRef, { status: 'Checked-Out' });
+          } else if (action === 'confirm_payment') {
+              await updateDoc(resDocRef, { 'payment.status': 'Cancelado' });
+          }
+      } catch (error) {
+          console.error(`Error performing action ${action}:`, error);
+      }
+  };
+
+  const filteredRooms = processedRooms.filter((room) => {
     if (!searchTerm) return true;
-    if (
-      !room.guest ||
-      ['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest)
-    )
-      return false;
-    return room.guest.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!room.reservation || room.reservation.status !== 'Checked-In') return false;
+    return room.reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const getStayDate = (reservation?: Reservation) => {
+      if (!reservation) return null;
+      const checkIn = parseISO(reservation.checkInDate);
+      const checkOut = parseISO(reservation.checkOutDate);
+      const nights = differenceInCalendarDays(checkOut, checkIn);
+      return `${format(checkIn, 'd LLL', {locale: es})} - ${format(checkOut, 'd LLL', {locale: es})} (${nights} ${nights === 1 ? 'noche' : 'noches'})`;
+  }
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
@@ -132,7 +217,9 @@ export default function RoomsDashboard() {
       </div>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredRooms.length > 0 ? (
+        {(roomsLoading || reservationsLoading) ? (
+            [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
+        ) : filteredRooms.length > 0 ? (
           filteredRooms.map((room) => (
             <Card
               key={room.id}
@@ -144,89 +231,65 @@ export default function RoomsDashboard() {
                   <div>
                     <CardTitle className="text-lg">{room.title}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      {getRoomDescription(room.price, room.id)}
+                      {room.type}
                     </p>
                   </div>
-                  {room.statusText && (
-                    <Badge className={room.statusColor}>
-                      {room.statusText}
-                    </Badge>
-                  )}
+                  <Badge className={room.statusColor}>
+                    {room.statusText}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 flex-grow">
-                {room.date && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>{room.date}</span>
-                  </div>
-                )}
-                {room.guest &&
-                  !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(
-                    room.guest
-                  ) && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>{room.guest}</span>
-                    </div>
-                  )}
-                {room.phone && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Phone className="mr-2 h-4 w-4" />
-                    <span>{room.phone}</span>
-                  </div>
-                )}
-                {room.vehicle && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                    {room.vehicle === 'bike' && (
-                      <Bike className="mr-2 h-4 w-4" />
-                    )}
-                    {room.vehicle === 'truck' && (
-                      <Truck className="mr-2 h-4 w-4" />
-                    )}
-                    <span>
-                      {room.vehicle === 'car'
-                        ? 'Carro'
-                        : room.vehicle === 'bike'
-                        ? 'Moto'
-                        : 'Camión'}
-                    </span>
-                  </div>
-                )}
-                {room.mainText && (
-                  <div className="text-center flex-grow flex flex-col justify-center items-center">
-                    <p className="text-muted-foreground">{room.mainText}</p>
-                  </div>
-                )}
-                {room.details && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    {room.detailsIcon}
-                    <span>{room.details}</span>
-                  </div>
-                )}
-                {room.subDetails && (
-                  <div className="flex items-center text-sm text-muted-foreground pl-6">
-                    <span>{room.subDetails}</span>
-                  </div>
-                )}
-                {room.payment && (
-                  <div
-                    className={`flex items-center text-sm pt-2 ${room.payment.color}`}
-                  >
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    <span>
-                      {room.payment.status}
-                      {room.payment.amount && ` (C$${room.payment.amount})`}
-                    </span>
-                  </div>
-                )}
+                 {room.statusText === 'Ocupada' && room.reservation && (
+                    <>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            <span>{getStayDate(room.reservation)}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                            <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span className="font-semibold">{room.reservation.guestName}</span>
+                        </div>
+                         {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
+                         {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
+                             {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                             {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                             {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                             <span>Vehículo</span>
+                         </div>}
+                         {room.reservation.payment && (
+                            <div className={`flex items-center text-sm pt-2 ${room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}`}>
+                                <DollarSign className="mr-2 h-4 w-4" />
+                                <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
+                            </div>
+                         )}
+                    </>
+                 )}
+                 {room.statusText === 'Reserva' && room.reservation && (
+                     <>
+                        <div className="flex items-center text-sm">
+                           <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                           <span className="font-semibold">{room.reservation.guestName}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                           <Calendar className="mr-2 h-4 w-4" />
+                           <span>Llega {format(parseISO(room.reservation.checkInDate), 'd LLL', {locale: es})}</span>
+                        </div>
+                     </>
+                 )}
+                 {room.statusText === 'Mantenimiento' && (
+                     <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
+                 )}
+                 {room.statusText === 'Disponible' && (
+                     <div className="text-center flex-grow flex flex-col justify-center items-center">
+                        <p className="text-muted-foreground">Limpia y lista</p>
+                     </div>
+                 )}
+
               </CardContent>
               <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                {room.action &&
-                  (room.action.text === 'Checkout' && (room.statusText === 'Ocupada' || room.statusText === 'Acomodada') ? (
-                    <>
-                      {room.payment?.status === 'Pendiente' ? (
+                {room.statusText === 'Ocupada' && room.reservation ? (
+                    room.reservation.payment?.status === 'Pendiente' ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
@@ -238,12 +301,12 @@ export default function RoomsDashboard() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Esta acción marcará la cuenta de {room.guest} como pagada.
+                                Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Confirmar</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -259,35 +322,22 @@ export default function RoomsDashboard() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Esto finalizará la estadía de {room.guest} y marcará la habitación como disponible.
+                                Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Confirmar</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      )}
-                    </>
-                  ) : (
-                    <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                      {room.action.icon}
-                      {room.action.text}
-                    </Button>
-                  ))}
+                      )
+                ) : room.statusText === 'Disponible' ? (
+                    <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
+                ) : room.statusText === 'Reserva' && room.reservation ? (
+                    <Button className="w-full" onClick={() => updateDoc(doc(firestore, 'reservations', room.reservation!.id), { status: 'Checked-In' })}><Check className="mr-2 h-4 w-4" />Check-in</Button>
+                ) : null }
 
-                {room.secondaryAction && (
-                  <div className="flex justify-end w-full">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground"
-                    >
-                      {room.secondaryAction.icon}
-                    </Button>
-                  </div>
-                )}
               </CardFooter>
             </Card>
           ))

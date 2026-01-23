@@ -10,37 +10,28 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Car, Bike, Truck } from "lucide-react";
-import { CustomerDetailModal, type PastGuest } from "./customer-detail-modal";
-
-type Room = {
-    id: number;
-    title: string;
-    history?: PastGuest[];
-}
+import { CustomerDetailModal } from "./customer-detail-modal";
+import type { Customer, Reservation, Room } from "@/lib/types";
 
 type RoomHistoryModalProps = {
     room: Room;
+    history: Reservation[];
     isOpen: boolean;
     onClose: () => void;
 }
 
-export function RoomHistoryModal({ room, isOpen, onClose }: RoomHistoryModalProps) {
-  const [selectedGuest, setSelectedGuest] = useState<PastGuest | null>(null);
+export function RoomHistoryModal({ room, history, isOpen, onClose }: RoomHistoryModalProps) {
+  const [selectedGuest, setSelectedGuest] = useState<Customer | null>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   
   if (!room) return null;
 
-  const handleGuestClick = (guest: PastGuest) => {
-    setSelectedGuest(guest);
-    setIsCustomerModalOpen(true);
+  const handleGuestClick = (guestName: string) => {
+    // This requires a more complex lookup if we want full customer details.
+    // For now, we don't have a direct way to create a 'Customer' object here.
+    // This modal's functionality might need to be re-evaluated.
+    console.log("Clicked on guest:", guestName);
   };
-
-  const handleCloseCustomerModal = () => {
-    setIsCustomerModalOpen(false);
-    setSelectedGuest(null);
-  }
-
-  const weeklyHistory = room.history || [];
 
   return (
     <>
@@ -54,30 +45,30 @@ export function RoomHistoryModal({ room, isOpen, onClose }: RoomHistoryModalProp
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] -mx-6 px-6">
             <div className="space-y-4 py-4">
-              {weeklyHistory.length > 0 ? (
-                  weeklyHistory.map((pastGuest, index) => (
+              {history.length > 0 ? (
+                  history.map((pastReservation, index) => (
                     <div key={index}>
-                      <div onClick={() => handleGuestClick(pastGuest)} className="cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors">
+                      <div onClick={() => handleGuestClick(pastReservation.guestName)} className="cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors">
                           <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                   <Avatar className="h-9 w-9 mr-4">
-                                  <AvatarFallback>{pastGuest.avatar}</AvatarFallback>
+                                    <AvatarFallback>{pastReservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                                   </Avatar>
                                   <div>
-                                  <p className="font-semibold">{pastGuest.name}</p>
-                                  <p className="text-sm text-muted-foreground">{pastGuest.date}</p>
+                                    <p className="font-semibold">{pastReservation.guestName}</p>
+                                    <p className="text-sm text-muted-foreground">{pastReservation.checkInDate}</p>
                                   </div>
                               </div>
-                              {pastGuest.vehicle && (
+                              {pastReservation.vehicle && (
                                   <div className="text-muted-foreground">
-                                      {pastGuest.vehicle === 'car' && <Car className="h-5 w-5" />}
-                                      {pastGuest.vehicle === 'bike' && <Bike className="h-5 w-5" />}
-                                      {pastGuest.vehicle === 'truck' && <Truck className="h-5 w-5" />}
+                                      {pastReservation.vehicle === 'car' && <Car className="h-5 w-5" />}
+                                      {pastReservation.vehicle === 'bike' && <Bike className="h-5 w-5" />}
+                                      {pastReservation.vehicle === 'truck' && <Truck className="h-5 w-5" />}
                                   </div>
                               )}
                           </div>
                       </div>
-                      {index < weeklyHistory.length - 1 && <Separator className="mt-4" />}
+                      {index < history.length - 1 && <Separator className="mt-4" />}
                     </div>
                   ))
               ) : (
@@ -90,11 +81,11 @@ export function RoomHistoryModal({ room, isOpen, onClose }: RoomHistoryModalProp
         </DialogContent>
       </Dialog>
 
-      <CustomerDetailModal
+      {/* {selectedGuest && <CustomerDetailModal
         isOpen={isCustomerModalOpen}
-        onClose={handleCloseCustomerModal}
-        guest={selectedGuest}
-      />
+        onClose={() => setIsCustomerModalOpen(false)}
+        customer={selectedGuest}
+      />} */}
     </>
   );
 }

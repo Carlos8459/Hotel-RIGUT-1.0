@@ -8,96 +8,84 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
 import { Separator } from "../ui/separator";
-
-export type PastGuest = {
-    name: string;
-    date: string;
-    avatar: string;
-    phone?: string;
-    payment?: {
-        status: string;
-        amount?: number;
-    };
-    vehicle?: 'car' | 'bike' | 'truck';
-    roomTitle?: string;
-};
+import { ScrollArea } from "../ui/scroll-area";
+import type { Customer, Reservation } from "@/lib/types";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 
 type CustomerDetailModalProps = {
-    guest: PastGuest | null;
+    customer: Customer | null;
     isOpen: boolean;
     onClose: () => void;
-    showRoom?: boolean;
+    roomMap: Map<string, string>;
 };
 
-export function CustomerDetailModal({ guest, isOpen, onClose, showRoom = false }: CustomerDetailModalProps) {
-  if (!guest) return null;
-
-  const paymentColor = guest.payment?.status === 'Cancelado' ? 'text-green-400' : 'text-red-400';
+export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: CustomerDetailModalProps) {
+  if (!customer) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card text-foreground max-w-xs border-border rounded-3xl">
-        <DialogHeader>
-          <DialogTitle>Detalles del Huésped</DialogTitle>
-          <DialogDescription>
-            Información detallada del huésped anterior.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-            <div className="flex items-center">
+      <DialogContent className="bg-card text-foreground max-w-sm border-border rounded-3xl p-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 pb-4">
+          <DialogTitle>Detalles del Cliente</DialogTitle>
+           <div className="flex items-center pt-4">
               <Avatar className="h-12 w-12 mr-4">
-                <AvatarFallback>{guest.avatar}</AvatarFallback>
+                <AvatarFallback>{customer.avatar}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-bold text-lg">{guest.name}</p>
-                 {guest.phone && (
+                <p className="font-bold text-lg">{customer.name}</p>
+                 {customer.phone && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Phone className="mr-2 h-4 w-4" />
-                    <span>{guest.phone}</span>
+                    <span>{customer.phone}</span>
                   </div>
                 )}
               </div>
             </div>
+        </DialogHeader>
+        <Separator />
+        <ScrollArea className="flex-grow min-h-0 px-6">
+            <h3 className="font-semibold text-base mb-4">Historial de Visitas ({customer.visitCount})</h3>
+            <div className="space-y-4 pb-6">
+                {customer.history.map((visit, index) => {
+                    const paymentColor = visit.payment?.status === 'Cancelado' ? 'text-green-400' : 'text-red-400';
+                    const dateRange = `${format(parseISO(visit.checkInDate), "d LLL yy", {locale: es})} - ${format(parseISO(visit.checkOutDate), "d LLL yy", {locale: es})}`
 
-            <Separator />
-
-            <div className="space-y-2 text-sm">
-                <h3 className="font-semibold text-base">Detalles de la Estadía</h3>
-                {showRoom && guest.roomTitle && (
-                  <div className="flex items-center text-muted-foreground">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span>{guest.roomTitle}</span>
-                  </div>
-                )}
-                <div className="flex items-center text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>{guest.date}</span>
-                </div>
-                 {guest.vehicle && (
-                    <div className="flex items-center text-muted-foreground">
-                    {guest.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                    {guest.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                    {guest.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                    <span>
-                        Vehículo: {guest.vehicle === 'car' ? 'Carro' : guest.vehicle === 'bike' ? 'Moto' : 'Camión'}
-                    </span>
-                    </div>
-                )}
-                {guest.payment && (
-                    <div className={`flex items-center ${paymentColor}`}>
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    <span>
-                        {guest.payment.status}
-                        {guest.payment.amount && ` (C$${guest.payment.amount})`}
-                    </span>
-                    </div>
-                )}
+                    return (
+                        <div key={index} className="space-y-2 text-sm p-3 rounded-lg border bg-background/50">
+                             <div className="flex items-center text-muted-foreground font-semibold">
+                                <Home className="mr-2 h-4 w-4" />
+                                <span>{roomMap.get(visit.roomId) || `Habitación ${visit.roomId}`}</span>
+                             </div>
+                            <div className="flex items-center text-muted-foreground">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                <span>{dateRange}</span>
+                            </div>
+                             {visit.vehicle && (
+                                <div className="flex items-center text-muted-foreground">
+                                {visit.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                                {visit.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                                {visit.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                                <span>
+                                    Vehículo: {visit.vehicle === 'car' ? 'Carro' : visit.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                                </span>
+                                </div>
+                            )}
+                            {visit.payment && (
+                                <div className={`flex items-center ${paymentColor}`}>
+                                <DollarSign className="mr-2 h-4 w-4" />
+                                <span>
+                                    {visit.payment.status}
+                                    {visit.payment.amount && ` (C$${visit.payment.amount})`}
+                                </span>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
             </div>
-            
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

@@ -35,6 +35,48 @@
         "registrationDate"
       ]
     },
+    "Room": {
+      "title": "Room",
+      "type": "object",
+      "description": "Represents a hotel room.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The room number or name, e.g., 'Habitación 1'."
+        },
+        "price": {
+          "type": "number",
+          "description": "The base price per night for the room."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the room.",
+          "enum": [
+            "Unipersonal",
+            "Matrimonial",
+            "Doble",
+            "Triple",
+            "Quintuple",
+            "Unipersonal con A/C",
+            "Matrimonial con A/C"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "The maintenance status of the room.",
+          "enum": [
+            "Disponible",
+            "Mantenimiento"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "price",
+        "type",
+        "status"
+      ]
+    },
     "Reservation": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Reservation",
@@ -86,6 +128,22 @@
           ],
           "description": "Status of the reservation."
         },
+        "payment": {
+          "type": "object",
+          "description": "Payment details for the reservation.",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "Pendiente",
+                "Cancelado"
+              ]
+            },
+            "amount": {
+              "type": "number"
+            }
+          }
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
@@ -126,6 +184,22 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/rooms/{roomId}",
+        "definition": {
+          "entityName": "Room",
+          "schema": {
+            "$ref": "#/backend/entities/Room"
+          },
+          "description": "Stores individual room information like price, type, and maintenance status. Room documents should be created manually in Firestore for now.",
+          "params": [
+            {
+              "name": "roomId",
+              "description": "The unique identifier for the room, corresponding to its title, e.g., 'Habitación 1'."
             }
           ]
         }

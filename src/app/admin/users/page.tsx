@@ -3,11 +3,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
-import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -32,7 +32,6 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
     Dialog,
@@ -50,7 +49,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -143,6 +142,16 @@ export default function ManageUsersPage() {
             }
         }
     };
+    
+    const handleDeleteUser = async (userId: string) => {
+        if (!firestore) return;
+        const userDocRef = doc(firestore, "users", userId);
+        deleteDocumentNonBlocking(userDocRef);
+        toast({
+            title: "Socio eliminado",
+            description: `El documento del socio ha sido eliminado de la base de datos.`,
+        });
+    };
 
     const handleCloseDialog = () => {
         setEditingUser(null);
@@ -168,7 +177,7 @@ export default function ManageUsersPage() {
             };
 
             if (firestore) {
-                await setDoc(doc(firestore, "users", newUser.uid), userProfile);
+                setDocumentNonBlocking(doc(firestore, "users", newUser.uid), userProfile, {merge: false});
             }
             
             await deleteApp(tempApp);
@@ -347,12 +356,12 @@ export default function ManageUsersPage() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta del socio. La eliminación de la autenticación del usuario no es compatible desde el cliente.
+                                                                Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta del socio de la base de datos. La eliminación de la autenticación del usuario debe hacerse desde la consola de Firebase.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
+                                                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteUser(member.id)}>Eliminar</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>

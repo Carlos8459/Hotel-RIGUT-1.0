@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, where, query, getDocs } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,10 +35,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { roomsData, getRoomDescription } from '@/lib/hotel-data';
 import { CalendarIcon, ArrowLeft } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useEffect, useState, useMemo } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import type { Room, Reservation } from '@/lib/types';
+
 
 const reservationFormSchema = z.object({
   guestName: z
@@ -59,6 +60,9 @@ const reservationFormSchema = z.object({
   roomId: z.string({ required_error: 'Debe seleccionar una habitación.' }),
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
   hasVehicle: z.boolean().default(false),
+}).refine(data => data.checkOutDate > data.checkInDate, {
+    message: "La fecha de check-out debe ser posterior a la de check-in.",
+    path: ["checkOutDate"],
 });
 
 export default function NewReservationPage() {
@@ -67,6 +71,13 @@ export default function NewReservationPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
+  const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
+  
+  const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
+  const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
+
 
   const form = useForm<z.infer<typeof reservationFormSchema>>({
     resolver: zodResolver(reservationFormSchema),
@@ -77,6 +88,32 @@ export default function NewReservationPage() {
       hasVehicle: false,
     },
   });
+
+  const { watch } = form;
+  const checkInDate = watch("checkInDate");
+  const checkOutDate = watch("checkOutDate");
+
+
+  const availableRooms = useMemo(() => {
+    if (!roomsData || !reservationsData || !checkInDate || !checkOutDate) {
+        return roomsData?.filter(room => room.status === 'Disponible') || [];
+    }
+
+    const reservedRoomIds = new Set(
+        reservationsData
+            .filter(res => {
+                if (res.status === 'Cancelled' || res.status === 'Checked-Out') return false;
+                const resCheckIn = new Date(res.checkInDate);
+                const resCheckOut = new Date(res.checkOutDate);
+                // Check for overlap
+                return checkInDate < resCheckOut && checkOutDate > resCheckIn;
+            })
+            .map(res => res.roomId)
+    );
+
+    return roomsData.filter(room => room.status === 'Disponible' && !reservedRoomIds.has(room.id));
+  }, [roomsData, reservationsData, checkInDate, checkOutDate]);
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -121,11 +158,8 @@ export default function NewReservationPage() {
     }
   }
 
-  const availableRooms = roomsData.filter(
-    (room) => room.statusText === 'Disponible'
-  );
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || roomsLoading || reservationsLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
@@ -289,17 +323,17 @@ export default function NewReservationPage() {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={!checkInDate || !checkOutDate}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar una habitación disponible" />
+                        <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación disponible"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {availableRooms.map((room) => (
                         <SelectItem key={room.id} value={String(room.id)}>
-                          {room.title} -{' '}
-                          {getRoomDescription(room.price, room.id)}
+                          {room.title} - {room.type} (C${room.price})
                         </SelectItem>
                       ))}
                     </SelectContent>
