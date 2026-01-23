@@ -104,18 +104,18 @@ export default function RoomSettingsPage() {
                                 Ingresa los detalles para el nuevo tipo de habitación. Haz clic en guardar cuando termines.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">
                                     Nombre
                                 </Label>
-                                <Input id="name" placeholder="Ej: Suite" className="col-span-3" />
+                                <Input id="name" placeholder="Ej: Suite" />
                             </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="price" className="text-right">
+                            <div className="space-y-2">
+                                <Label htmlFor="price">
                                     Precio
                                 </Label>
-                                <Input id="price" type="number" placeholder="Ej: 1200" className="col-span-3" />
+                                <Input id="price" type="number" placeholder="Ej: 1200" />
                             </div>
                         </div>
                         <DialogFooter>
