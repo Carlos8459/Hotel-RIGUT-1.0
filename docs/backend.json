@@ -23,13 +23,83 @@
         "role": {
           "type": "string",
           "description": "The role of the user.",
-          "enum": ["Admin", "Socio"]
+          "enum": [
+            "Admin",
+            "Socio"
+          ]
         }
       },
       "required": [
         "username",
         "email",
         "registrationDate"
+      ]
+    },
+    "Reservation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reservation",
+      "type": "object",
+      "description": "Represents a hotel room reservation.",
+      "properties": {
+        "guestName": {
+          "type": "string",
+          "description": "Name of the guest."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Guest's phone number."
+        },
+        "checkInDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Check-in date."
+        },
+        "checkOutDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Check-out date."
+        },
+        "roomId": {
+          "type": "string",
+          "description": "ID of the reserved room."
+        },
+        "vehicle": {
+          "type": "string",
+          "enum": [
+            "car",
+            "bike",
+            "truck"
+          ],
+          "description": "Type of vehicle."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Confirmed",
+            "Checked-In",
+            "Checked-Out",
+            "Cancelled"
+          ],
+          "description": "Status of the reservation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the reservation was created."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who created the reservation."
+        }
+      },
+      "required": [
+        "guestName",
+        "checkInDate",
+        "checkOutDate",
+        "roomId",
+        "status",
+        "createdAt",
+        "createdBy"
       ]
     }
   },
@@ -52,6 +122,22 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reservations/{reservationId}",
+        "definition": {
+          "entityName": "Reservation",
+          "schema": {
+            "$ref": "#/backend/entities/Reservation"
+          },
+          "description": "Stores all reservation records for the hotel.",
+          "params": [
+            {
+              "name": "reservationId",
+              "description": "The unique identifier of the reservation."
             }
           ]
         }

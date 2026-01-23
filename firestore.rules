@@ -35,5 +35,10 @@ service cloud.firestore {
       // Any signed-in user can delete any user profile.
       allow delete: if isSignedIn();
     }
+
+    match /reservations/{reservationId} {
+      // Any signed-in user can create, read, update, or delete any reservation.
+      allow read, write: if isSignedIn();
+    }
   }
 }
