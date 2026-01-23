@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check, Phone, Car, Bike, Truck } from "lucide-react";
+import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check, Phone, Car, Bike, Truck, LayoutGrid, Users, Settings } from "lucide-react";
 import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
 
 const roomsData = [
@@ -291,7 +291,7 @@ export default function RoomsDashboard() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
+    <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
@@ -416,13 +416,27 @@ export default function RoomsDashboard() {
           onClose={handleCloseModal}
         />
       )}
+
+      <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
+        <div className="flex justify-around">
+          <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
+            <LayoutGrid className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Habitaciones</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Calendar className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Reservas</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Users className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Clientes</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Settings className="h-5 w-5 mb-1" />
+            <span className="text-xs font-medium">Ajustes</span>
+          </Button>
+        </div>
+      </footer>
     </div>
   );
-
-    
-
-    
-
-    
-
-    
+}
