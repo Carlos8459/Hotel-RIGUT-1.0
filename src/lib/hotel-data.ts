@@ -1,4 +1,5 @@
 
+import React from "react";
 import { PlusCircle, KeyRound, Check, LogOut, Wrench } from "lucide-react";
 import type { PastGuest } from "@/components/dashboard/customer-detail-modal";
 
@@ -13,7 +14,7 @@ export const roomsData = [
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "23 Ene - 26 Ene (3 noches)",
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
-    action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
+    action: { text: "Checkout", icon: React.createElement(LogOut, { className: "mr-2 h-4 w-4" }) },
     history: [ { name: "Mariana Lopez", date: "19 Ene - 22 Ene", avatar: "ML", vehicle: 'car', phone: '11 5555-5555', payment: { status: 'Cancelado', amount: 2400 } } ],
     vehicle: 'truck'
   },
@@ -27,7 +28,7 @@ export const roomsData = [
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 25 Ene (3 noches)",
     payment: { status: "Pendiente", amount: 500, color: "text-red-400" },
-    action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
+    action: { text: "Checkout", icon: React.createElement(LogOut, { className: "mr-2 h-4 w-4" }) },
     history: [
       { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT", vehicle: 'bike', phone: '11-1111-1111', payment: { status: 'Cancelado', amount: 2100 } },
       { name: "Carlos Rivas", date: "10 Ene - 12 Ene", avatar: "CR", vehicle: 'truck', phone: '11-2222-2222', payment: { status: 'Cancelado', amount: 1400 } },
@@ -42,8 +43,8 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
-    secondaryAction: { icon: <KeyRound className="h-5 w-5" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
+    secondaryAction: { icon: React.createElement(KeyRound, { className: "h-5 w-5" }) },
     history: [
       { name: "Luisa Fernandez", date: "18 Ene - 21 Ene", avatar: "LF", vehicle: 'car' },
       { name: "Mario Gomez", date: "14 Ene - 17 Ene", avatar: "MG", vehicle: 'bike' },
@@ -58,7 +59,7 @@ export const roomsData = [
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
     date: "24 Ene",
-    action: { text: "Check-in", icon: <Check className="mr-2 h-4 w-4" /> },
+    action: { text: "Check-in", icon: React.createElement(Check, { className: "mr-2 h-4 w-4" }) },
     history: [
       { name: "David Choi", date: "20 Ene - 23 Ene", avatar: "DC", vehicle: 'truck' },
       { name: "Emily White", date: "15 Ene - 19 Ene", avatar: "EW", vehicle: 'car' },
@@ -72,7 +73,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: []
   },
   {
@@ -85,7 +86,7 @@ export const roomsData = [
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "24 Ene - 28 Ene (4 noches)",
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
-    action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
+    action: { text: "Checkout", icon: React.createElement(LogOut, { className: "mr-2 h-4 w-4" }) },
     history: [ { name: "Pedro Ramirez", date: "20 Ene - 23 Ene", avatar: "PR", vehicle: 'bike' } ],
     vehicle: 'bike'
   },
@@ -96,7 +97,7 @@ export const roomsData = [
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Pintura",
-    detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
+    detailsIcon: React.createElement(Wrench, { className: "mr-2 h-4 w-4" }),
     action: { text: "Ver reporte" },
     history: []
   },
@@ -107,7 +108,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: [ { name: "Julia Roberts", date: "15 Ene - 18 Ene", avatar: "JR", vehicle: 'car' } ]
   },
   {
@@ -136,7 +137,7 @@ export const roomsData = [
     statusText: "Reservada",
     statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
     details: "Revisión de plomería",
-    detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
+    detailsIcon: React.createElement(Wrench, { className: "mr-2 h-4 w-4" }),
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
     action: { text: "Ver reporte" },
     history: [
@@ -153,7 +154,7 @@ export const roomsData = [
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Inicio: 24 Ene",
-    detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
+    detailsIcon: React.createElement(Wrench, { className: "mr-2 h-4 w-4" }),
     subDetails: "Incidencia: Fuga de agua",
     action: { text: "Ver reporte" },
     history: [
@@ -172,7 +173,7 @@ export const roomsData = [
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "21 Ene - 26 Ene (5 noches)",
     payment: { status: "Pendiente", amount: 120, color: "text-red-400" },
-    action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
+    action: { text: "Checkout", icon: React.createElement(LogOut, { className: "mr-2 h-4 w-4" }) },
     history: [],
     vehicle: 'truck'
   },
@@ -183,7 +184,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: [ { name: "Sandra Bullock", date: "10 Ene - 12 Ene", avatar: "SB", vehicle: 'car' } ]
   },
   {
@@ -194,7 +195,7 @@ export const roomsData = [
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
     date: "25 Ene",
-    action: { text: "Check-in", icon: <Check className="mr-2 h-4 w-4" /> },
+    action: { text: "Check-in", icon: React.createElement(Check, { className: "mr-2 h-4 w-4" }) },
     history: []
   },
   {
@@ -218,7 +219,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: []
   },
   {
@@ -231,7 +232,7 @@ export const roomsData = [
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 24 Ene (2 noches)",
     payment: { status: "Cancelado", amount: 400, color: "text-green-400" },
-    action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
+    action: { text: "Checkout", icon: React.createElement(LogOut, { className: "mr-2 h-4 w-4" }) },
     history: [],
     vehicle: 'car'
   },
@@ -242,7 +243,7 @@ export const roomsData = [
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Aire acondicionado",
-    detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
+    detailsIcon: React.createElement(Wrench, { className: "mr-2 h-4 w-4" }),
     action: { text: "Ver reporte" },
     history: []
   },
@@ -253,7 +254,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: []
   },
   {
@@ -278,7 +279,7 @@ export const roomsData = [
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
     date: "26 Ene",
-    action: { text: "Check-in", icon: <Check className="mr-2 h-4 w-4" /> },
+    action: { text: "Check-in", icon: React.createElement(Check, { className: "mr-2 h-4 w-4" }) },
     history: []
   },
   {
@@ -288,7 +289,7 @@ export const roomsData = [
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
-    action: { text: "Crear Reserva", icon: <PlusCircle className="mr-2 h-4 w-4" /> },
+    action: { text: "Crear Reserva", icon: React.createElement(PlusCircle, { className: "mr-2 h-4 w-4" }) },
     history: []
   }
 ];
