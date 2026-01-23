@@ -327,7 +327,7 @@ export default function StatsPage() {
         </section>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
+      <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">
         <div className="flex justify-around">
           <Link href="/dashboard">
             <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
