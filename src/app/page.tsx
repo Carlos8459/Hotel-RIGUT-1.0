@@ -33,10 +33,10 @@ export default function LoginPage() {
 
       <div className="z-10 w-full max-w-sm space-y-16">
         <div className="text-center">
-          <h1 className="font-headline text-5xl font-bold text-foreground">
+          <h1 className="font-headline text-5xl font-bold text-primary-foreground">
             Hotel RIGUT
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-primary-foreground/80">
             Bienvenido de nuevo. Inicia sesión en tu cuenta.
           </p>
         </div>
