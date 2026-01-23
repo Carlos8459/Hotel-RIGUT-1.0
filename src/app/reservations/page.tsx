@@ -68,6 +68,7 @@ export default function ReservationsPage() {
                                 modifiersClassNames={{
                                     reserved: 'bg-primary text-primary-foreground rounded-full',
                                 }}
+                                className="flex-none"
                             />
                         </CardContent>
                     </Card>
