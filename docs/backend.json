@@ -45,6 +45,10 @@
           "type": "string",
           "description": "Name of the guest."
         },
+        "cedula": {
+          "type": "string",
+          "description": "Guest's ID card number."
+        },
         "phone": {
           "type": "string",
           "description": "Guest's phone number."

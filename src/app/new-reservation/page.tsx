@@ -44,7 +44,12 @@ const reservationFormSchema = z.object({
   guestName: z
     .string()
     .min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  phone: z.string().optional(),
+  cedula: z.string().optional(),
+  phone: z
+    .string()
+    .length(8, { message: 'El número de teléfono debe tener 8 dígitos.' })
+    .optional()
+    .or(z.literal('')),
   checkInDate: z.date({
     required_error: 'La fecha de check-in es obligatoria.',
   }),
@@ -67,6 +72,7 @@ export default function NewReservationPage() {
     resolver: zodResolver(reservationFormSchema),
     defaultValues: {
       guestName: '',
+      cedula: '',
       phone: '',
       hasVehicle: false,
     },
@@ -85,6 +91,7 @@ export default function NewReservationPage() {
     try {
       const reservationData = {
         guestName: data.guestName,
+        cedula: data.cedula || '',
         phone: data.phone || '',
         checkInDate: data.checkInDate.toISOString(),
         checkOutDate: data.checkOutDate.toISOString(),
@@ -159,12 +166,25 @@ export default function NewReservationPage() {
             />
             <FormField
               control={form.control}
+              name="cedula"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cédula (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: 001-000000-0000A" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Teléfono (Opcional)</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="Ej: 8888-8888" {...field} />
+                    <Input type="tel" placeholder="Ej: 88888888" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
