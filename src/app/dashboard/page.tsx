@@ -305,8 +305,8 @@ const getRoomDescription = (price?: number) => {
   switch (price) {
     case 400: return 'Unipersonal';
     case 500: return 'Matrimonial';
-    case 700: return 'Unipersonal con aíre acondicionado';
-    case 800: return 'Matrimonial con aíre acondicionado';
+    case 700: return 'Unipersonal con aire acondicionado';
+    case 800: return 'Matrimonial con aire acondicionado';
     default: return null;
   }
 };
@@ -473,5 +473,3 @@ export default function RoomsDashboard() {
     </div>
   );
 }
-
-    
