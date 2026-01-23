@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RoomHistoryModal } from "./room-history-modal";
 import type { PastGuest } from "./customer-detail-modal";
+import { getRoomDescription } from "@/lib/hotel-data";
 
 type Room = {
     id: number;
@@ -50,26 +51,6 @@ type RoomDetailModalProps = {
     isOpen: boolean;
     onClose: () => void;
 }
-
-const getRoomDescription = (price?: number, roomId?: number) => {
-    if (price === undefined || roomId === undefined) return null;
-  
-    const acRooms = [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22];
-    const isAcEligible = acRooms.includes(roomId);
-  
-    switch (price) {
-      case 400:
-        return 'Unipersonal';
-      case 500:
-        return 'Matrimonial';
-      case 700:
-        return isAcEligible ? 'Unipersonal con aíre acondicionado' : 'Unipersonal';
-      case 800:
-        return isAcEligible ? 'Matrimonial con aíre acondicionado' : 'Matrimonial';
-      default:
-        return null;
-    }
-  };
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -216,3 +197,5 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     </>
   );
 }
+
+    

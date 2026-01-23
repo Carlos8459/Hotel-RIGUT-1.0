@@ -6,7 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
+import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
 import { Separator } from "../ui/separator";
 
 export type PastGuest = {
@@ -19,15 +19,17 @@ export type PastGuest = {
         amount?: number;
     };
     vehicle?: 'car' | 'bike' | 'truck';
+    roomTitle?: string;
 };
 
 type CustomerDetailModalProps = {
     guest: PastGuest | null;
     isOpen: boolean;
     onClose: () => void;
+    showRoom?: boolean;
 };
 
-export function CustomerDetailModal({ guest, isOpen, onClose }: CustomerDetailModalProps) {
+export function CustomerDetailModal({ guest, isOpen, onClose, showRoom = false }: CustomerDetailModalProps) {
   if (!guest) return null;
 
   const paymentColor = guest.payment?.status === 'Cancelado' ? 'text-green-400' : 'text-red-400';
@@ -61,6 +63,12 @@ export function CustomerDetailModal({ guest, isOpen, onClose }: CustomerDetailMo
 
             <div className="space-y-2 text-sm">
                 <h3 className="font-semibold text-base">Detalles de la Estadía</h3>
+                {showRoom && guest.roomTitle && (
+                  <div className="flex items-center text-muted-foreground">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>{guest.roomTitle}</span>
+                  </div>
+                )}
                 <div className="flex items-center text-muted-foreground">
                     <Calendar className="mr-2 h-4 w-4" />
                     <span>{guest.date}</span>
@@ -91,3 +99,5 @@ export function CustomerDetailModal({ guest, isOpen, onClose }: CustomerDetailMo
     </Dialog>
   );
 }
+
+    
