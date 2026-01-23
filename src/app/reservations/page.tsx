@@ -11,12 +11,14 @@ import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, User, PlusCircle
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// Helper to parse dates like "24 Ene"
+// Helper to parse dates like "24 Ene" or "23 Ene - ..."
 const parseReservationDate = (dateStr: string): Date | null => {
     try {
         const currentYear = new Date().getFullYear();
+        // Take only the start date part, e.g., "24 Ene" from "24 Ene - 26 Ene"
+        const datePart = dateStr.split(' - ')[0];
         // The date format in hotel-data.ts is like "24 Ene". `d LLL` should parse it.
-        return parse(`${dateStr} ${currentYear}`, 'd LLL yyyy', { locale: es });
+        return parse(`${datePart} ${currentYear}`, 'd LLL yyyy', { locale: es });
     } catch (e) {
         console.error("Error parsing date:", dateStr, e);
         return null;
