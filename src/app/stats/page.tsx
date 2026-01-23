@@ -17,6 +17,10 @@ import {
   startOfYear,
   endOfYear,
   subMonths,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -115,6 +119,16 @@ export default function StatsPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const setToday = () => {
+    const today = new Date();
+    setDateRange({ from: startOfDay(today), to: endOfDay(today) });
+  };
+
+  const setThisWeek = () => {
+    const today = new Date();
+    setDateRange({ from: startOfWeek(today, { locale: es }), to: endOfWeek(today, { locale: es }) });
+  };
+
   const setThisMonth = () => {
     setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
   };
@@ -137,7 +151,7 @@ export default function StatsPage() {
 
   const filteredReservations = useMemo(() => {
     if (!dateRange?.from) return paidReservations;
-    const endOfRange = dateRange.to ? endOfMonth(dateRange.to) : endOfMonth(dateRange.from);
+    const endOfRange = dateRange.to ?? dateRange.from;
     return paidReservations.filter((res) => {
       const checkOutDate = parseISO(res.checkOutDate);
       return isWithinInterval(checkOutDate, { start: dateRange.from!, end: endOfRange });
@@ -221,7 +235,9 @@ export default function StatsPage() {
         <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
         <div className="flex flex-wrap items-center gap-2">
             <DateRangePicker date={dateRange} onDateChange={setDateRange} />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={setToday}>Hoy</Button>
+                <Button variant="outline" size="sm" onClick={setThisWeek}>Esta Semana</Button>
                 <Button variant="outline" size="sm" onClick={setThisMonth}>Este Mes</Button>
                 <Button variant="outline" size="sm" onClick={setLastMonth}>Mes Pasado</Button>
                 <Button variant="outline" size="sm" onClick={setThisYear}>Este Año</Button>
