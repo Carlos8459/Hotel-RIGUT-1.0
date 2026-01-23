@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, PlusCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 
@@ -42,24 +42,13 @@ export default function RoomSettingsPage() {
             <main className="max-w-4xl mx-auto space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Gestionar Habitaciones</CardTitle>
-                        <CardDescription>Agrega o elimina habitaciones existentes en el hotel.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex gap-4">
-                        <Button size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Agregar Habitación
-                        </Button>
-                        <Button variant="destructive" size="sm">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar Habitación
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Precios de Habitaciones</CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Precios de Habitaciones</CardTitle>
+                            <Button variant="ghost" size="icon">
+                                <PlusCircle className="h-5 w-5" />
+                                <span className="sr-only">Agregar tipo de habitación</span>
+                            </Button>
+                        </div>
                         <CardDescription>Ajusta los precios base para cada tipo de habitación.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
