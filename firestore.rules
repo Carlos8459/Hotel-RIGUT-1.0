@@ -23,8 +23,11 @@ service cloud.firestore {
       // A user can create their own profile, or an admin can create any user profile
       allow create: if isOwner(userId) || isAdmin();
 
-      // An admin can list and read any user profile. A user can read their own.
-      allow list, read: if isAdmin() || isOwner(userId);
+      // An admin can list any user profile.
+      allow list: if isAdmin();
+
+      // A user can read their own profile. An admin can read any user's profile.
+      allow read: if isAdmin() || isOwner(userId);
       
       // A user can update their own profile. An admin can also update any user's profile (e.g., to change a role).
       allow update: if isOwner(userId) || isAdmin();
