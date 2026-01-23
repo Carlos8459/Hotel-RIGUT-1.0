@@ -45,7 +45,7 @@ const roomsData = [
   {
     id: 3,
     title: "Habitación 3",
-    price: 400,
+    price: 700,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -60,7 +60,7 @@ const roomsData = [
   {
     id: 4,
     title: "Habitación 4",
-    price: 500,
+    price: 800,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -75,7 +75,7 @@ const roomsData = [
   {
     id: 5,
     title: "Habitación 5",
-    price: 400,
+    price: 700,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -186,7 +186,7 @@ const roomsData = [
   {
     id: 13,
     title: "Habitación 13",
-    price: 400,
+    price: 700,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -196,7 +196,7 @@ const roomsData = [
   {
     id: 14,
     title: "Habitación 14",
-    price: 500,
+    price: 800,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -245,7 +245,7 @@ const roomsData = [
   {
     id: 18,
     title: "Habitación 18",
-    price: 500,
+    price: 800,
     statusText: "Mantenimiento",
     statusColor: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     details: "Aire acondicionado",
@@ -256,7 +256,7 @@ const roomsData = [
   {
     id: 19,
     title: "Habitación 19",
-    price: 400,
+    price: 700,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
@@ -280,7 +280,7 @@ const roomsData = [
   {
     id: 21,
     title: "Habitación 21",
-    price: 500,
+    price: 800,
     statusText: "Reserva",
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
@@ -291,7 +291,7 @@ const roomsData = [
   {
     id: 22,
     title: "Habitación 22",
-    price: 400,
+    price: 700,
     statusText: "Disponible",
     statusColor: "bg-green-500/20 text-green-400 border-green-500/50",
     mainText: "Limpia y lista",
