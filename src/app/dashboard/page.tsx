@@ -205,10 +205,12 @@ export default function RoomsDashboard() {
               <span className="text-xs font-medium">Clientes</span>
             </Button>
           </Link>
-          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-            <Settings className="h-5 w-5 mb-1" />
-            <span className="text-xs font-medium">Ajustes</span>
-          </Button>
+          <Link href="/settings">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <Settings className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Ajustes</span>
+            </Button>
+          </Link>
         </div>
       </footer>
     </div>
