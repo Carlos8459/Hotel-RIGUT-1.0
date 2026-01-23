@@ -108,13 +108,6 @@ export function LoginForm() {
           ¿Olvidaste tu PIN?
         </Link>
       </div>
-
-      <div className="mt-12 text-center text-sm">
-        <span className="text-muted-foreground">¿No eres miembro? </span>
-        <Button asChild variant="outline" className="ml-2 rounded-full border-accent text-accent hover:bg-accent/10 hover:text-accent-foreground">
-          <Link href="/register">Regístrate ahora</Link>
-        </Button>
-      </div>
     </div>
   );
 }
