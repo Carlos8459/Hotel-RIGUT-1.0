@@ -235,179 +235,183 @@ export default function RoomsDashboard() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
-      <Link href="/notifications" className="fixed top-6 right-6 z-30">
-          <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-lg bg-card/80 backdrop-blur-sm hover:bg-card">
-              <Bell className="h-6 w-6" />
-              <span className="sr-only">Notificaciones</span>
-          </Button>
-      </Link>
-      <header className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
+    <div className="dark min-h-screen bg-background text-foreground pb-24">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por huésped..."
-            className="bg-card border-border pl-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <Link href="/notifications">
+            <Button variant="ghost" size="icon">
+                <Bell className="h-6 w-6" />
+                <span className="sr-only">Notificaciones</span>
+            </Button>
+        </Link>
       </header>
 
-      <div className="mb-6 flex justify-center sm:justify-start">
-        <div className="flex space-x-1 rounded-lg bg-card p-1">
-          {fiveDates.map((date) => (
-            <Button
-              key={date.toISOString()}
-              variant={isSameDay(date, selectedDate) ? 'secondary' : 'ghost'}
-              onClick={() => setSelectedDate(startOfDay(date))}
-              className="flex-1 flex-col h-auto px-3 py-2 text-center"
-            >
-              <span className="text-xs font-medium uppercase text-muted-foreground">
-                {format(date, 'EEE', { locale: es })}
-              </span>
-              <span className="text-xl font-bold">{format(date, 'd')}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-6 mb-6">
-        <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-green-400"></div>
-            <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Disponibles</span></p>
-        </div>
-        <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-red-400"></div>
-            <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
-        </div>
-        <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-blue-400"></div>
-            <p className="text-sm font-medium"><span className="font-bold text-foreground">{reservasCount}</span> <span className="text-muted-foreground">Reservas</span></p>
-        </div>
-      </div>
-
-      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {(roomsLoading || reservationsLoading) ? (
-                [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
-            ) : filteredRooms.length > 0 ? (
-            filteredRooms.map((room) => (
-                <Card
-                key={room.id}
-                onClick={() => handleCardClick(room)}
-                className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
+          <div className="flex-grow">
+            <div className="flex space-x-1 rounded-lg bg-card p-1 max-w-min">
+              {fiveDates.map((date) => (
+                <Button
+                  key={date.toISOString()}
+                  variant={isSameDay(date, selectedDate) ? 'secondary' : 'ghost'}
+                  onClick={() => setSelectedDate(startOfDay(date))}
+                  className="flex-1 flex-col h-auto px-3 py-2 text-center"
                 >
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-lg">{room.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                        {room.type}
-                        </p>
-                    </div>
-                    <Badge className={room.statusColor}>
-                        {room.statusText}
-                    </Badge>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-3 flex-grow">
-                    {room.reservation && (
-                        <>
-                            <div className="flex items-center text-sm">
-                                <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                                <span className="font-semibold">{room.reservation.guestName}</span>
-                            </div>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                <span>{getStayDate(room.reservation)}</span>
-                            </div>
-                            {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
-                            {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
-                                {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                                {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                                {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                                <span>Vehículo</span>
-                            </div>}
-                            {room.reservation.payment && (
-                                <div className={`flex items-center text-sm pt-2 ${room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}`}>
-                                    <DollarSign className="mr-2 h-4 w-4" />
-                                    <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
-                                </div>
-                            )}
-                        </>
-                    )}
-                    {room.statusText === 'Mantenimiento' && (
-                        <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
-                    )}
-                    {room.statusText === 'Disponible' && (
-                        <div className="text-center flex-grow flex flex-col justify-center items-center">
-                            <p className="text-muted-foreground">Limpia y lista</p>
-                        </div>
-                    )}
-
-                </CardContent>
-                <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                    {room.reservation && room.statusText === 'Ocupada' ? (
-                        room.reservation.payment?.status === 'Pendiente' ? (
-                            <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
-                                <DollarSign className="mr-2 h-4 w-4" />
-                                Registrar Pago
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-xs rounded-3xl">
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                            </AlertDialog>
-                        ) : (
-                            <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                Checkout
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-xs rounded-3xl">
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                            </AlertDialog>
-                        )
-                    ) : room.statusText === 'Disponible' ? (
-                        <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
-                    ) : room.reservation && (room.statusText === 'Reserva' || room.statusText === 'Llegada') ? (
-                        <Button className="w-full" onClick={() => handleCheckIn(room.reservation!, room.title)} disabled={isUserProfileLoading}><Check className="mr-2 h-4 w-4" />Check-in</Button>
-                    ) : null }
-
-                </CardFooter>
-                </Card>
-            ))
-            ) : (
-            <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-                No se encontraron habitaciones que coincidan con la búsqueda.
+                  <span className="text-xs font-medium uppercase text-muted-foreground">
+                    {format(date, 'EEE', { locale: es })}
+                  </span>
+                  <span className="text-xl font-bold">{format(date, 'd')}</span>
+                </Button>
+              ))}
             </div>
-            )}
-      </main>
+          </div>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por huésped..."
+              className="bg-card border-border pl-10 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-green-400"></div>
+              <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Disponibles</span></p>
+          </div>
+          <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-red-400"></div>
+              <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
+          </div>
+          <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-blue-400"></div>
+              <p className="text-sm font-medium"><span className="font-bold text-foreground">{reservasCount}</span> <span className="text-muted-foreground">Reservas</span></p>
+          </div>
+        </div>
+
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {(roomsLoading || reservationsLoading) ? (
+                  [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
+              ) : filteredRooms.length > 0 ? (
+              filteredRooms.map((room) => (
+                  <Card
+                  key={room.id}
+                  onClick={() => handleCardClick(room)}
+                  className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
+                  >
+                  <CardHeader>
+                      <div className="flex justify-between items-start">
+                      <div>
+                          <CardTitle className="text-lg">{room.title}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                          {room.type}
+                          </p>
+                      </div>
+                      <Badge className={room.statusColor}>
+                          {room.statusText}
+                      </Badge>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 flex-grow">
+                      {room.reservation && (
+                          <>
+                              <div className="flex items-center text-sm">
+                                  <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  <span className="font-semibold">{room.reservation.guestName}</span>
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  <span>{getStayDate(room.reservation)}</span>
+                              </div>
+                              {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
+                              {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
+                                  {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                                  {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                                  {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                                  <span>Vehículo</span>
+                              </div>}
+                              {room.reservation.payment && (
+                                  <div className={`flex items-center text-sm pt-2 ${room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}`}>
+                                      <DollarSign className="mr-2 h-4 w-4" />
+                                      <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
+                                  </div>
+                              )}
+                          </>
+                      )}
+                      {room.statusText === 'Mantenimiento' && (
+                          <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
+                      )}
+                      {room.statusText === 'Disponible' && (
+                          <div className="text-center flex-grow flex flex-col justify-center items-center">
+                              <p className="text-muted-foreground">Limpia y lista</p>
+                          </div>
+                      )}
+
+                  </CardContent>
+                  <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
+                      {room.reservation && room.statusText === 'Ocupada' ? (
+                          room.reservation.payment?.status === 'Pendiente' ? (
+                              <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
+                                  <DollarSign className="mr-2 h-4 w-4" />
+                                  Registrar Pago
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="max-w-xs rounded-3xl">
+                                  <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
+                                  </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                              </AlertDialog>
+                          ) : (
+                              <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                                  <LogOut className="mr-2 h-4 w-4" />
+                                  Checkout
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="max-w-xs rounded-3xl">
+                                  <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
+                                  </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                              </AlertDialog>
+                          )
+                      ) : room.statusText === 'Disponible' ? (
+                          <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
+                      ) : room.reservation && (room.statusText === 'Reserva' || room.statusText === 'Llegada') ? (
+                          <Button className="w-full" onClick={() => handleCheckIn(room.reservation!, room.title)} disabled={isUserProfileLoading}><Check className="mr-2 h-4 w-4" />Check-in</Button>
+                      ) : null }
+
+                  </CardFooter>
+                  </Card>
+              ))
+              ) : (
+              <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
+                  No se encontraron habitaciones que coincidan con la búsqueda.
+              </div>
+              )}
+        </main>
+      </div>
 
       <Link href="/new-reservation">
         <Button
