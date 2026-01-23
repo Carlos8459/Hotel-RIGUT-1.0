@@ -1,19 +1,64 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, KeyRound, LogOut } from 'lucide-react';
+import { ArrowLeft, KeyRound, LogOut, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+
+const changePinSchema = z.object({
+  currentPassword: z.string().min(1, { message: "El PIN actual es obligatorio." }),
+  newPassword: z.string().min(6, { message: "El nuevo PIN debe tener al menos 6 caracteres." }),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Los nuevos PIN no coinciden.",
+  path: ["confirmPassword"],
+});
+
 
 export default function AccountSettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const auth = useAuth();
+    const { toast } = useToast();
+    const [isPending, setIsPending] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const form = useForm<z.infer<typeof changePinSchema>>({
+        resolver: zodResolver(changePinSchema),
+        defaultValues: {
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+        },
+    });
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -25,6 +70,47 @@ export default function AccountSettingsPage() {
         await signOut(auth);
         router.push('/');
     };
+    
+    const onSubmitPinChange = async (values: z.infer<typeof changePinSchema>) => {
+        setIsPending(true);
+        setErrorMessage(null);
+
+        if (!user || !user.email) {
+            setErrorMessage("No se pudo verificar la identidad del usuario.");
+            setIsPending(false);
+            return;
+        }
+
+        try {
+            const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
+            await reauthenticateWithCredential(user, credential);
+
+            await updatePassword(user, values.newPassword);
+
+            toast({
+                title: "PIN actualizado",
+                description: "Tu PIN ha sido cambiado exitosamente. Por favor, inicia sesión de nuevo.",
+            });
+            
+            setIsDialogOpen(false);
+            form.reset();
+            
+            // Log out user after password change for security
+            await signOut(auth);
+            router.push('/');
+
+        } catch (error: any) {
+            console.error(error);
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                form.setError("currentPassword", { type: "manual", message: "El PIN actual es incorrecto." });
+            } else {
+                setErrorMessage("Ocurrió un error inesperado al cambiar el PIN.");
+            }
+        } finally {
+            setIsPending(false);
+        }
+    };
+
 
     if (isUserLoading || !user) {
         return (
@@ -64,10 +150,84 @@ export default function AccountSettingsPage() {
                         <CardDescription>Cambia tu PIN y gestiona la seguridad de tu cuenta.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button disabled>
-                            <KeyRound className="mr-2 h-4 w-4" />
-                            Cambiar PIN (Próximamente)
-                        </Button>
+                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <KeyRound className="mr-2 h-4 w-4" />
+                                    Cambiar PIN
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Cambiar PIN</DialogTitle>
+                                    <DialogDescription>
+                                        Actualiza tu PIN de seguridad. Se cerrará tu sesión actual después del cambio.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmitPinChange)} className="space-y-4 pt-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="currentPassword"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>PIN Actual</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="password" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="newPassword"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Nuevo PIN</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="password" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="confirmPassword"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Confirmar Nuevo PIN</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="password" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {errorMessage && (
+                                            <Alert variant="destructive">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertDescription>{errorMessage}</AlertDescription>
+                                            </Alert>
+                                        )}
+
+                                        <div className="flex justify-between items-center pt-4">
+                                            <Button asChild variant="link" className="p-0 h-auto text-sm text-muted-foreground hover:text-primary">
+                                                <Link href="/forgot-password">
+                                                    ¿Olvidaste tu pin?
+                                                </Link>
+                                            </Button>
+                                            <Button type="submit" disabled={isPending}>
+                                                {isPending ? 'Guardando...' : 'Guardar Cambios'}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </Form>
+                            </DialogContent>
+                        </Dialog>
                     </CardContent>
                 </Card>
 
