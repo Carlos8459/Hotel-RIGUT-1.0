@@ -88,7 +88,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card text-foreground max-w-[16rem] border-border flex flex-col max-h-[85vh] rounded-3xl">
+      <DialogContent className="bg-card text-foreground max-w-xs border-border flex flex-col max-h-[85vh] rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
           {roomDescription && <p className="text-lg text-muted-foreground -mt-1 mb-2">{roomDescription}</p>}
@@ -96,7 +96,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             Detalles de la habitación y el huésped actual.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="pr-6 -mr-6">
+        <ScrollArea className="flex-grow min-h-0 pr-6 -mr-6">
         <div className="grid gap-6 py-4">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Estado</span>
