@@ -14,6 +14,7 @@ import { roomsData, getRoomDescription } from "@/lib/hotel-data";
 
 export default function RoomsDashboard() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleCardClick = (room: any) => {
     setSelectedRoom(room);
@@ -22,6 +23,12 @@ export default function RoomsDashboard() {
   const handleCloseModal = () => {
     setSelectedRoom(null);
   };
+
+  const filteredRooms = roomsData.filter(room => {
+    if (!searchTerm) return true;
+    if (!room.guest || ['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest)) return false;
+    return room.guest.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
@@ -34,6 +41,8 @@ export default function RoomsDashboard() {
               type="search"
               placeholder="Buscar clientes..."
               className="bg-card border-border pl-10 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
@@ -60,88 +69,94 @@ export default function RoomsDashboard() {
       </div>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {roomsData.map((room) => (
-          <Card key={room.id} onClick={() => handleCardClick(room)} className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{room.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{getRoomDescription(room.price, room.id)}</p>
+        {filteredRooms.length > 0 ? (
+          filteredRooms.map((room) => (
+            <Card key={room.id} onClick={() => handleCardClick(room)} className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{room.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{getRoomDescription(room.price, room.id)}</p>
+                  </div>
+                  {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
                 </div>
-                {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 flex-grow">
-              {room.date && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>{room.date}</span>
-                </div>
-              )}
-              {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>{room.guest}</span>
-                </div>
-              )}
-              {room.phone && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Phone className="mr-2 h-4 w-4" />
-                  <span>{room.phone}</span>
-                </div>
-              )}
-               {room.vehicle && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                  {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                  {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                  <span>
-                    {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
-                  </span>
-                </div>
-              )}
-              {room.mainText && (
-                <div className="text-center flex-grow flex flex-col justify-center items-center">
-                  <p className="text-muted-foreground">{room.mainText}</p>
-                </div>
-              )}
-              {room.details && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {room.detailsIcon}
-                  <span>{room.details}</span>
-                </div>
-              )}
-               {room.subDetails && (
-                <div className="flex items-center text-sm text-muted-foreground pl-6">
-                  <span>{room.subDetails}</span>
-                </div>
-              )}
-              {room.payment && (
-                <div className={`flex items-center text-sm pt-2 ${room.payment.color}`}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  <span>
-                    {room.payment.status}
-                    {room.payment.amount && ` (C$${room.payment.amount})`}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-              {room.action && (
-                  <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                    {room.action.icon}{room.action.text}
-                  </Button>
-              )}
-               {room.secondaryAction && (
-                <div className="flex justify-end w-full">
-                  <Button variant="ghost" size="icon" className="text-muted-foreground">
-                    {room.secondaryAction.icon}
-                  </Button>
-                </div>
-              )}
-            </CardFooter>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent className="space-y-3 flex-grow">
+                {room.date && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    <span>{room.date}</span>
+                  </div>
+                )}
+                {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>{room.guest}</span>
+                  </div>
+                )}
+                {room.phone && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>{room.phone}</span>
+                  </div>
+                )}
+                 {room.vehicle && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                    {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                    {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                    <span>
+                      {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                    </span>
+                  </div>
+                )}
+                {room.mainText && (
+                  <div className="text-center flex-grow flex flex-col justify-center items-center">
+                    <p className="text-muted-foreground">{room.mainText}</p>
+                  </div>
+                )}
+                {room.details && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    {room.detailsIcon}
+                    <span>{room.details}</span>
+                  </div>
+                )}
+                 {room.subDetails && (
+                  <div className="flex items-center text-sm text-muted-foreground pl-6">
+                    <span>{room.subDetails}</span>
+                  </div>
+                )}
+                {room.payment && (
+                  <div className={`flex items-center text-sm pt-2 ${room.payment.color}`}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    <span>
+                      {room.payment.status}
+                      {room.payment.amount && ` (C$${room.payment.amount})`}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
+                {room.action && (
+                    <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                      {room.action.icon}{room.action.text}
+                    </Button>
+                )}
+                 {room.secondaryAction && (
+                  <div className="flex justify-end w-full">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground">
+                      {room.secondaryAction.icon}
+                    </Button>
+                  </div>
+                )}
+              </CardFooter>
+            </Card>
+          ))
+        ) : (
+            <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
+                No se encontraron clientes que coincidan con la búsqueda.
+            </div>
+        )}
       </main>
 
       {selectedRoom && (
