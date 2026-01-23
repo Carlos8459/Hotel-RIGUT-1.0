@@ -88,7 +88,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card text-foreground max-w-xs border-border flex flex-col max-h-[85vh] rounded-3xl">
+      <DialogContent className="bg-card text-foreground max-w-[16rem] border-border flex flex-col max-h-[85vh] rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
           {roomDescription && <p className="text-lg text-muted-foreground -mt-1 mb-2">{roomDescription}</p>}
@@ -183,7 +183,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             Check-out
                         </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-[320px] rounded-3xl">
+                    <AlertDialogContent className="max-w-[256px] rounded-3xl">
                         <AlertDialogHeader>
                         <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
                         <AlertDialogDescription>
