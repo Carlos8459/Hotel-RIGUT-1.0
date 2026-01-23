@@ -35,7 +35,7 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
               <div>
                 <p className="font-bold text-lg">{customer.name}</p>
                  {customer.phone && (
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <div className="flex items-center text-sm text-foreground/80">
                     <Phone className="mr-2 h-4 w-4" />
                     <span>{customer.phone}</span>
                   </div>
@@ -53,16 +53,16 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
 
                     return (
                         <div key={index} className="space-y-2 text-sm p-3 rounded-lg border bg-background/50">
-                             <div className="flex items-center text-muted-foreground font-semibold">
+                             <div className="flex items-center text-foreground font-semibold">
                                 <Home className="mr-2 h-4 w-4" />
                                 <span>{roomMap.get(visit.roomId) || `Habitación ${visit.roomId}`}</span>
                              </div>
-                            <div className="flex items-center text-muted-foreground">
+                            <div className="flex items-center text-foreground/80">
                                 <Calendar className="mr-2 h-4 w-4" />
                                 <span>{dateRange}</span>
                             </div>
                              {visit.vehicle && (
-                                <div className="flex items-center text-muted-foreground">
+                                <div className="flex items-center text-foreground/80">
                                 {visit.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
                                 {visit.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
                                 {visit.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
