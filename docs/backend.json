@@ -169,6 +169,41 @@
         "createdAt",
         "createdBy"
       ]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a system notification for user actions.",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The content of the notification message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the notification was created."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who triggered the notification."
+        },
+        "creatorName": {
+          "type": "string",
+          "description": "Display name of the user who triggered the notification."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Whether the notification has been read."
+        }
+      },
+      "required": [
+        "message",
+        "createdAt",
+        "createdBy",
+        "creatorName",
+        "isRead"
+      ]
     }
   },
   "auth": {
@@ -222,6 +257,22 @@
             {
               "name": "reservationId",
               "description": "The unique identifier of the reservation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores system-wide notifications for all users.",
+          "params": [
+            {
+              "name": "notificationId",
+              "description": "The unique identifier of the notification."
             }
           ]
         }

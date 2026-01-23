@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
 import {
   parseISO,
   format,
@@ -54,9 +54,11 @@ import {
   Wrench,
   Check,
   BarChart2,
+  Bell,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 // Combined type for display purposes
 export interface ProcessedRoom extends Room {
@@ -69,6 +71,7 @@ export default function RoomsDashboard() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const [selectedRoom, setSelectedRoom] = useState<ProcessedRoom | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,9 +80,12 @@ export default function RoomsDashboard() {
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
 
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -172,6 +178,33 @@ export default function RoomsDashboard() {
   const handleCloseModal = () => {
     setSelectedRoom(null);
   };
+  
+  const handleCheckIn = (reservation: Reservation, roomTitle: string) => {
+    if (!firestore || !user) return;
+
+    // 1. Update reservation status to 'Checked-In'
+    const resDocRef = doc(firestore, 'reservations', reservation.id);
+    updateDoc(resDocRef, { status: 'Checked-In' });
+
+    // 2. Create notification
+    const creatorName = userProfile?.username || user.email;
+    if (creatorName) {
+        const notificationsColRef = collection(firestore, 'notifications');
+        const notificationMessage = `${creatorName} registró a ${reservation.guestName} en la ${roomTitle}.`;
+        addDoc(notificationsColRef, {
+            message: notificationMessage,
+            createdAt: new Date().toISOString(),
+            createdBy: user.uid,
+            creatorName: creatorName,
+            isRead: false,
+        });
+    }
+    
+    toast({
+        title: "Check-in realizado",
+        description: `${reservation.guestName} ha sido registrado en ${roomTitle}.`
+    });
+  };
 
   const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
@@ -204,7 +237,15 @@ export default function RoomsDashboard() {
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
-        <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
+        <div className="flex items-center gap-4">
+          <Link href="/notifications">
+              <Button variant="outline" size="icon">
+                  <Bell className="h-5 w-5" />
+                  <span className="sr-only">Notificaciones</span>
+              </Button>
+          </Link>
+          <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
+        </div>
         <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
@@ -357,7 +398,7 @@ export default function RoomsDashboard() {
                     ) : room.statusText === 'Disponible' ? (
                         <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
                     ) : room.reservation && (room.statusText === 'Reserva' || room.statusText === 'Llegada') ? (
-                        <Button className="w-full" onClick={() => updateDoc(doc(firestore, 'reservations', room.reservation!.id), { status: 'Checked-In' })}><Check className="mr-2 h-4 w-4" />Check-in</Button>
+                        <Button className="w-full" onClick={() => handleCheckIn(room.reservation!, room.title)} disabled={isUserProfileLoading}><Check className="mr-2 h-4 w-4" />Check-in</Button>
                     ) : null }
 
                 </CardFooter>

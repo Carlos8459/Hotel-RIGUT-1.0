@@ -41,5 +41,12 @@ service cloud.firestore {
       // Any signed-in user can create, read, update, or delete any reservation.
       allow read, write: if isSignedIn();
     }
+
+    match /notifications/{notificationId} {
+      // Any signed-in user can read and create notifications.
+      allow read, create: if isSignedIn();
+      // For now, disallow updates and deletes from the client.
+      allow update, delete: if false;
+    }
   }
 }

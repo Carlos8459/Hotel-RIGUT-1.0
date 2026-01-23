@@ -32,3 +32,12 @@ export type Customer = {
   visitCount: number;
   history: Reservation[];
 };
+
+export type Notification = {
+  id: string;
+  message: string;
+  createdAt: string; // ISO string
+  createdBy: string; // UID
+  creatorName: string;
+  isRead: boolean;
+};
