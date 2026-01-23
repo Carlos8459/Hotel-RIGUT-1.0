@@ -110,53 +110,53 @@ export default function SettingsPage() {
             </header>
 
             <main className="max-w-2xl mx-auto space-y-8">
-                {isAdmin ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Perfil</CardTitle>
+                        <CardDescription>Administra los detalles de tu cuenta.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Nombre de usuario</p>
+                            <p className="text-sm text-muted-foreground">{user.displayName || user.email}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Correo electrónico</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="mt-2">Cambiar PIN</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Cambiar tu PIN?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                Se enviará un correo electrónico a <strong>{user.email}</strong> con instrucciones para restablecer tu PIN. ¿Deseas continuar?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleChangePin} disabled={isSendingEmail}>
+                                {isSendingEmail ? "Enviando..." : "Enviar correo"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+
+                {isAdmin && (
                     <Card
                         onClick={() => router.push('/admin')}
                         className="cursor-pointer hover:border-primary transition-colors"
                     >
                         <CardHeader>
-                            <CardTitle>Panel de Administración</CardTitle>
+                            <CardTitle>Administración</CardTitle>
                             <CardDescription>Gestionar usuarios, roles y permisos de la aplicación.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-muted-foreground">Acceso exclusivo para administradores.</p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Perfil</CardTitle>
-                            <CardDescription>Administra los detalles de tu cuenta.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Nombre de usuario</p>
-                                <p className="text-sm text-muted-foreground">{user.displayName || user.email}</p>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">Correo electrónico</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                            </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                <Button variant="outline" className="mt-2">Cambiar PIN</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="max-w-xs rounded-3xl">
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cambiar tu PIN?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Se enviará un correo electrónico a <strong>{user.email}</strong> con instrucciones para restablecer tu PIN. ¿Deseas continuar?
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleChangePin} disabled={isSendingEmail}>
-                                    {isSendingEmail ? "Enviando..." : "Enviar correo"}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
                         </CardContent>
                     </Card>
                 )}
