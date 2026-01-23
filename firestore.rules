@@ -20,20 +20,20 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // A user can create their own profile, or an admin can create any user profile
-      allow create: if isOwner(userId) || isAdmin();
+      // Any signed-in user can create a user profile.
+      allow create: if isSignedIn();
 
-      // An admin can list any user profile.
-      allow list: if isAdmin();
+      // Any signed-in user can list all user profiles.
+      allow list: if isSignedIn();
 
-      // A user can read their own profile. An admin can read any user's profile.
-      allow read: if isAdmin() || isOwner(userId);
+      // Any signed-in user can read any user's profile.
+      allow read: if isSignedIn();
       
-      // A user can update their own profile. An admin can also update any user's profile (e.g., to change a role).
-      allow update: if isOwner(userId) || isAdmin();
+      // Any signed-in user can update any user's profile.
+      allow update: if isSignedIn();
 
-      // Only a user can delete their own profile. Admins cannot delete users from the client.
-      allow delete: if isOwner(userId);
+      // Any signed-in user can delete any user profile.
+      allow delete: if isSignedIn();
     }
   }
 }

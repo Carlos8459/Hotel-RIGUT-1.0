@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -84,12 +84,7 @@ export default function ManageUsersPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const currentUserDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-    const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserDocument>(currentUserDocRef);
-
-    const isAdmin = currentUserProfile?.role === 'Admin';
-
-    const usersCollection = useMemoFirebase(() => (firestore && isAdmin) ? collection(firestore, 'users') : null, [firestore, isAdmin]);
+    const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: usersData, isLoading: usersLoading, error: usersError } = useCollection<UserDocument>(usersCollection);
     
     const users = useMemo<User[]>(() => {
@@ -201,7 +196,7 @@ export default function ManageUsersPage() {
         }
     };
 
-    if (isUserLoading || isProfileLoading) {
+    if (isUserLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
@@ -211,29 +206,6 @@ export default function ManageUsersPage() {
 
     if (!user) {
         return null;
-    }
-
-    if (!isAdmin) {
-        return (
-            <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
-                 <header className="flex items-center gap-4 mb-8">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Volver</span>
-                    </Button>
-                    <div className="flex-grow">
-                        <h1 className="text-2xl font-bold">Gestionar Socios</h1>
-                    </div>
-                </header>
-                <main className="max-w-4xl mx-auto">
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Acceso Denegado</AlertTitle>
-                        <AlertDescription>No tienes permisos de administrador para ver esta página.</AlertDescription>
-                    </Alert>
-                </main>
-            </div>
-        );
     }
 
     return (
@@ -318,12 +290,12 @@ export default function ManageUsersPage() {
                 <Card>
                     <CardContent className="p-0">
                         <div className="divide-y divide-border">
-                            {usersLoading && (
+                            {(usersLoading) && (
                                 <div className="space-y-2 p-4">
                                     {[...Array(3)].map((_, i) => (
-                                        <div key={i} className="flex items-center gap-4">
+                                        <div key={i} className="flex items-center gap-4 p-4">
                                             <Skeleton className="h-10 w-10 rounded-full" />
-                                            <div className="space-y-2">
+                                            <div className="flex-grow space-y-2">
                                                 <Skeleton className="h-4 w-[250px]" />
                                                 <Skeleton className="h-4 w-[200px]" />
                                             </div>
@@ -333,7 +305,11 @@ export default function ManageUsersPage() {
                             )}
                             {usersError && (
                                 <div className="p-4 text-center text-destructive">
-                                    <p>Error al cargar los socios. Es posible que no tengas permisos para ver esta información.</p>
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Error de Permisos</AlertTitle>
+                                        <AlertDescription>No tienes permisos para ver la lista de socios. Contacta a un administrador.</AlertDescription>
+                                    </Alert>
                                 </div>
                             )}
                             {!usersLoading && !usersError && users.map((member) => (
