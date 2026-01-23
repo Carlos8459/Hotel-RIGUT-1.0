@@ -12,10 +12,10 @@ export default function LoginPage() {
       <div className="z-10 w-full max-w-sm space-y-8">
         <div className="text-center">
           <h1 className="font-headline text-5xl font-bold text-foreground">
-            Hello Again!
+            Hotel RIGUT
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Welcome back, you've been missed!
+            Bienvenido de nuevo. Inicia sesión en tu cuenta.
           </p>
         </div>
         <LoginForm />

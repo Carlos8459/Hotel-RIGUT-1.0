@@ -20,8 +20,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: "Username is required." }),
-  pin: z.string().min(4, { message: "PIN must be at least 4 characters." }),
+  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
+  pin: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
 });
 
 export function LoginForm() {
@@ -63,7 +63,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Enter username" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Usuario" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -75,7 +75,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem className="relative">
                 <FormControl>
-                  <Input type={showPin ? "text" : "password"} placeholder="Password" {...field} autoComplete="current-password" className="h-14 rounded-full px-6 pr-12 text-base" />
+                  <Input type={showPin ? "text" : "password"} placeholder="PIN" {...field} autoComplete="current-password" className="h-14 rounded-full px-6 pr-12 text-base" />
                 </FormControl>
                 <button
                   type="button"
@@ -92,27 +92,27 @@ export function LoginForm() {
           {errorMessage && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertTitle>Error de autenticación</AlertTitle>
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
 
           <Button type="submit" className="w-full h-14 rounded-full bg-button-gradient text-lg font-bold text-primary-foreground shadow-lg" disabled={isPending}>
-            {isPending ? "Signing In..." : "Sign In"}
+            {isPending ? "Iniciando sesión..." : "Iniciar sesión"}
           </Button>
         </form>
       </Form>
       
       <div className="mt-4 text-center">
         <Link href="/forgot-password" className="text-sm text-muted-foreground hover:underline">
-          Recovery Password
+          ¿Olvidaste tu PIN?
         </Link>
       </div>
 
       <div className="mt-8 text-center text-sm">
-        <span className="text-muted-foreground">Not a member? </span>
+        <span className="text-muted-foreground">¿No eres miembro? </span>
         <Button asChild variant="outline" className="ml-2 rounded-full border-accent text-accent hover:bg-accent/10 hover:text-accent-foreground">
-          <Link href="/register">Register Now</Link>
+          <Link href="/register">Regístrate ahora</Link>
         </Button>
       </div>
     </div>

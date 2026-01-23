@@ -20,15 +20,15 @@ export async function authenticate(
  
     // Mock authentication
     if (parsedData.username === 'admin' && parsedData.pin === '1234') {
-      console.log('Authentication successful');
+      console.log('Autenticación exitosa');
     } else {
-        throw new Error('Incorrect username or PIN.');
+        throw new Error('Usuario o PIN incorrecto.');
     }
   } catch (error) {
     if (error instanceof Error) {
         return error.message;
     }
-    return 'Something went wrong. Please try again.';
+    return 'Algo salió mal. Por favor, inténtalo de nuevo.';
   }
 
   redirect('/dashboard');
