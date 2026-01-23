@@ -4,12 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut } from "lucide-react";
+import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +56,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   if (!room) return null;
 
   const roomDescription = getRoomDescription(room.price, room.id);
-  const canCheckout = room.statusText === 'Ocupada';
+  const canCheckout = room.statusText === 'Ocupada' || room.statusText === 'Acomodada';
+  const isGuestPresent = room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest);
 
   function handleCheckout() {
     // Here you would typically handle the checkout logic,
@@ -66,117 +66,130 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     onClose(); // Close the modal after checkout.
   }
 
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="bg-card text-foreground max-w-xs border-border flex flex-col max-h-[85vh] rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl">{room.title}</DialogTitle>
-            {roomDescription && <p className="text-base text-muted-foreground -mt-1 mb-1">{roomDescription}</p>}
-            <DialogDescription className="text-sm">
-              Detalles de la habitación y el huésped actual.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="flex-grow min-h-0 pr-6 -mr-6">
-          <div className="space-y-2 py-1">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">Estado</span>
-              {room.statusText && <Badge className={`${room.statusColor} text-xs`}>{room.statusText}</Badge>}
+        <DialogContent className="bg-card text-foreground sm:max-w-md border-border flex flex-col max-h-[90vh] rounded-3xl p-0">
+          <DialogHeader className="p-6 pb-4">
+            <div className="flex items-start justify-between">
+                <div>
+                    <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
+                    {roomDescription && <p className="text-base text-muted-foreground">{roomDescription}</p>}
+                </div>
+                {room.statusText && <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>}
             </div>
+          </DialogHeader>
 
-            {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
-              <>
-                <Separator />
-                <h3 className="font-semibold text-sm pt-1">Huésped Actual</h3>
-                <div className="flex items-center">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarFallback className="text-xs">{room.guest.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-sm">{room.guest}</p>
-                    {room.phone && (
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Phone className="mr-1 h-3 w-3" />
-                        <span>{room.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-0.5 pl-10">
-                  {room.date && (
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      <span>{room.date}</span>
+          <ScrollArea className="flex-grow min-h-0 px-6">
+            <div className="space-y-6 pb-6">
+                {isGuestPresent && (
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16">
+                                <AvatarFallback className="text-2xl">{room.guest!.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-1">
+                                <p className="font-semibold text-lg">{room.guest}</p>
+                                {room.phone && (
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                    <Phone className="mr-2 h-4 w-4" />
+                                    <span>{room.phone}</span>
+                                </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                  )}
-                  {room.payment && (
-                    <div className={`flex items-center text-xs ${room.payment.color}`}>
-                      <DollarSign className="mr-1 h-3 w-3" />
-                      <span>
-                        {room.payment.status}
-                        {room.payment.amount && ` (C$${room.payment.amount})`}
-                      </span>
+                )}
+
+                {(isGuestPresent || room.date) && <Separator />}
+
+                {isGuestPresent && (
+                     <div className="space-y-4">
+                        <h3 className="font-semibold text-lg flex items-center"><Calendar className="mr-2 h-5 w-5" />Estadía</h3>
+                        <div className="grid gap-2 text-sm">
+                            {room.date && (
+                                <div className="flex items-center text-muted-foreground">
+                                    <span className="w-28 font-medium text-foreground">Duración:</span>
+                                    <span>{room.date}</span>
+                                </div>
+                            )}
+                            {room.payment && (
+                                <div className={`flex items-center`}>
+                                    <span className="w-28 font-medium text-foreground">Pago:</span>
+                                    <span className={room.payment.color}>
+                                        {room.payment.status}
+                                        {room.payment.amount && ` (C$${room.payment.amount})`}
+                                    </span>
+                                </div>
+                            )}
+                            {room.vehicle && (
+                                <div className="flex items-center text-muted-foreground">
+                                    <span className="w-28 font-medium text-foreground">Vehículo:</span>
+                                    <div className="flex items-center">
+                                        {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                                        {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                                        {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                                        <span>
+                                            {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                  )}
-                  {room.vehicle && (
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      {room.vehicle === 'car' && <Car className="mr-1 h-3 w-3" />}
-                      {room.vehicle === 'bike' && <Bike className="mr-1 h-3 w-3" />}
-                      {room.vehicle === 'truck' && <Truck className="mr-1 h-3 w-3" />}
-                      <span>Vehículo registrado</span>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                )}
             
-            {room.mainText && (
-               <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
-                  <p className="text-muted-foreground text-base">{room.mainText}</p>
-                </div>
-            )}
-
-            {room.history && room.history.length > 0 && (
-              <>
-                <Separator />
-                <div className="flex justify-between items-center pt-1">
-                  <h3 className="font-semibold text-sm">Historial</h3>
-                  <Button variant="link" className="text-xs p-0 h-auto" onClick={() => setIsHistoryModalOpen(true)}>
-                    Ver más
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {room.history.slice(0, 1).map((pastGuest, index) => (
-                    <div key={index} className="flex items-center">
-                      <Avatar className="h-8 w-8 mr-2">
-                        <AvatarFallback className="text-xs">{pastGuest.avatar}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-sm">{pastGuest.name}</p>
-                        <p className="text-xs text-muted-foreground">{pastGuest.date}</p>
-                      </div>
+                {room.mainText && (
+                <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
+                    <p className="text-muted-foreground text-lg">{room.mainText}</p>
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+                )}
+
+                {room.history && room.history.length > 0 && (
+                    <>
+                        <Separator />
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-semibold text-lg flex items-center"><History className="mr-2 h-5 w-5" />Historial Reciente</h3>
+                                <Button variant="link" className="text-sm p-0 h-auto" onClick={() => setIsHistoryModalOpen(true)}>
+                                    Ver todo
+                                </Button>
+                            </div>
+                            <div className="space-y-3">
+                            {room.history.slice(0, 2).map((pastGuest, index) => (
+                                <div key={index} className="flex items-center">
+                                <Avatar className="h-10 w-10 mr-3">
+                                    <AvatarFallback>{pastGuest.avatar}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">{pastGuest.name}</p>
+                                    <p className="text-xs text-muted-foreground">{pastGuest.date}</p>
+                                </div>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
           </ScrollArea>
+          
           {canCheckout && (
-              <div className="pt-2">
+              <div className="p-6 pt-0 mt-auto">
+                   <Separator className="mb-4" />
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="w-full">
-                              <LogOut className="mr-2 h-4 w-4" />
-                              Check-out
+                          <Button variant="destructive" className="w-full text-base py-6">
+                              <LogOut className="mr-2 h-5 w-5" />
+                              Realizar Check-out
                           </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="max-w-[256px] rounded-3xl">
+                      <AlertDialogContent className="max-w-xs rounded-3xl">
                           <AlertDialogHeader>
                           <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
                           <AlertDialogDescription>
-                              Esta acción marcará la habitación como disponible. No podrás deshacer esta acción.
+                              Esta acción marcará la habitación como disponible y finalizará la estadía del huésped. No podrás deshacer esta acción.
                           </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -197,5 +210,3 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     </>
   );
 }
-
-    
