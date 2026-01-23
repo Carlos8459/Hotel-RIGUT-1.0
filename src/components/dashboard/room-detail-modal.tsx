@@ -91,13 +91,13 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       <DialogContent className="bg-card text-foreground max-w-xs border-border flex flex-col max-h-[85vh] rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
-          {roomDescription && <p className="text-lg text-muted-foreground -mt-1 mb-2">{roomDescription}</p>}
+          {roomDescription && <p className="text-lg text-muted-foreground -mt-1 mb-1">{roomDescription}</p>}
           <DialogDescription>
             Detalles de la habitación y el huésped actual.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0 pr-6 -mr-6">
-        <div className="grid gap-6 py-4">
+        <div className="grid gap-4 py-2">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Estado</span>
             {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
@@ -148,7 +148,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
           )}
           
           {room.mainText && (
-             <div className="text-center flex-grow flex flex-col justify-center items-center py-8">
+             <div className="text-center flex-grow flex flex-col justify-center items-center py-6">
                 <p className="text-muted-foreground text-lg">{room.mainText}</p>
               </div>
           )}
@@ -157,7 +157,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             <>
               <Separator />
               <h3 className="font-semibold">Historial de Huéspedes</h3>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {room.history.map((pastGuest, index) => (
                   <div key={index} className="flex items-center">
                     <Avatar className="h-9 w-9 mr-4">
@@ -175,7 +175,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         </div>
         </ScrollArea>
         {canCheckout && (
-            <div className="pt-6">
+            <div className="pt-4">
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="w-full">
