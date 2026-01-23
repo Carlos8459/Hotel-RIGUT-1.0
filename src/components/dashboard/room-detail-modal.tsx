@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -9,8 +8,20 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
+import { Calendar, DollarSign, Phone, Car, Bike, Truck, LogOut } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Room = {
     id: number;
@@ -42,6 +53,16 @@ type RoomDetailModalProps = {
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   if (!room) return null;
+
+  const canCheckout = room.statusText === 'Ocupada';
+
+  function handleCheckout() {
+    // Here you would typically handle the checkout logic,
+    // like updating the database.
+    console.log(`Checking out room ${room.id}`);
+    onClose(); // Close the modal after checkout.
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -130,11 +151,31 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
           )}
         </div>
         </ScrollArea>
+        {canCheckout && (
+            <div className="pt-6">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Check-out
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción marcará la habitación como disponible. No podrás deshacer esta acción.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCheckout}>Confirmar</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
-
-    
-
-    
