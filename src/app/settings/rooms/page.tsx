@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,12 +49,13 @@ import type { Room } from '@/lib/types';
 type EditableRoom = Room & { originalPrice: number; originalType: string; originalStatus: string; };
 
 const newRoomSchema = z.object({
-  id: z.string().min(1, { message: 'El ID es obligatorio.' }).regex(/^[a-zA-Z0-9_.-]+$/, { message: 'ID solo puede contener letras, números, ., _, -' }),
+  id: z.string()
+    .min(1, { message: 'El ID es obligatorio.' })
+    .regex(/^[a-zA-Z0-9_.-]+$/, { message: 'ID solo puede contener letras, números, ., _, -' })
+    .refine(id => !id.includes('/'), { message: 'El ID no puede contener "/".' })
+    .refine(id => id !== '.' && id !== '..', { message: 'El ID no puede ser "." o "..".' }),
   title: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  price: z.preprocess(
-    (a) => parseInt(z.string().parse(a), 10),
-    z.number().positive({ message: 'El precio debe ser un número positivo.' })
-  ),
+  price: z.coerce.number().positive({ message: 'El precio debe ser un número positivo.' }),
   type: z.enum(["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"]),
 });
 
@@ -111,10 +112,9 @@ export default function RoomSettingsPage() {
         );
     };
 
-    const handleSaveChanges = async () => {
+    const handleSaveChanges = () => {
         if (!firestore) return;
         setIsSaving(true);
-        const updatePromises: Promise<void>[] = [];
         
         editableRooms.forEach(room => {
             const hasChanged = room.price !== room.originalPrice || room.type !== room.originalType || room.status !== room.originalStatus;
@@ -125,73 +125,52 @@ export default function RoomSettingsPage() {
                     type: room.type,
                     status: room.status,
                 };
-                updatePromises.push(updateDoc(roomDocRef, dataToUpdate));
+                updateDocumentNonBlocking(roomDocRef, dataToUpdate);
             }
         });
 
-        try {
-            await Promise.all(updatePromises);
-            toast({
-                title: "Cambios Guardados",
-                description: "La configuración de las habitaciones ha sido actualizada.",
-            });
-        } catch (error) {
-            console.error("Error saving room changes: ", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'No se pudieron guardar los cambios.',
-            });
-        } finally {
-            setIsSaving(false);
-        }
+        toast({
+            title: "Cambios Guardados",
+            description: "La configuración de las habitaciones ha sido actualizada.",
+        });
+        setIsSaving(false);
     };
     
-    const onAddRoomSubmit = async (values: z.infer<typeof newRoomSchema>) => {
-        if (!firestore) return;
-
-        try {
-            const newRoomRef = doc(firestore, 'rooms', values.id);
-            await setDoc(newRoomRef, {
-                title: values.title,
-                price: values.price,
-                type: values.type,
-                status: 'Disponible'
-            });
-
-            toast({
-                title: "Habitación Agregada",
-                description: `La habitación ${values.title} ha sido creada.`,
-            });
-            setIsAddRoomDialogOpen(false);
-            form.reset();
-
-        } catch (error) {
-             console.error("Error creating room: ", error);
+    const onAddRoomSubmit = (values: z.infer<typeof newRoomSchema>) => {
+        if (!firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'No se pudo crear la habitación.',
+                description: 'No se pudo conectar a la base de datos.',
             });
+            return;
         }
+
+        const newRoomRef = doc(firestore, 'rooms', values.id);
+        const newRoomData = {
+            title: values.title,
+            price: values.price,
+            type: values.type,
+            status: 'Disponible'
+        };
+        
+        setDocumentNonBlocking(newRoomRef, newRoomData, { merge: false });
+
+        toast({
+            title: "Habitación Agregada",
+            description: `La habitación ${values.title} ha sido creada.`,
+        });
+        setIsAddRoomDialogOpen(false);
+        form.reset();
     };
 
-    const handleDeleteRoom = async (roomId: string) => {
+    const handleDeleteRoom = (roomId: string) => {
         if (!firestore) return;
-        try {
-            await deleteDoc(doc(firestore, 'rooms', roomId));
-            toast({
-                title: 'Habitación Eliminada',
-                description: 'La habitación ha sido eliminada permanentemente.',
-            });
-        } catch (error) {
-            console.error('Error deleting room:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'No se pudo eliminar la habitación.',
-            });
-        }
+        deleteDocumentNonBlocking(doc(firestore, 'rooms', roomId));
+        toast({
+            title: 'Habitación Eliminada',
+            description: 'La habitación ha sido eliminada permanentemente.',
+        });
     };
 
     if (isUserLoading || !user) {
