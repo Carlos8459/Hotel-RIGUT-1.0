@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home } from 'lucide-react';
 import { CustomerDetailModal, type PastGuest } from '@/components/dashboard/customer-detail-modal';
 import { roomsData } from '@/lib/hotel-data';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parse, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Helper to parse dates like "24 Ene" or "23 Ene - 26 Ene"
 const parseDate = (dateStr: string, position: 'start' | 'end'): Date | null => {
@@ -77,7 +78,7 @@ const allCustomers: Customer[] = Object.values(guestVisits).map(visits => {
     const latestVisit = visits.sort((a, b) => {
         const dateA = parseDate(a.date, 'end');
         const dateB = parseDate(b.date, 'end');
-        if (dateA && dateB) return dateB.getTime() - dateA.getTime();
+        if (dateA && dateB) return dateB.getTime() - a.getTime();
         if (dateA) return -1;
         if (dateB) return 1;
         return 0;
@@ -97,6 +98,7 @@ export default function CustomersPage() {
     const [filter, setFilter] = useState('all');
     const [date, setDate] = useState<Date | undefined>();
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRoom, setSelectedRoom] = useState('');
 
     const handleGuestClick = (guest: PastGuest) => {
         setSelectedGuest(guest);
@@ -112,6 +114,14 @@ export default function CustomersPage() {
         // Search filter
         if (searchTerm) {
             customers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        // Room filter
+        if (selectedRoom) {
+            customers = customers.filter(customer => {
+                const visits = guestVisits[customer.name] || [];
+                return visits.some(visit => visit.roomTitle === selectedRoom);
+            });
         }
     
         // Tabs filter
@@ -147,7 +157,7 @@ export default function CustomersPage() {
     
         return customers;
     
-    }, [filter, date, searchTerm]);
+    }, [filter, date, searchTerm, selectedRoom]);
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
@@ -173,7 +183,7 @@ export default function CustomersPage() {
             <TabsTrigger value="frequent">Frecuentes</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Popover>
               <PopoverTrigger asChild>
                   <Button
@@ -198,6 +208,20 @@ export default function CustomersPage() {
               </PopoverContent>
           </Popover>
           {date && <Button variant="ghost" size="sm" onClick={() => setDate(undefined)}>Limpiar</Button>}
+          <Select value={selectedRoom} onValueChange={(value) => setSelectedRoom(value === 'all' ? '' : value)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+                <Home className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Buscar por habitación" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todas las habitaciones</SelectItem>
+                {roomsData.map(room => (
+                    <SelectItem key={room.id} value={room.title}>
+                        {room.title}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
         </div>
       </div>
 
