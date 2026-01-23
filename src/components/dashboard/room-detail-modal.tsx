@@ -52,21 +52,30 @@ type RoomDetailModalProps = {
     onClose: () => void;
 }
 
-const getRoomDescription = (price?: number) => {
-    if (!price) return null;
+const getRoomDescription = (price?: number, roomId?: number) => {
+    if (price === undefined || roomId === undefined) return null;
+  
+    const acRooms = [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22];
+    const isAcEligible = acRooms.includes(roomId);
+  
     switch (price) {
-        case 400: return 'Unipersonal';
-        case 500: return 'Matrimonial';
-        case 700: return 'Unipersonal con aire acondicionado';
-        case 800: return 'Matrimonial con aire acondicionado';
-        default: return null;
+      case 400:
+        return 'Unipersonal';
+      case 500:
+        return 'Matrimonial';
+      case 700:
+        return isAcEligible ? 'Unipersonal con aíre acondicionado' : 'Unipersonal';
+      case 800:
+        return isAcEligible ? 'Matrimonial con aíre acondicionado' : 'Matrimonial';
+      default:
+        return null;
     }
-}
+  };
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   if (!room) return null;
 
-  const roomDescription = getRoomDescription(room.price);
+  const roomDescription = getRoomDescription(room.price, room.id);
   const canCheckout = room.statusText === 'Ocupada';
 
   function handleCheckout() {
