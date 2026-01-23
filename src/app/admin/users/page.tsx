@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -84,7 +84,12 @@ export default function ManageUsersPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+    const currentUserDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserDocument>(currentUserDocRef);
+
+    const isAdmin = currentUserProfile?.role === 'Admin';
+
+    const usersCollection = useMemoFirebase(() => (firestore && isAdmin) ? collection(firestore, 'users') : null, [firestore, isAdmin]);
     const { data: usersData, isLoading: usersLoading, error: usersError } = useCollection<UserDocument>(usersCollection);
     
     const users = useMemo<User[]>(() => {
@@ -115,8 +120,6 @@ export default function ManageUsersPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-        // Note: For a real implementation, we depend on Firestore security rules
-        // to ensure only administrators can access this page's data.
     }, [user, isUserLoading, router]);
 
     const handleEditRoleClick = (userToEdit: User) => {
@@ -125,7 +128,7 @@ export default function ManageUsersPage() {
     };
 
     const handleSaveChanges = async () => {
-        if (editingUser) {
+        if (editingUser && firestore) {
             const userDocRef = doc(firestore, "users", editingUser.id);
             try {
                 await updateDoc(userDocRef, { role: newRole });
@@ -169,7 +172,9 @@ export default function ManageUsersPage() {
                 role: 'Socio'
             };
 
-            await setDoc(doc(firestore, "users", newUser.uid), userProfile);
+            if (firestore) {
+                await setDoc(doc(firestore, "users", newUser.uid), userProfile);
+            }
             
             await deleteApp(tempApp);
 
@@ -196,10 +201,37 @@ export default function ManageUsersPage() {
         }
     };
 
-    if (isUserLoading || !user) {
+    if (isUserLoading || isProfileLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
+    }
+
+    if (!isAdmin) {
+        return (
+            <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
+                 <header className="flex items-center gap-4 mb-8">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Volver</span>
+                    </Button>
+                    <div className="flex-grow">
+                        <h1 className="text-2xl font-bold">Gestionar Socios</h1>
+                    </div>
+                </header>
+                <main className="max-w-4xl mx-auto">
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Acceso Denegado</AlertTitle>
+                        <AlertDescription>No tienes permisos de administrador para ver esta página.</AlertDescription>
+                    </Alert>
+                </main>
             </div>
         );
     }
@@ -319,7 +351,7 @@ export default function ManageUsersPage() {
                                         <p className="text-sm font-medium text-muted-foreground hidden sm:block">{member.role}</p>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={member.id === user.uid}>
+                                                <Button variant="ghost" size="icon" disabled={user && member.id === user.uid}>
                                                     <MoreVertical className="h-4 w-4" />
                                                     <span className="sr-only">Opciones</span>
                                                 </Button>
