@@ -11,6 +11,7 @@ import {
   differenceInCalendarDays,
   startOfDay,
   isSameDay,
+  addDays,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -56,7 +57,6 @@ import {
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar } from '@/components/ui/calendar';
 
 // Combined type for display purposes
 export interface ProcessedRoom extends Room {
@@ -72,7 +72,7 @@ export default function RoomsDashboard() {
 
   const [selectedRoom, setSelectedRoom] = useState<ProcessedRoom | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
 
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -87,13 +87,9 @@ export default function RoomsDashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  // Memoize reservation check-in dates for calendar markers
-  const reservationDates = useMemo(() => {
-    if (!reservationsData) return [];
-    return reservationsData
-      .map(r => parseISO(r.checkInDate))
-      .filter((d): d is Date => d instanceof Date && !isNaN(d.getTime()));
-  }, [reservationsData]);
+  const fiveDates = useMemo(() => {
+    return Array.from({ length: 5 }, (_, i) => addDays(new Date(), i));
+  }, []);
 
   const processedRooms = useMemo((): ProcessedRoom[] => {
     if (!roomsData || !reservationsData || !selectedDate) return [];
@@ -221,6 +217,24 @@ export default function RoomsDashboard() {
         </div>
       </header>
 
+      <div className="mb-6 flex justify-center sm:justify-start">
+        <div className="flex space-x-1 rounded-lg bg-card p-1">
+          {fiveDates.map((date) => (
+            <Button
+              key={date.toISOString()}
+              variant={isSameDay(date, selectedDate) ? 'secondary' : 'ghost'}
+              onClick={() => setSelectedDate(startOfDay(date))}
+              className="flex-1 flex-col h-auto px-3 py-2 text-center"
+            >
+              <span className="text-xs font-medium uppercase text-muted-foreground">
+                {format(date, 'EEE', { locale: es })}
+              </span>
+              <span className="text-xl font-bold">{format(date, 'd')}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center gap-6 mb-6">
         <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-green-400"></div>
@@ -236,26 +250,7 @@ export default function RoomsDashboard() {
         </div>
       </div>
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 flex justify-center lg:justify-start">
-            <Card className="bg-card border-border inline-block">
-                <CardContent className="p-0">
-                <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    locale={es}
-                    modifiers={{ reserved: reservationDates }}
-                    modifiersClassNames={{
-                      reserved: 'bg-primary/80 text-primary-foreground rounded-full',
-                    }}
-                    className="p-4"
-                />
-                </CardContent>
-            </Card>
-        </div>
-        
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {(roomsLoading || reservationsLoading) ? (
                 [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
             ) : filteredRooms.length > 0 ? (
@@ -373,7 +368,6 @@ export default function RoomsDashboard() {
                 No se encontraron habitaciones que coincidan con la búsqueda.
             </div>
             )}
-        </div>
       </main>
 
       <Link href="/new-reservation">
