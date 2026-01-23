@@ -53,6 +53,7 @@ import {
   Settings,
   LogOut,
   Wrench,
+  Check,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
