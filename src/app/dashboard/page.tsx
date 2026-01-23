@@ -300,11 +300,12 @@ export default function RoomsDashboard() {
 
       <Link href="/new-reservation">
         <Button
-          size="icon"
-          className="fixed z-20 bottom-24 right-4 h-16 w-16 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8"
+          size="lg"
+          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8"
           aria-label="Nueva Reserva"
         >
-          <PlusCircle className="h-8 w-8" />
+          <PlusCircle className="h-6 w-6" />
+          Nueva Reserva
         </Button>
       </Link>
 
