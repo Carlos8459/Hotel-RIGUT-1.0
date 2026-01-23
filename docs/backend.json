@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Hotel RIGUT application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "pin": {
+          "type": "string",
+          "description": "The user's PIN for authentication."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "registrationDate": {
+          "type": "string",
+          "description": "The date and time when the user registered.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "pin",
+        "email",
+        "registrationDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Accessible only by the user (userId) or an administrator (document in /roles_admin/{uid}).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Indicates administrative privileges for the user with the given UID. The presence of a document at this path grants admin rights. This example re-uses the User schema, however, it could have its own schema or be schemaless.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The unique identifier of the user with admin privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given the requirement for user authentication with username/PIN and the need for user management by your partners, the structure focuses on securely storing user credentials and profiles. We will use a simple collection `/users/{userId}` to store user data. This path-based ownership allows for straightforward security rules ensuring only the user or an admin can access/modify their data.\n\nThis structure achieves Authorization Independence as no `get()` calls are required to validate ownership. Security rules will simply check `request.auth.uid == userId` for standard user operations. For administrative access, a separate `/roles_admin/{uid}` collection will be used to grant admin privileges. Existence of a document in `/roles_admin/{uid}` indicates admin status.\n\nThis design supports required QAPs by:\n\n1.  Segregation: User data is isolated in their respective `/users/{userId}` documents.\n2.  Path-Based Ownership: Enforces strict access control, preventing unauthorized listing of user data."
+  }
+}
