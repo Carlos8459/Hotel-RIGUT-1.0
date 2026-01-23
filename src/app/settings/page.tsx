@@ -1,20 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutGrid, Calendar, Users, Settings } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const auth = useAuth();
+    const { toast } = useToast();
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -26,6 +40,35 @@ export default function SettingsPage() {
         await signOut(auth);
         router.push('/'); // Force redirect to login page
     };
+
+    const handleChangePin = async () => {
+        if (!user?.email) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No hay un correo electrónico asociado a esta cuenta.",
+            });
+            return;
+        }
+        setIsSendingEmail(true);
+        try {
+            await sendPasswordResetEmail(auth, user.email);
+            toast({
+                title: "Correo enviado",
+                description: "Se ha enviado un enlace para restablecer tu PIN a tu correo electrónico.",
+            });
+        } catch (error) {
+            console.error("Password reset error:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No se pudo enviar el correo de restablecimiento. Inténtalo de nuevo más tarde.",
+            });
+        } finally {
+            setIsSendingEmail(false);
+        }
+    };
+
 
     if (isUserLoading || !user) {
         return (
@@ -56,7 +99,26 @@ export default function SettingsPage() {
                             <p className="text-sm font-medium">Correo electrónico</p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                         </div>
-                        <Button variant="outline" className="mt-2">Cambiar PIN</Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="mt-2">Cambiar PIN</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-xs rounded-3xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Cambiar tu PIN?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Se enviará un correo electrónico a <strong>{user.email}</strong> con instrucciones para restablecer tu PIN. ¿Deseas continuar?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleChangePin} disabled={isSendingEmail}>
+                                {isSendingEmail ? "Enviando..." : "Enviar correo"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
 
