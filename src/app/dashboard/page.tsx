@@ -236,16 +236,14 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
+      <Link href="/notifications" className="fixed top-6 right-6 z-30">
+          <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-lg bg-card/80 backdrop-blur-sm hover:bg-card">
+              <Bell className="h-6 w-6" />
+              <span className="sr-only">Notificaciones</span>
+          </Button>
+      </Link>
       <header className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/notifications">
-              <Button variant="outline" size="icon">
-                  <Bell className="h-5 w-5" />
-                  <span className="sr-only">Notificaciones</span>
-              </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
-        </div>
+        <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
         <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
