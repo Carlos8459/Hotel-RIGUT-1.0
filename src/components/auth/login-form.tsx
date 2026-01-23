@@ -24,7 +24,7 @@ import { doc } from "firebase/firestore";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Por favor, introduce un nombre de usuario." }),
-  password: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
+  password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
 });
 
 export function LoginForm() {
@@ -50,16 +50,17 @@ export function LoginForm() {
 
     let emailForAuth: string;
     let passwordForAuth: string;
+    let isAdminLogin = false;
 
-    if (values.username === 'admin') {
-      if (values.password !== '1234') {
-        setErrorMessage('PIN incorrecto para el usuario admin.');
+    if (values.username.toLowerCase() === 'carlos84593326@gmail.com') {
+      if (values.password !== '123456') {
+        setErrorMessage('PIN incorrecto para el usuario administrador.');
         setIsPending(false);
         return;
       }
-      // Using a new email to avoid conflicts with previously created (and possibly broken) admin users.
-      emailForAuth = 'admin-login-final@hotel-rigut.app';
+      emailForAuth = 'carlos84593326@gmail.com';
       passwordForAuth = '123456';
+      isAdminLogin = true;
     } else {
       emailForAuth = values.username;
       passwordForAuth = values.password;
@@ -70,13 +71,13 @@ export function LoginForm() {
         router.push('/dashboard');
       })
       .catch((error) => {
-        if (error.code === 'auth/user-not-found' && values.username === 'admin') {
+        if (error.code === 'auth/user-not-found' && isAdminLogin) {
           // Admin user doesn't exist, so create it and then log in.
           createUserWithEmailAndPassword(auth, emailForAuth, passwordForAuth)
             .then((userCredential) => {
                 const user = userCredential.user;
                 const userProfile = {
-                    username: 'admin',
+                    username: 'Carlos (Admin)',
                     email: emailForAuth,
                     registrationDate: new Date().toISOString(),
                 };
@@ -99,7 +100,7 @@ export function LoginForm() {
             if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
                 setErrorMessage('Usuario o PIN incorrecto.');
             } else if (error.code === 'auth/invalid-email') {
-                setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico o "admin".');
+                setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico.');
             } else {
                 setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
             }
@@ -118,7 +119,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Usuario" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Usuario (o correo)" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>

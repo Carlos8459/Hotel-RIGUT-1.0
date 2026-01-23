@@ -53,13 +53,13 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (get) A user can read their own profile. An admin can read any user's profile.
      * @allow (create) An authenticated user can create their own profile document.
-     * @deny (list) No user, not even an admin, can list all user profiles from the client.
+     * @allow (list) An admin can list all user profiles.
      * @deny (update) A user cannot update another user's profile.
      * @principle Enforces strict ownership for user data, with a specific override for admins.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false; // CRITICAL: Prevents listing all users
+      allow list: if isAdmin();
       allow create: if isOwner(userId);
       allow update: if (isOwner(userId) || isAdmin()) && isExistingDocument();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDocument();

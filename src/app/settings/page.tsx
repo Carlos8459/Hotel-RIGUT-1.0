@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutGrid, Calendar, Users, Settings } from 'lucide-react';
@@ -22,13 +23,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const auth = useAuth();
+    const firestore = useFirestore();
     const { toast } = useToast();
     const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+    // Admin Check
+    const adminRoleRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, 'roles_admin', user.uid);
+    }, [firestore, user?.uid]);
+    const { data: adminRole, isLoading: isAdminRoleLoading } = useDoc<{ isAdmin?: boolean }>(adminRoleRef);
+    const isAdmin = adminRole?.isAdmin === true;
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -69,11 +80,25 @@ export default function SettingsPage() {
         }
     };
 
-
-    if (isUserLoading || !user) {
+    if (isUserLoading || isAdminRoleLoading || !user) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-                <p>Cargando...</p>
+            <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
+                <header className="flex items-center justify-between mb-8">
+                    <h1 className="text-2xl font-bold">Configuración</h1>
+                </header>
+                <main className="max-w-2xl mx-auto space-y-8">
+                    <Card>
+                        <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
+                        </CardContent>
+                    </Card>
+                </main>
             </div>
         );
     }
@@ -85,42 +110,56 @@ export default function SettingsPage() {
             </header>
 
             <main className="max-w-2xl mx-auto space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Perfil</CardTitle>
-                        <CardDescription>Administra los detalles de tu cuenta.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Nombre de usuario</p>
-                            <p className="text-sm text-muted-foreground">{user.displayName || user.email}</p>
-                        </div>
-                         <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">Correo electrónico</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                        </div>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" className="mt-2">Cambiar PIN</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-xs rounded-3xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Cambiar tu PIN?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Se enviará un correo electrónico a <strong>{user.email}</strong> con instrucciones para restablecer tu PIN. ¿Deseas continuar?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleChangePin} disabled={isSendingEmail}>
-                                {isSendingEmail ? "Enviando..." : "Enviar correo"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                    </CardContent>
-                </Card>
+                {isAdmin ? (
+                    <Card
+                        onClick={() => router.push('/admin')}
+                        className="cursor-pointer hover:border-primary transition-colors"
+                    >
+                        <CardHeader>
+                            <CardTitle>Panel de Administración</CardTitle>
+                            <CardDescription>Gestionar usuarios, roles y permisos de la aplicación.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">Acceso exclusivo para administradores.</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Perfil</CardTitle>
+                            <CardDescription>Administra los detalles de tu cuenta.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Nombre de usuario</p>
+                                <p className="text-sm text-muted-foreground">{user.displayName || user.email}</p>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">Correo electrónico</p>
+                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                <Button variant="outline" className="mt-2">Cambiar PIN</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Cambiar tu PIN?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    Se enviará un correo electrónico a <strong>{user.email}</strong> con instrucciones para restablecer tu PIN. ¿Deseas continuar?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleChangePin} disabled={isSendingEmail}>
+                                    {isSendingEmail ? "Enviando..." : "Enviar correo"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>
@@ -162,7 +201,6 @@ export default function SettingsPage() {
                        <Button variant="destructive" onClick={handleLogout}>Cerrar sesión</Button>
                     </CardContent>
                 </Card>
-
             </main>
 
             <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
