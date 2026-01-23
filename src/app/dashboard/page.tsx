@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,7 @@ const roomsData = [
   {
     id: 2,
     title: "Habitación 2",
-    price: 700,
+    price: 800,
     guest: "Juan Pérez",
     phone: "11 1234-5678",
     statusText: "Ocupada",
@@ -461,18 +462,22 @@ export default function RoomsDashboard() {
 
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
         <div className="flex justify-around">
-          <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
-            <LayoutGrid className="h-5 w-5 mb-1" />
-            <span className="text-xs font-medium">Habitaciones</span>
-          </Button>
+          <Link href="/dashboard">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
+              <LayoutGrid className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Habitaciones</span>
+            </Button>
+          </Link>
           <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
             <Calendar className="h-5 w-5 mb-1" />
             <span className="text-xs font-medium">Reservas</span>
           </Button>
-          <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-            <Users className="h-5 w-5 mb-1" />
-            <span className="text-xs font-medium">Clientes</span>
-          </Button>
+          <Link href="/customers">
+            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+              <Users className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Clientes</span>
+            </Button>
+          </Link>
           <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
             <Settings className="h-5 w-5 mb-1" />
             <span className="text-xs font-medium">Ajustes</span>
