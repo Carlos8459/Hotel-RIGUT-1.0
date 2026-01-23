@@ -25,9 +25,33 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+
+type User = {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+};
 
 // Placeholder data for users. In a real app, this would come from Firestore.
-const placeholderUsers = [
+const initialUsers: User[] = [
     { id: '1', name: 'Socio Uno', email: 'socio1@example.com', role: 'Socio' },
     { id: '2', name: 'Socio Dos', email: 'socio2@example.com', role: 'Socio' },
     { id: '3', name: 'Admin Principal', email: 'admin@example.com', role: 'Admin' },
@@ -37,6 +61,10 @@ export default function ManageUsersPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
 
+    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [newRole, setNewRole] = useState('');
+
     useEffect(() => {
         if (!isUserLoading && !user) {
             router.push('/');
@@ -44,6 +72,22 @@ export default function ManageUsersPage() {
         // Note: For a real implementation, we would add role-based access control here
         // to ensure only administrators can access this page.
     }, [user, isUserLoading, router]);
+
+    const handleEditRoleClick = (userToEdit: User) => {
+        setEditingUser(userToEdit);
+        setNewRole(userToEdit.role);
+    };
+
+    const handleSaveChanges = () => {
+        if (editingUser) {
+            setUsers(users.map(u => (u.id === editingUser.id ? { ...u, role: newRole } : u)));
+            setEditingUser(null);
+        }
+    };
+
+    const handleCloseDialog = () => {
+        setEditingUser(null);
+    };
 
     if (isUserLoading || !user) {
         return (
@@ -74,7 +118,7 @@ export default function ManageUsersPage() {
                 <Card>
                     <CardContent className="p-0">
                         <div className="divide-y divide-border">
-                            {placeholderUsers.map((member) => (
+                            {users.map((member) => (
                                 <div key={member.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <Avatar>
@@ -95,7 +139,9 @@ export default function ManageUsersPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>Editar rol</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => handleEditRoleClick(member)}>
+                                                    Editar rol
+                                                </DropdownMenuItem>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive px-2 py-1.5 text-sm h-auto font-normal relative flex cursor-default select-none items-center rounded-sm outline-none transition-colors focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
@@ -128,6 +174,34 @@ export default function ManageUsersPage() {
                     * Esta es una vista de demostración. Se necesita implementar roles y permisos para la funcionalidad completa.
                 </p>
             </main>
+
+            <Dialog open={!!editingUser} onOpenChange={(isOpen) => !isOpen && handleCloseDialog()}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar rol de {editingUser?.name}</DialogTitle>
+                        <DialogDescription>
+                            Selecciona el nuevo rol para el usuario.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 py-4">
+                        <Label htmlFor="role-select">Rol del usuario</Label>
+                        <Select value={newRole} onValueChange={setNewRole}>
+                            <SelectTrigger id="role-select" className="w-full">
+                                <SelectValue placeholder="Seleccionar un rol" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Socio">Socio</SelectItem>
+                                <SelectItem value="Admin">Admin</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
+                        <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
