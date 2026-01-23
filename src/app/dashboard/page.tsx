@@ -1,24 +1,43 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Phone, Car, Bike, Truck, LayoutGrid, Users, Settings } from "lucide-react";
-import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
-import { roomsData, getRoomDescription } from "@/lib/hotel-data";
-import { useUser } from "@/firebase";
-import { useRouter } from "next/navigation";
-
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Calendar,
+  User,
+  DollarSign,
+  Search,
+  PlusCircle,
+  Sparkles,
+  Phone,
+  Car,
+  Bike,
+  Truck,
+  LayoutGrid,
+  Users,
+  Settings,
+} from 'lucide-react';
+import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
+import { roomsData, getRoomDescription } from '@/lib/hotel-data';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 export default function RoomsDashboard() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -27,10 +46,10 @@ export default function RoomsDashboard() {
   }, [user, isUserLoading, router]);
 
   if (isUserLoading || !user) {
-     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-            <p>Cargando...</p>
-        </div>
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+        <p>Cargando...</p>
+      </div>
     );
   }
 
@@ -42,9 +61,13 @@ export default function RoomsDashboard() {
     setSelectedRoom(null);
   };
 
-  const filteredRooms = roomsData.filter(room => {
+  const filteredRooms = roomsData.filter((room) => {
     if (!searchTerm) return true;
-    if (!room.guest || ['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest)) return false;
+    if (
+      !room.guest ||
+      ['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest)
+    )
+      return false;
     return room.guest.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -63,10 +86,13 @@ export default function RoomsDashboard() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
+          <Button
+            asChild
+            className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0"
+          >
             <Link href="/new-reservation">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Nueva Reserva
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Nueva Reserva
             </Link>
           </Button>
         </div>
@@ -89,14 +115,24 @@ export default function RoomsDashboard() {
       <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredRooms.length > 0 ? (
           filteredRooms.map((room) => (
-            <Card key={room.id} onClick={() => handleCardClick(room)} className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors">
+            <Card
+              key={room.id}
+              onClick={() => handleCardClick(room)}
+              className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{room.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{getRoomDescription(room.price, room.id)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {getRoomDescription(room.price, room.id)}
+                    </p>
                   </div>
-                  {room.statusText && <Badge className={room.statusColor}>{room.statusText}</Badge>}
+                  {room.statusText && (
+                    <Badge className={room.statusColor}>
+                      {room.statusText}
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 flex-grow">
@@ -106,25 +142,36 @@ export default function RoomsDashboard() {
                     <span>{room.date}</span>
                   </div>
                 )}
-                {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>{room.guest}</span>
-                  </div>
-                )}
+                {room.guest &&
+                  !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(
+                    room.guest
+                  ) && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>{room.guest}</span>
+                    </div>
+                  )}
                 {room.phone && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Phone className="mr-2 h-4 w-4" />
                     <span>{room.phone}</span>
                   </div>
                 )}
-                 {room.vehicle && (
+                {room.vehicle && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                    {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                    {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                    {room.vehicle === 'bike' && (
+                      <Bike className="mr-2 h-4 w-4" />
+                    )}
+                    {room.vehicle === 'truck' && (
+                      <Truck className="mr-2 h-4 w-4" />
+                    )}
                     <span>
-                      {room.vehicle === 'car' ? 'Carro' : room.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                      {room.vehicle === 'car'
+                        ? 'Carro'
+                        : room.vehicle === 'bike'
+                        ? 'Moto'
+                        : 'Camión'}
                     </span>
                   </div>
                 )}
@@ -139,13 +186,15 @@ export default function RoomsDashboard() {
                     <span>{room.details}</span>
                   </div>
                 )}
-                 {room.subDetails && (
+                {room.subDetails && (
                   <div className="flex items-center text-sm text-muted-foreground pl-6">
                     <span>{room.subDetails}</span>
                   </div>
                 )}
                 {room.payment && (
-                  <div className={`flex items-center text-sm pt-2 ${room.payment.color}`}>
+                  <div
+                    className={`flex items-center text-sm pt-2 ${room.payment.color}`}
+                  >
                     <DollarSign className="mr-2 h-4 w-4" />
                     <span>
                       {room.payment.status}
@@ -156,13 +205,18 @@ export default function RoomsDashboard() {
               </CardContent>
               <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
                 {room.action && (
-                    <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                      {room.action.icon}{room.action.text}
-                    </Button>
+                  <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                    {room.action.icon}
+                    {room.action.text}
+                  </Button>
                 )}
-                 {room.secondaryAction && (
+                {room.secondaryAction && (
                   <div className="flex justify-end w-full">
-                    <Button variant="ghost" size="icon" className="text-muted-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground"
+                    >
                       {room.secondaryAction.icon}
                     </Button>
                   </div>
@@ -171,9 +225,9 @@ export default function RoomsDashboard() {
             </Card>
           ))
         ) : (
-            <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-                No se encontraron clientes que coincidan con la búsqueda.
-            </div>
+          <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
+            No se encontraron clientes que coincidan con la búsqueda.
+          </div>
         )}
       </main>
 
@@ -186,31 +240,43 @@ export default function RoomsDashboard() {
       )}
 
       <div className="text-center text-sm text-muted-foreground mt-12">
-        <p>desarrollado por Carlos Rivera</p>
+        <p>Desarrollado por Carlos Rivera</p>
       </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 z-10 md:hidden">
         <div className="flex justify-around">
           <Link href="/dashboard">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-primary px-2 py-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-auto items-center text-primary px-2 py-1"
+            >
               <LayoutGrid className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Habitaciones</span>
             </Button>
           </Link>
           <Link href="/reservations">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+            >
               <Calendar className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Reservas</span>
             </Button>
           </Link>
           <Link href="/customers">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+            >
               <Users className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Clientes</span>
             </Button>
           </Link>
           <Link href="/settings">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+            >
               <Settings className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Ajustes</span>
             </Button>
