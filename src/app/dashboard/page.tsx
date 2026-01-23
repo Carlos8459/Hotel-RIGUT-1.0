@@ -93,8 +93,8 @@ export default function RoomsDashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  const fiveDates = useMemo(() => {
-    return Array.from({ length: 5 }, (_, i) => addDays(new Date(), i));
+  const visibleDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
   }, []);
 
   const processedRooms = useMemo((): ProcessedRoom[] => {
@@ -259,9 +259,9 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-4">
-            <div className="flex space-x-1 rounded-lg bg-card p-1 max-w-min">
-              {fiveDates.map((date) => (
+        <div className="mb-4 overflow-x-auto pb-2">
+            <div className="flex space-x-1 rounded-lg bg-card p-1 w-min">
+              {visibleDates.map((date) => (
                 <Button
                   key={date.toISOString()}
                   variant={isSameDay(date, selectedDate) ? 'secondary' : 'ghost'}
