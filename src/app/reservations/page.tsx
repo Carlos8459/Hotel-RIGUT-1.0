@@ -22,15 +22,8 @@ import { useRouter } from 'next/navigation';
 import { collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { Reservation } from '@/lib/types';
 
-type Reservation = {
-  id: string;
-  guestName: string;
-  roomId: string;
-  checkInDate: string;
-  checkOutDate: string;
-  status: 'Confirmed' | 'Checked-In' | 'Checked-Out' | 'Cancelled';
-};
 
 export default function ReservationsPage() {
   const { user, isUserLoading } = useUser();
