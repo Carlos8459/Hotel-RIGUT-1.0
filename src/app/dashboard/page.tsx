@@ -18,7 +18,7 @@ const roomsData = [
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "23 Ene - 26 Ene (3 noches)",
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [ { name: "Mariana Lopez", date: "19 Ene - 22 Ene", avatar: "ML" } ],
     vehicle: 'truck'
@@ -31,7 +31,7 @@ const roomsData = [
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 25 Ene (3 noches)",
-    payment: { status: "Pendiente", amount: 50, color: "text-yellow-400" },
+    payment: { status: "Pendiente", amount: 50, color: "text-red-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [
       { name: "Ana Torres", date: "15 Ene - 18 Ene", avatar: "AT" },
@@ -85,7 +85,7 @@ const roomsData = [
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "24 Ene - 28 Ene (4 noches)",
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [ { name: "Pedro Ramirez", date: "20 Ene - 23 Ene", avatar: "PR" } ],
     vehicle: 'bike'
@@ -117,7 +117,7 @@ const roomsData = [
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 27 Ene (3 noches)",
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Ver check-in" },
     history: [
       { name: "George Harris", date: "18 Ene - 22 Ene", avatar: "GH" },
@@ -134,7 +134,7 @@ const roomsData = [
     statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
     details: "Revisión de plomería",
     detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Ver reporte" },
     history: [
       { name: "Jack King", date: "19 Ene - 22 Ene", avatar: "JK" },
@@ -166,7 +166,7 @@ const roomsData = [
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "21 Ene - 26 Ene (5 noches)",
-    payment: { status: "Pendiente", amount: 120, color: "text-yellow-400" },
+    payment: { status: "Pendiente", amount: 120, color: "text-red-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [],
     vehicle: 'truck'
@@ -198,7 +198,7 @@ const roomsData = [
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 25 Ene (1 noche)",
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Ver check-in" },
     history: [],
     vehicle: 'car'
@@ -220,7 +220,7 @@ const roomsData = [
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 24 Ene (2 noches)",
-    payment: { status: "Pagado", color: "text-green-400" },
+    payment: { status: "Cancelado", color: "text-green-400" },
     action: { text: "Checkout", icon: <LogOut className="mr-2 h-4 w-4" /> },
     history: [],
     vehicle: 'car'
@@ -252,7 +252,7 @@ const roomsData = [
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 29 Ene (5 noches)",
-    payment: { status: "Pendiente", amount: 250, color: "text-yellow-400" },
+    payment: { status: "Pendiente", amount: 250, color: "text-red-400" },
     action: { text: "Ver check-in" },
     history: [],
     vehicle: 'bike'
@@ -385,8 +385,8 @@ export default function RoomsDashboard() {
                 <div className={`flex items-center text-sm pt-2 ${room.payment.color}`}>
                   <DollarSign className="mr-2 h-4 w-4" />
                   <span>
-                    Pago: {room.payment.status}
-                    {room.payment.amount && ` ($${room.payment.amount})`}
+                    {room.payment.status}
+                    {room.payment.amount && ` (C$${room.payment.amount})`}
                   </span>
                 </div>
               )}
@@ -418,6 +418,8 @@ export default function RoomsDashboard() {
       )}
     </div>
   );
+
+    
 
     
 

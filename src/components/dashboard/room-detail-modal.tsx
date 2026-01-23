@@ -87,8 +87,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                  <div className={`flex items-center text-sm ${room.payment.color}`}>
                   <DollarSign className="mr-2 h-4 w-4" />
                   <span>
-                    Pago: {room.payment.status}
-                    {room.payment.amount && ` ($${room.payment.amount})`}
+                    {room.payment.status}
+                    {room.payment.amount && ` (C$${room.payment.amount})`}
                   </span>
                 </div>
               )}
@@ -134,5 +134,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     </Dialog>
   );
 }
+
+    
 
     
