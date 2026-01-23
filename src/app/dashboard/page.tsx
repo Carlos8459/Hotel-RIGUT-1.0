@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check, Phone } from "lucide-react";
 import { RoomDetailModal } from "@/components/dashboard/room-detail-modal";
@@ -15,12 +14,10 @@ const roomsData = [
     id: 102,
     title: "Habitación 102",
     guest: "Juan Pérez",
-    phone: "+54 9 11 1234-5678",
+    phone: "11 1234-5678",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 25 Ene (3 noches)",
-    progress: 70,
-    progressColor: "[&>div]:bg-red-500",
     payment: {
       status: "Pendiente",
       amount: 50,
@@ -76,12 +73,10 @@ const roomsData = [
     id: 201,
     title: "Habitación 201",
     guest: "Maria Garcia",
-    phone: "+54 9 11 8765-4321",
+    phone: "11 8765-4321",
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 27 Ene (3 noches)",
-    progress: 33,
-    progressColor: "[&>div]:bg-cyan-500",
     payment: {
       status: "Pagado",
       color: "text-green-400"
@@ -228,12 +223,6 @@ export default function RoomsDashboard() {
                   <span>{room.subDetails}</span>
                 </div>
               )}
-              {room.progress !== undefined && (
-                <div className="flex justify-between items-center pt-2">
-                    <Progress value={room.progress} className={`w-3/4 bg-muted ${room.progressColor}`} />
-                    <span className="text-sm font-medium">{room.progress}%</span>
-                </div>
-              )}
               {room.payment && (
                 <div className={`flex items-center text-sm pt-2 ${room.payment.color}`}>
                   <DollarSign className="mr-2 h-4 w-4" />
@@ -271,4 +260,5 @@ export default function RoomsDashboard() {
       )}
     </div>
   );
-}
+
+    
