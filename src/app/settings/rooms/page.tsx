@@ -10,6 +10,16 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, PlusCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+
 
 export default function RoomSettingsPage() {
     const { user, isUserLoading } = useUser();
@@ -40,50 +50,79 @@ export default function RoomSettingsPage() {
             </header>
 
             <main className="max-w-4xl mx-auto space-y-8">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle>Precios de Habitaciones</CardTitle>
-                            <Button variant="ghost" size="icon">
-                                <PlusCircle className="h-5 w-5" />
-                                <span className="sr-only">Agregar tipo de habitación</span>
-                            </Button>
+                <Dialog>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Precios de Habitaciones</CardTitle>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <PlusCircle className="h-5 w-5" />
+                                        <span className="sr-only">Agregar tipo de habitación</span>
+                                    </Button>
+                                </DialogTrigger>
+                            </div>
+                            <CardDescription>Ajusta los precios base para cada tipo de habitación.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-unipersonal">Unipersonal</Label>
+                                    <Input id="price-unipersonal" type="number" defaultValue="400" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-matrimonial">Matrimonial</Label>
+                                    <Input id="price-matrimonial" type="number" defaultValue="500" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-unipersonal-ac">Unipersonal con A/C</Label>
+                                    <Input id="price-unipersonal-ac" type="number" defaultValue="700" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-matrimonial-ac">Matrimonial con A/C</Label>
+                                    <Input id="price-matrimonial-ac" type="number" defaultValue="800" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-dobles">Habitaciones dobles</Label>
+                                    <Input id="price-dobles" type="number" defaultValue="600" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-triples">Habitaciones triples</Label>
+                                    <Input id="price-triples" type="number" defaultValue="700" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="price-quintuples">Habitaciones quintuples</Label>
+                                    <Input id="price-quintuples" type="number" defaultValue="1000" />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                     <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Agregar Nuevo Tipo de Habitación</DialogTitle>
+                            <DialogDescription>
+                                Ingresa los detalles para el nuevo tipo de habitación. Haz clic en guardar cuando termines.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="name" className="text-right">
+                                    Nombre
+                                </Label>
+                                <Input id="name" placeholder="Ej: Suite" className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="price" className="text-right">
+                                    Precio
+                                </Label>
+                                <Input id="price" type="number" placeholder="Ej: 1200" className="col-span-3" />
+                            </div>
                         </div>
-                        <CardDescription>Ajusta los precios base para cada tipo de habitación.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="price-unipersonal">Unipersonal</Label>
-                                <Input id="price-unipersonal" type="number" defaultValue="400" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price-matrimonial">Matrimonial</Label>
-                                <Input id="price-matrimonial" type="number" defaultValue="500" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price-unipersonal-ac">Unipersonal con A/C</Label>
-                                <Input id="price-unipersonal-ac" type="number" defaultValue="700" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="price-matrimonial-ac">Matrimonial con A/C</Label>
-                                <Input id="price-matrimonial-ac" type="number" defaultValue="800" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price-dobles">Habitaciones dobles</Label>
-                                <Input id="price-dobles" type="number" defaultValue="600" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price-triples">Habitaciones triples</Label>
-                                <Input id="price-triples" type="number" defaultValue="700" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="price-quintuples">Habitaciones quintuples</Label>
-                                <Input id="price-quintuples" type="number" defaultValue="1000" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <DialogFooter>
+                            <Button type="submit">Guardar Cambios</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 <Card>
                     <CardHeader>
