@@ -9,7 +9,7 @@ export default function LoginPage() {
       <div className="absolute top-[5%] right-[20%] h-24 w-24 rounded-full bg-pink-200/50 opacity-80 blur-lg" />
       <div className="absolute bottom-[10%] left-[20%] h-24 w-24 rounded-full bg-blue-200/50 opacity-80 blur-lg" />
 
-      <div className="z-10 w-full max-w-sm space-y-8">
+      <div className="z-10 w-full max-w-sm space-y-12">
         <div className="text-center">
           <h1 className="font-headline text-5xl font-bold text-foreground">
             Hotel RIGUT
