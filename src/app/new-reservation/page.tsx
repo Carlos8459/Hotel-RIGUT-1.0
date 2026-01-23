@@ -83,6 +83,7 @@ export default function NewReservationPage() {
       guestName: '',
       cedula: '',
       phone: '',
+      vehicle: undefined,
     },
   });
 
@@ -354,7 +355,6 @@ export default function NewReservationPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Vehículo (Opcional)</FormLabel>
-                  <FormControl>
                     <div className="grid grid-cols-3 gap-4 pt-2">
                       <Button
                         type="button"
@@ -399,7 +399,6 @@ export default function NewReservationPage() {
                         Camión
                       </Button>
                     </div>
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
