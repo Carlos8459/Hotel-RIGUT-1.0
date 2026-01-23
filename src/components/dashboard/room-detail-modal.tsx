@@ -9,7 +9,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Phone } from "lucide-react";
+import { Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Room = {
@@ -31,6 +31,7 @@ type Room = {
         date: string;
         avatar: string;
     }[];
+    vehicle?: 'car' | 'bike' | 'truck';
 }
 
 type RoomDetailModalProps = {
@@ -91,6 +92,14 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                   </span>
                 </div>
               )}
+              {room.vehicle && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  {room.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                  {room.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                  {room.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                  <span>Vehículo registrado</span>
+                </div>
+              )}
             </>
           )}
           
@@ -125,3 +134,5 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     </Dialog>
   );
 }
+
+    
