@@ -49,16 +49,18 @@ export default function ReservationsPage() {
         <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
             <header className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold">Reservas</h1>
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Nueva Reserva
+                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Link href="/new-reservation">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Nueva Reserva
+                    </Link>
                 </Button>
             </header>
 
             <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Card className="bg-card border-border">
-                        <CardContent className="flex justify-center p-4">
+                <div className="lg:col-span-2 flex justify-center">
+                    <Card className="bg-card border-border inline-block">
+                        <CardContent className="p-0">
                             <Calendar
                                 mode="single"
                                 selected={date}
@@ -68,7 +70,7 @@ export default function ReservationsPage() {
                                 modifiersClassNames={{
                                     reserved: 'bg-primary text-primary-foreground rounded-full',
                                 }}
-                                className="flex-none"
+                                className="p-4"
                             />
                         </CardContent>
                     </Card>

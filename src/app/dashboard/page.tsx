@@ -36,9 +36,11 @@ export default function RoomsDashboard() {
               className="bg-card border-border pl-10 w-full"
             />
           </div>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Nueva Reserva
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
+            <Link href="/new-reservation">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Nueva Reserva
+            </Link>
           </Button>
         </div>
       </header>
