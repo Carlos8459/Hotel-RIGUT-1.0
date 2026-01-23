@@ -18,8 +18,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
-import { useAuth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc } from "firebase/firestore";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Por favor, introduce un nombre de usuario." }),
@@ -32,6 +33,7 @@ export function LoginForm() {
   const [showPin, setShowPin] = useState(false);
 
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,16 +69,41 @@ export function LoginForm() {
         router.push('/dashboard');
       })
       .catch((error) => {
-        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
-            setErrorMessage('Usuario o PIN incorrecto.');
-        } else if (error.code === 'auth/invalid-email') {
-            setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico o "admin".');
+        if (error.code === 'auth/user-not-found' && values.username === 'admin') {
+          // Admin user doesn't exist, so create it and then log in.
+          createUserWithEmailAndPassword(auth, emailForAuth, passwordForAuth)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                const userProfile = {
+                    username: 'admin',
+                    email: emailForAuth,
+                    registrationDate: new Date().toISOString(),
+                };
+                const userDocRef = doc(firestore, "users", user.uid);
+                setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+
+                const adminRoleRef = doc(firestore, "roles_admin", user.uid);
+                setDocumentNonBlocking(adminRoleRef, { isAdmin: true }, { merge: true });
+
+                router.push("/dashboard");
+            })
+            .catch(creationError => {
+                console.error("Admin user creation error:", creationError);
+                setErrorMessage('No se pudo crear el usuario admin. Por favor, inténtalo de nuevo.');
+            })
+            .finally(() => {
+                setIsPending(false);
+            });
         } else {
-            setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
+            if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
+                setErrorMessage('Usuario o PIN incorrecto.');
+            } else if (error.code === 'auth/invalid-email') {
+                setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico o "admin".');
+            } else {
+                setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
+            }
+            setIsPending(false);
         }
-      })
-      .finally(() => {
-        setIsPending(false);
       });
   };
 
