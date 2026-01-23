@@ -22,7 +22,7 @@ import { useAuth } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  username: z.string().min(1, { message: "Por favor, introduce un nombre de usuario." }),
   password: z.string().min(4, { message: "El PIN debe tener al menos 4 caracteres." }),
 });
 
@@ -37,7 +37,7 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -45,13 +45,32 @@ export function LoginForm() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setErrorMessage("");
     setIsPending(true);
-    signInWithEmailAndPassword(auth, values.email, values.password)
+
+    let emailForAuth: string;
+    let passwordForAuth: string;
+
+    if (values.username === 'admin') {
+      if (values.password !== '1234') {
+        setErrorMessage('PIN incorrecto para el usuario admin.');
+        setIsPending(false);
+        return;
+      }
+      emailForAuth = 'admin@hotel-rigut.app';
+      passwordForAuth = '1234';
+    } else {
+      emailForAuth = values.username;
+      passwordForAuth = values.password;
+    }
+    
+    signInWithEmailAndPassword(auth, emailForAuth, passwordForAuth)
       .then(() => {
         router.push('/dashboard');
       })
       .catch((error) => {
-        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {
+        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
             setErrorMessage('Usuario o PIN incorrecto.');
+        } else if (error.code === 'auth/invalid-email') {
+            setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico o "admin".');
         } else {
             setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
         }
@@ -67,11 +86,11 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="email"
+            name="username"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Usuario (correo electrónico)" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Usuario" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
