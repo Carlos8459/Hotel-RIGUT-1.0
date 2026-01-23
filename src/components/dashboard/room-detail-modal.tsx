@@ -44,7 +44,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card text-foreground sm:max-w-sm border-border flex flex-col max-h-[85vh]">
+      <DialogContent className="bg-card text-foreground sm:max-w-xs border-border flex flex-col max-h-[85vh] sm:rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.title}</DialogTitle>
           <DialogDescription>
