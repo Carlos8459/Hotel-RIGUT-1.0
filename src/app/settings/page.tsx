@@ -7,7 +7,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutGrid, Calendar, Users, Settings } from 'lucide-react';
+import { LayoutGrid, Calendar, Users, Settings, Wrench } from 'lucide-react';
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
@@ -42,8 +42,20 @@ export default function SettingsPage() {
             <main className="max-w-2xl mx-auto space-y-8">
                 <Card>
                     <CardHeader>
+                        <CardTitle>Configuración de Habitaciones</CardTitle>
+                        <CardDescription>Administra los precios y otros detalles de las habitaciones.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <Button>
+                           <Wrench className="mr-2 h-4 w-4" />
+                           Habitaciones
+                       </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
                         <CardTitle>Cuenta</CardTitle>
-                         <CardDescription>Hola, {user.displayName || user.email}</CardDescription>
+                         <CardDescription>Hola, {user.email}</CardDescription>
                     </CardHeader>
                     <CardContent>
                        <Button variant="destructive" onClick={handleLogout}>Cerrar sesión</Button>
