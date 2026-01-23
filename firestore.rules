@@ -1,36 +1,7 @@
-/**
- * # Firestore Security Rules
- *
- * ## Core Philosophy
- * This ruleset enforces a strict user-ownership model combined with a global administrator role. 
- * Standard users can only access and manage their own data. A designated set of administrators,
- * defined in a separate collection, have privileged access to manage user data. The default
- * posture is to deny all access unless explicitly granted.
- *
- * ## Data Structure
- * - `/users/{userId}`: Contains private user profile documents. Each document is keyed by the
- *   user's unique authentication ID (`uid`).
- * - `/roles_admin/{uid}`: A collection where the mere existence of a document grants
- *   administrator privileges to the user with the corresponding `uid`. This collection
- *   is only manageable by other existing administrators.
- *
- * ## Key Security Decisions
- * - **No User Listing**: To protect user privacy and prevent data scraping, listing documents
- *   in the top-level `/users` collection is strictly forbidden for all clients.
- * - **Admin-by-Existence**: Administrator status is determined by the presence of a document
- *   in `/roles_admin/{uid}`. This is a highly performant method for role checking that avoids
- *   reading document data.
- * - **Self-Service Creation**: Users can create their own profile document, but cannot create
- *   profiles for others. Administrators cannot create profiles on behalf of users; this must
- *   be initiated by the user themselves.
- * - **Admin Management**: Only existing administrators can add or remove other administrators,
- *   preventing unauthorized privilege escalation.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for readable and reusable logic
     function isSignedIn() {
       return request.auth != null;
     }
@@ -39,47 +10,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-    
-    // Checks if a document exists before an update or delete operation.
-    function isExistingDocument() {
-      return resource != null;
-    }
-
-    /**
-     * @description Rules for user profile documents.
-     * @path /users/{userId}
-     * @allow (get) A user can read their own profile. An admin can read any user's profile.
-     * @allow (create) An authenticated user can create their own profile document.
-     * @allow (list) An admin can list all user profiles.
-     * @deny (update) A user cannot update another user's profile.
-     * @principle Enforces strict ownership for user data, with a specific override for admins.
-     */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      // A user can create their own profile
       allow create: if isOwner(userId);
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDocument();
-      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDocument();
-    }
 
-    /**
-     * @description Rules for the admin roles collection.
-     * @path /roles_admin/{uid}
-     * @allow (get) An admin can check if another user is an admin. A user can check their own admin status.
-     * @allow (create) An admin can grant another user admin privileges.
-     * @deny (create) A non-admin user cannot make themselves or anyone else an admin.
-     * @deny (delete) A non-admin user cannot revoke admin privileges.
-     * @principle Restricts management of administrator roles to existing administrators.
-     */
-    match /roles_admin/{uid} {
-      allow get: if isOwner(uid) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if false; // Role documents are flags; updates are not meaningful.
-      allow delete: if isAdmin() && isExistingDocument();
+      // A user can read, update, and delete their own profile
+      allow read, update, delete: if isOwner(userId);
     }
   }
 }

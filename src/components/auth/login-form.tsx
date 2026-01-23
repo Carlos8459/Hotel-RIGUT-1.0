@@ -18,12 +18,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
-import { useAuth, useFirestore } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: "Por favor, introduce un nombre de usuario." }),
+  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
   password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
 });
 
@@ -33,13 +32,12 @@ export function LoginForm() {
   const [showPin, setShowPin] = useState(false);
 
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -47,73 +45,18 @@ export function LoginForm() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setErrorMessage("");
     setIsPending(true);
-
-    let emailForAuth: string;
-    let passwordForAuth: string;
-    let isAdminLogin = false;
-
-    if (values.username.toLowerCase() === 'carlos84593326@gmail.com') {
-      if (values.password !== '123456') {
-        setErrorMessage('PIN incorrecto para el usuario administrador.');
-        setIsPending(false);
-        return;
-      }
-      emailForAuth = 'carlos84593326@gmail.com';
-      passwordForAuth = '123456';
-      isAdminLogin = true;
-    } else {
-      emailForAuth = values.username;
-      passwordForAuth = values.password;
-    }
     
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, emailForAuth, passwordForAuth);
-        if (isAdminLogin) {
-            const user = userCredential.user;
-            // Await these writes to prevent a race condition on the next page
-            const adminRoleRef = doc(firestore, "roles_admin", user.uid);
-            await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
-            
-            const userProfile = {
-                username: 'Carlos (Admin)',
-                email: emailForAuth,
-                registrationDate: new Date().toISOString(),
-            };
-            const userDocRef = doc(firestore, "users", user.uid);
-            await setDoc(userDocRef, userProfile, { merge: true });
-        }
+        await signInWithEmailAndPassword(auth, values.email, values.password);
         router.push('/dashboard');
     } catch (error: any) {
-        if (error.code === 'auth/user-not-found' && isAdminLogin) {
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, emailForAuth, passwordForAuth);
-                const user = userCredential.user;
-
-                // Await these writes to ensure they complete before navigation
-                const userProfile = {
-                    username: 'Carlos (Admin)',
-                    email: emailForAuth,
-                    registrationDate: new Date().toISOString(),
-                };
-                const userDocRef = doc(firestore, "users", user.uid);
-                await setDoc(userDocRef, userProfile, { merge: true });
-
-                const adminRoleRef = doc(firestore, "roles_admin", user.uid);
-                await setDoc(adminRoleRef, { isAdmin: true }, { merge: true });
-
-                router.push("/dashboard");
-            } catch (creationError: any) {
-                console.error("Admin user creation error:", creationError);
-                setErrorMessage('No se pudo crear el usuario admin. Por favor, inténtalo de nuevo.');
-            }
+        if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
+            setErrorMessage('Correo o PIN incorrecto.');
+        } else if (error.code === 'auth/invalid-email') {
+            setErrorMessage('El formato del correo electrónico es incorrecto.');
         } else {
-            if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
-                setErrorMessage('Usuario o PIN incorrecto.');
-            } else if (error.code === 'auth/invalid-email') {
-                setErrorMessage('El formato del usuario es incorrecto. Debe ser un correo electrónico.');
-            } else {
-                setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
-            }
+            console.error("Authentication error:", error);
+            setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
         }
     } finally {
         setIsPending(false);
@@ -126,11 +69,11 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="username"
+            name="email"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Usuario (o correo)" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Correo electrónico" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
