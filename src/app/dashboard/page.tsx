@@ -6,11 +6,11 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useRouter } from 'next/navigation';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
-  isToday,
-  isFuture,
   parseISO,
   format,
   differenceInCalendarDays,
+  startOfDay,
+  isSameDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -25,7 +25,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,12 +37,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   User,
   DollarSign,
   Search,
   PlusCircle,
-  Sparkles,
   Phone,
   Car,
   Bike,
@@ -58,6 +56,7 @@ import {
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
 
 // Combined type for display purposes
 export interface ProcessedRoom extends Room {
@@ -73,6 +72,7 @@ export default function RoomsDashboard() {
 
   const [selectedRoom, setSelectedRoom] = useState<ProcessedRoom | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -87,29 +87,54 @@ export default function RoomsDashboard() {
     }
   }, [user, isUserLoading, router]);
 
+  // Memoize reservation check-in dates for calendar markers
+  const reservationDates = useMemo(() => {
+    if (!reservationsData) return [];
+    return reservationsData
+      .map(r => parseISO(r.checkInDate))
+      .filter((d): d is Date => d instanceof Date && !isNaN(d.getTime()));
+  }, [reservationsData]);
 
   const processedRooms = useMemo((): ProcessedRoom[] => {
-    if (!roomsData || !reservationsData) return [];
+    if (!roomsData || !reservationsData || !selectedDate) return [];
+
+    const startOfSelected = startOfDay(selectedDate);
 
     return roomsData.map((room) => {
-      // Find the most relevant reservation for this room
-      const activeReservation = reservationsData.find(
-        (res) => res.roomId === room.id && (res.status === 'Checked-In' || res.status === 'Confirmed')
-      );
-
       let statusText = 'Disponible';
       let statusColor = 'bg-green-500/20 text-green-400 border-green-500/50';
+      let relevantReservation: Reservation | undefined = undefined;
+
+      const overlappingReservations = reservationsData
+        .filter(res => {
+            if (res.roomId !== room.id || ['Cancelled', 'Checked-Out'].includes(res.status)) {
+                return false;
+            }
+            const checkIn = startOfDay(parseISO(res.checkInDate));
+            const checkOut = startOfDay(parseISO(res.checkOutDate));
+            return startOfSelected >= checkIn && startOfSelected < checkOut;
+        })
+        .sort((a, b) => {
+            if (a.status === 'Checked-In' && b.status !== 'Checked-In') return -1;
+            if (b.status === 'Checked-In' && a.status !== 'Checked-In') return 1;
+            return 0;
+        });
+
+      relevantReservation = overlappingReservations[0] as Reservation | undefined;
 
       if (room.status === 'Mantenimiento') {
         statusText = 'Mantenimiento';
         statusColor = 'bg-orange-500/20 text-orange-400 border-orange-500/50';
-      } else if (activeReservation) {
-        const checkIn = parseISO(activeReservation.checkInDate);
-        if (activeReservation.status === 'Checked-In') {
-           statusText = 'Ocupada'; // Can also be "Acomodada" based on your logic
+      } else if (relevantReservation) {
+        if (relevantReservation.status === 'Checked-In') {
+           statusText = 'Ocupada';
            statusColor = 'bg-red-500/20 text-red-400 border-red-500/50';
-        } else if (activeReservation.status === 'Confirmed' && (isToday(checkIn) || isFuture(checkIn))) {
-           statusText = 'Reserva';
+        } else if (relevantReservation.status === 'Confirmed') {
+            if (isSameDay(startOfDay(parseISO(relevantReservation.checkInDate)), startOfSelected)) {
+                statusText = 'Llegada';
+            } else {
+                statusText = 'Reserva';
+            }
            statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
         }
       }
@@ -117,12 +142,12 @@ export default function RoomsDashboard() {
       return {
         ...room,
         id: room.id,
-        reservation: activeReservation as Reservation | undefined,
+        reservation: relevantReservation,
         statusText,
         statusColor,
       };
-    });
-  }, [roomsData, reservationsData]);
+    }).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  }, [roomsData, reservationsData, selectedDate]);
 
 
   const ocupadasCount = processedRooms.filter(
@@ -130,6 +155,9 @@ export default function RoomsDashboard() {
   ).length;
   const disponiblesCount = processedRooms.filter(
     (room) => room.statusText === 'Disponible'
+  ).length;
+  const reservasCount = processedRooms.filter(
+    (room) => room.statusText === 'Reserva' || room.statusText === 'Llegada'
   ).length;
 
 
@@ -165,7 +193,7 @@ export default function RoomsDashboard() {
 
   const filteredRooms = processedRooms.filter((room) => {
     if (!searchTerm) return true;
-    if (!room.reservation || room.reservation.status !== 'Checked-In') return false;
+    if (!room.reservation) return false;
     return room.reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -185,7 +213,7 @@ export default function RoomsDashboard() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar clientes..."
+            placeholder="Buscar por huésped..."
             className="bg-card border-border pl-10 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -193,171 +221,169 @@ export default function RoomsDashboard() {
         </div>
       </header>
 
-      <div className="flex items-center gap-6 mb-4">
+      <div className="flex items-center gap-6 mb-6">
         <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-green-400"></div>
-            <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Libres</span></p>
+            <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Disponibles</span></p>
         </div>
         <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-red-400"></div>
             <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
         </div>
+        <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-blue-400"></div>
+            <p className="text-sm font-medium"><span className="font-bold text-foreground">{reservasCount}</span> <span className="text-muted-foreground">Reservas</span></p>
+        </div>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <Tabs defaultValue="ene24">
-          <TabsList className="bg-card border border-border">
-            <TabsTrigger value="ene22">Ene 22</TabsTrigger>
-            <TabsTrigger value="ene23">Ene 23</TabsTrigger>
-            <TabsTrigger value="ene24">Ene 24</TabsTrigger>
-            <TabsTrigger value="ene25">Ene 25</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Button variant="ghost" size="icon">
-          <Sparkles className="h-5 w-5 text-muted-foreground" />
-        </Button>
-      </div>
-
-      <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {(roomsLoading || reservationsLoading) ? (
-            [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
-        ) : filteredRooms.length > 0 ? (
-          filteredRooms.map((room) => (
-            <Card
-              key={room.id}
-              onClick={() => handleCardClick(room)}
-              className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{room.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {room.type}
-                    </p>
-                  </div>
-                  <Badge className={room.statusColor}>
-                    {room.statusText}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 flex-grow">
-                 {room.statusText === 'Ocupada' && room.reservation && (
-                    <>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            <span>{getStayDate(room.reservation)}</span>
-                        </div>
-                        <div className="flex items-center text-sm">
-                            <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <span className="font-semibold">{room.reservation.guestName}</span>
-                        </div>
-                         {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
-                         {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
-                             {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                             {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                             {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                             <span>Vehículo</span>
-                         </div>}
-                         {room.reservation.payment && (
-                            <div className={`flex items-center text-sm pt-2 ${room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}`}>
-                                <DollarSign className="mr-2 h-4 w-4" />
-                                <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
-                            </div>
-                         )}
-                    </>
-                 )}
-                 {room.statusText === 'Reserva' && room.reservation && (
-                     <>
-                        <div className="flex items-center text-sm">
-                           <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                           <span className="font-semibold">{room.reservation.guestName}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                           <Calendar className="mr-2 h-4 w-4" />
-                           <span>Llega {format(parseISO(room.reservation.checkInDate), 'd LLL', {locale: es})}</span>
-                        </div>
-                     </>
-                 )}
-                 {room.statusText === 'Mantenimiento' && (
-                     <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
-                 )}
-                 {room.statusText === 'Disponible' && (
-                     <div className="text-center flex-grow flex flex-col justify-center items-center">
-                        <p className="text-muted-foreground">Limpia y lista</p>
-                     </div>
-                 )}
-
-              </CardContent>
-              <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                {room.statusText === 'Ocupada' && room.reservation ? (
-                    room.reservation.payment?.status === 'Pendiente' ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
-                              <DollarSign className="mr-2 h-4 w-4" />
-                              Registrar Pago
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-xs rounded-3xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                              <LogOut className="mr-2 h-4 w-4" />
-                              Checkout
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-xs rounded-3xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )
-                ) : room.statusText === 'Disponible' ? (
-                    <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
-                ) : room.statusText === 'Reserva' && room.reservation ? (
-                    <Button className="w-full" onClick={() => updateDoc(doc(firestore, 'reservations', room.reservation!.id), { status: 'Checked-In' })}><Check className="mr-2 h-4 w-4" />Check-in</Button>
-                ) : null }
-
-              </CardFooter>
+      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 flex justify-center lg:justify-start">
+            <Card className="bg-card border-border inline-block">
+                <CardContent className="p-0">
+                <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    locale={es}
+                    modifiers={{ reserved: reservationDates }}
+                    modifiersClassNames={{
+                      reserved: 'bg-primary/80 text-primary-foreground rounded-full',
+                    }}
+                    className="p-4"
+                />
+                </CardContent>
             </Card>
-          ))
-        ) : (
-          <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-            No se encontraron clientes que coincidan con la búsqueda.
-          </div>
-        )}
+        </div>
+        
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {(roomsLoading || reservationsLoading) ? (
+                [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
+            ) : filteredRooms.length > 0 ? (
+            filteredRooms.map((room) => (
+                <Card
+                key={room.id}
+                onClick={() => handleCardClick(room)}
+                className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
+                >
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-lg">{room.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                        {room.type}
+                        </p>
+                    </div>
+                    <Badge className={room.statusColor}>
+                        {room.statusText}
+                    </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3 flex-grow">
+                    {room.reservation && (
+                        <>
+                            <div className="flex items-center text-sm">
+                                <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <span className="font-semibold">{room.reservation.guestName}</span>
+                            </div>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                <span>{getStayDate(room.reservation)}</span>
+                            </div>
+                            {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
+                            {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
+                                {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
+                                {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
+                                {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
+                                <span>Vehículo</span>
+                            </div>}
+                            {room.reservation.payment && (
+                                <div className={`flex items-center text-sm pt-2 ${room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}`}>
+                                    <DollarSign className="mr-2 h-4 w-4" />
+                                    <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {room.statusText === 'Mantenimiento' && (
+                        <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
+                    )}
+                    {room.statusText === 'Disponible' && (
+                        <div className="text-center flex-grow flex flex-col justify-center items-center">
+                            <p className="text-muted-foreground">Limpia y lista</p>
+                        </div>
+                    )}
+
+                </CardContent>
+                <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
+                    {room.reservation && room.statusText === 'Ocupada' ? (
+                        room.reservation.payment?.status === 'Pendiente' ? (
+                            <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
+                                <DollarSign className="mr-2 h-4 w-4" />
+                                Registrar Pago
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                            </AlertDialog>
+                        ) : (
+                            <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Checkout
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                            </AlertDialog>
+                        )
+                    ) : room.statusText === 'Disponible' ? (
+                        <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
+                    ) : room.reservation && (room.statusText === 'Reserva' || room.statusText === 'Llegada') ? (
+                        <Button className="w-full" onClick={() => updateDoc(doc(firestore, 'reservations', room.reservation!.id), { status: 'Checked-In' })}><Check className="mr-2 h-4 w-4" />Check-in</Button>
+                    ) : null }
+
+                </CardFooter>
+                </Card>
+            ))
+            ) : (
+            <div className="col-span-full text-center text-muted-foreground p-8 border border-dashed rounded-lg">
+                No se encontraron habitaciones que coincidan con la búsqueda.
+            </div>
+            )}
+        </div>
       </main>
 
       <Link href="/new-reservation">
         <Button
           size="lg"
-          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-8 md:right-8 flex items-center gap-2"
+          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl h-auto py-3 px-5 md:bottom-8 md:right-8 flex items-center gap-2"
           aria-label="Nueva Reserva"
         >
           <PlusCircle className="h-6 w-6" />
-          <span>Nueva Reserva</span>
+          <span className="text-base font-semibold">Nueva Reserva</span>
         </Button>
       </Link>
 
@@ -389,7 +415,7 @@ export default function RoomsDashboard() {
               variant="ghost"
               className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
             >
-              <Calendar className="h-5 w-5 mb-1" />
+              <CalendarIcon className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Reservas</span>
             </Button>
           </Link>
