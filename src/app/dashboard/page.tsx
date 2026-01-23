@@ -245,7 +245,7 @@ export default function RoomsDashboard() {
                               Registrar Pago
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-xs rounded-3xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -266,7 +266,7 @@ export default function RoomsDashboard() {
                               Checkout
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-xs rounded-3xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
                               <AlertDialogDescription>
