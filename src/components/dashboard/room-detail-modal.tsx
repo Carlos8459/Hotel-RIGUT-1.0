@@ -104,7 +104,11 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             const currentYear = new Date().getFullYear();
             const datePart = dateStr.split(' - ')[1]?.split(' (')[0];
             if (!datePart) return undefined;
-            return parse(`${datePart} ${currentYear}`, 'd LLL yyyy', { locale: es });
+            const parsedDate = parse(`${datePart} ${currentYear}`, 'd LLL yyyy', { locale: es });
+            if (Number.isNaN(parsedDate.getTime())) {
+                return undefined;
+            }
+            return parsedDate;
         } catch (e) {
             console.error("Error parsing checkout date:", e)
             return undefined;
@@ -367,7 +371,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                                 <Calendar
                                     mode="single"
                                     selected={editedGuest.checkOutDate}
-                                    onSelect={(date) => setEditedGuest(prev => ({...prev, checkOutDate: date as Date}))}
+                                    onSelect={(date) => setEditedGuest(prev => ({...prev, checkOutDate: date as Date | undefined}))}
                                     initialFocus
                                     locale={es}
                                 />
