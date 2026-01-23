@@ -253,7 +253,7 @@ export default function NewReservationPage() {
                           <Button
                             variant={'ghost'}
                             className={cn(
-                              'w-full justify-start text-left font-normal bg-transparent border-0 border-b border-input rounded-none hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
+                              'w-full justify-start text-left font-normal border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
                               !field.value && 'text-muted-foreground'
                             )}
                           >
@@ -266,7 +266,7 @@ export default function NewReservationPage() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -295,7 +295,7 @@ export default function NewReservationPage() {
                           <Button
                             variant={'ghost'}
                             className={cn(
-                              'w-full justify-start text-left font-normal bg-transparent border-0 border-b border-input rounded-none hover:bg-transparent focus:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
+                              'w-full justify-start text-left font-normal border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
                               !field.value && 'text-muted-foreground'
                             )}
                           >
@@ -308,7 +308,7 @@ export default function NewReservationPage() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
