@@ -1,20 +1,21 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check } from "lucide-react";
+import { Calendar, User, DollarSign, Search, PlusCircle, Sparkles, Wrench, KeyRound, LogOut, Check, Phone } from "lucide-react";
 
 const roomsData = [
   {
     id: 102,
     title: "Habitación 102",
     guest: "Juan Pérez",
+    phone: "+54 9 11 1234-5678",
     statusText: "Ocupada",
     statusColor: "bg-red-500/20 text-red-400 border-red-500/50",
     date: "22 Ene - 25 Ene (3 noches)",
-    occupancy: "2 Adultos",
     progress: 70,
     progressColor: "[&>div]:bg-red-500",
     payment: {
@@ -48,7 +49,6 @@ const roomsData = [
     statusColor: "bg-blue-500/20 text-blue-400 border-blue-500/50",
     guest: "Próxima Reserva",
     date: "24 Ene",
-    occupancy: "1 Adulto",
     action: {
       text: "Check-in",
       icon: <Check className="mr-2 h-4 w-4" />
@@ -58,12 +58,16 @@ const roomsData = [
     id: 201,
     title: "Habitación 201",
     guest: "Maria Garcia",
+    phone: "+54 9 11 8765-4321",
     statusText: "Acomodada",
     statusColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
     date: "24 Ene - 27 Ene (3 noches)",
-    occupancy: "1 Adulto",
     progress: 33,
     progressColor: "[&>div]:bg-cyan-500",
+    payment: {
+      status: "Pagado",
+      color: "text-green-400"
+    },
     action: {
       text: "Ver check-in",
     }
@@ -77,7 +81,7 @@ const roomsData = [
     details: "Revisión de plomería",
     detailsIcon: <Wrench className="mr-2 h-4 w-4" />,
     payment: {
-      status: "Confirmado",
+      status: "Pagado",
       color: "text-green-400"
     },
     action: {
@@ -153,10 +157,16 @@ export default function RoomsDashboard() {
                   <span>{room.date}</span>
                 </div>
               )}
-              {room.occupancy && (
+              {room.guest && !['Próxima Reserva', 'Reservada', 'Mantenimiento'].includes(room.guest) && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <User className="mr-2 h-4 w-4" />
-                  <span>{room.occupancy}</span>
+                  <span>{room.guest}</span>
+                </div>
+              )}
+              {room.phone && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Phone className="mr-2 h-4 w-4" />
+                  <span>{room.phone}</span>
                 </div>
               )}
               {room.mainText && (
