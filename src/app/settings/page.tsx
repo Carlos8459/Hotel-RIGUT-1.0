@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LayoutGrid, Calendar, Users, Settings, Wrench, User as UserIcon, BarChart2 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -33,21 +33,18 @@ export default function SettingsPage() {
                 <h1 className="text-2xl font-bold">Ajustes</h1>
             </header>
 
-            <main className="max-w-2xl mx-auto space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Configuración de Habitaciones</CardTitle>
-                        <CardDescription>Administra los precios y otros detalles de las habitaciones.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Button asChild>
-                           <Link href="/settings/rooms">
-                               <Wrench className="mr-2 h-4 w-4" />
-                               Habitaciones
-                           </Link>
-                       </Button>
-                    </CardContent>
-                </Card>
+            <main className="max-w-2xl mx-auto space-y-4">
+                <Link href="/settings/rooms" className="block w-full">
+                    <Card className="hover:border-primary transition-colors cursor-pointer">
+                        <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                            <Wrench className="h-6 w-6 text-muted-foreground" />
+                            <div>
+                                <CardTitle className="text-lg">Configuración de Habitaciones</CardTitle>
+                                <CardDescription>Administra los precios y otros detalles de las habitaciones.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
 
                 <Link href="/settings/account" className="block w-full">
                     <Card className="hover:border-primary transition-colors cursor-pointer">
