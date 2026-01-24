@@ -248,6 +248,25 @@
         "messageTemplate",
         "isEnabled"
       ]
+    },
+    "ConsumptionItem": {
+      "title": "Consumption Item",
+      "type": "object",
+      "description": "Represents a product or service available for extra consumption.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the item (e.g., 'Gaseosa')."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the item."
+        }
+      },
+      "required": [
+        "name",
+        "price"
+      ]
     }
   },
   "auth": {
@@ -285,6 +304,12 @@
         "$ref": "#/backend/entities/WhatsappConfig"
       },
       "description": "Stores general application settings. The document ID should be descriptive, e.g., 'whatsapp_config'."
+    },
+    "/consumption_items/{itemId}": {
+      "schema": {
+        "$ref": "#/backend/entities/ConsumptionItem"
+      },
+      "description": "Stores all available items for extra consumption."
     }
   }
 }

@@ -12,6 +12,12 @@ export type ExtraConsumption = {
   price: number;
 };
 
+export type ConsumptionItem = {
+    id: string;
+    name: string;
+    price: number;
+};
+
 export type Reservation = {
   id: string;
   guestName: string;

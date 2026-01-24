@@ -50,10 +50,10 @@ export default function SettingsPage() {
                 <Link href="/settings/rooms" className="block w-full">
                     <Card className="hover:border-primary transition-colors cursor-pointer">
                         <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                            <Wrench className="h-6 w-6 text-muted-foreground" />
+                            <Settings className="h-6 w-6 text-muted-foreground" />
                             <div>
-                                <CardTitle className="text-lg">Configuración de Habitaciones</CardTitle>
-                                <CardDescription>Administra los precios y otros detalles de las habitaciones.</CardDescription>
+                                <CardTitle className="text-lg">Configuración</CardTitle>
+                                <CardDescription>Administra habitaciones y consumos extras.</CardDescription>
                             </div>
                         </CardHeader>
                     </Card>

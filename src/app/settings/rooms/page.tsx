@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, PlusCircle, Trash2, Package, Edit, DollarSign } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -43,7 +43,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import type { Room } from '@/lib/types';
+import type { Room, ConsumptionItem } from '@/lib/types';
 
 
 type EditableRoom = Room & { originalPrice: number; originalType: string; originalStatus: string; };
@@ -59,6 +59,11 @@ const newRoomSchema = z.object({
   type: z.enum(["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"]),
 });
 
+const consumptionItemSchema = z.object({
+  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
+  price: z.coerce.number().positive({ message: 'El precio debe ser un número positivo.' }),
+});
+
 
 export default function RoomSettingsPage() {
     const { user, isUserLoading } = useUser();
@@ -66,31 +71,44 @@ export default function RoomSettingsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    // User Profile
     const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
 
+    // Rooms Data
     const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
-    const { data: roomsData, isLoading: roomsLoading, error: roomsError } = useCollection<Omit<Room, 'id'>>(roomsCollection);
+    const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
 
+    // Consumption Items Data
+    const consumptionItemsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'consumption_items') : null, [firestore]);
+    const { data: consumptionItemsData, isLoading: consumptionItemsLoading } = useCollection<Omit<ConsumptionItem, 'id'>>(consumptionItemsCollection);
+
+    // Rooms State
     const [editableRooms, setEditableRooms] = useState<EditableRoom[]>([]);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSavingRooms, setIsSavingRooms] = useState(false);
     const [isAddRoomDialogOpen, setIsAddRoomDialogOpen] = useState(false);
     
-    const form = useForm<z.infer<typeof newRoomSchema>>({
+    // Consumption Items State
+    const [isConsumptionDialogOpen, setIsConsumptionDialogOpen] = useState(false);
+    const [editingConsumptionItem, setEditingConsumptionItem] = useState<ConsumptionItem | null>(null);
+
+
+    // --- Forms ---
+    const roomForm = useForm<z.infer<typeof newRoomSchema>>({
         resolver: zodResolver(newRoomSchema),
-        defaultValues: {
-            id: "",
-            title: "",
-            price: 0,
-            type: "Unipersonal",
-        },
+        defaultValues: { id: "", title: "", price: 0, type: "Unipersonal" },
     });
 
+    const consumptionForm = useForm<z.infer<typeof consumptionItemSchema>>({
+        resolver: zodResolver(consumptionItemSchema),
+        defaultValues: { name: "", price: 0 },
+    });
+    
+
+    // --- Auth & Permissions ---
     useEffect(() => {
-        if (!isUserLoading && !user) {
-            router.push('/');
-        }
-         if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+        if (!isUserLoading && !user) router.push('/');
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
             toast({
                 title: "Acceso Denegado",
                 description: "No tienes permiso para acceder a esta página.",
@@ -103,113 +121,92 @@ export default function RoomSettingsPage() {
     useEffect(() => {
         if (roomsData) {
             const sortedRooms = [...roomsData].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
-            setEditableRooms(
-                sortedRooms.map(room => ({
-                    ...room,
-                    id: room.id,
-                    originalPrice: room.price,
-                    originalType: room.type,
-                    originalStatus: room.status,
-                }))
-            );
+            setEditableRooms(sortedRooms.map(room => ({ ...room, id: room.id, originalPrice: room.price, originalType: room.type, originalStatus: room.status, })));
         }
     }, [roomsData]);
 
+
+    // --- Room Management ---
     const handleRoomChange = (id: string, field: keyof Room, value: string | number) => {
-        setEditableRooms(prev => 
-            prev.map(room => 
-                room.id === id ? { ...room, [field]: value } : room
-            )
-        );
+        setEditableRooms(prev => prev.map(room => room.id === id ? { ...room, [field]: value } : room));
     };
 
     const handleSaveChanges = () => {
         if (!firestore) return;
-        setIsSaving(true);
-        
-        const changedRooms = editableRooms.filter(room => 
-            room.price !== room.originalPrice || 
-            room.type !== room.originalType || 
-            room.status !== room.originalStatus
-        );
+        setIsSavingRooms(true);
+        const changedRooms = editableRooms.filter(room => room.price !== room.originalPrice || room.type !== room.originalType || room.status !== room.originalStatus);
 
         if (changedRooms.length === 0) {
-            toast({
-                title: "Sin Cambios",
-                description: "No se detectaron modificaciones para guardar.",
-            });
-            setIsSaving(false);
+            toast({ title: "Sin Cambios", description: "No se detectaron modificaciones para guardar." });
+            setIsSavingRooms(false);
             return;
         }
 
-        const promises = changedRooms.map(room => {
+        changedRooms.forEach(room => {
             const roomDocRef = doc(firestore, 'rooms', room.id);
-            const dataToUpdate = {
-                price: room.price,
-                type: room.type,
-                status: room.status,
-            };
-            // Using updateDoc and returning the promise
-            return updateDocumentNonBlocking(roomDocRef, dataToUpdate);
+            const dataToUpdate = { price: room.price, type: room.type, status: room.status };
+            updateDocumentNonBlocking(roomDocRef, dataToUpdate);
         });
 
-        // We aren't really waiting for promises here due to non-blocking nature
-        // but this structure is useful if we ever switch back.
-        toast({
-            title: "Cambios Guardados",
-            description: `Se han actualizado ${changedRooms.length} habitacion(es).`,
-        });
-        setIsSaving(false);
+        toast({ title: "Cambios Guardados", description: `Se han actualizado ${changedRooms.length} habitacion(es).` });
+        setIsSavingRooms(false);
     };
     
     const onAddRoomSubmit = (values: z.infer<typeof newRoomSchema>) => {
-        if (!firestore) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'No se pudo conectar a la base de datos.',
-            });
-            return;
-        }
-
+        if (!firestore) return;
         const newRoomRef = doc(firestore, 'rooms', values.id);
-        const newRoomData = {
-            title: values.title,
-            price: values.price,
-            type: values.type,
-            status: 'Disponible'
-        };
-        
+        const newRoomData = { title: values.title, price: values.price, type: values.type, status: 'Disponible' };
         setDocumentNonBlocking(newRoomRef, newRoomData, { merge: false });
-
-        toast({
-            title: "Habitación Agregada",
-            description: `La habitación ${values.title} ha sido creada.`,
-        });
+        toast({ title: "Habitación Agregada", description: `La habitación ${values.title} ha sido creada.` });
         setIsAddRoomDialogOpen(false);
-        form.reset();
+        roomForm.reset();
     };
 
     const handleDeleteRoom = (roomId: string) => {
         if (!firestore) return;
         deleteDocumentNonBlocking(doc(firestore, 'rooms', roomId));
-        toast({
-            title: 'Habitación Eliminada',
-            description: 'La habitación ha sido eliminada permanentemente.',
-        });
+        toast({ title: 'Habitación Eliminada', description: 'La habitación ha sido eliminada permanentemente.' });
     };
 
-    if (isUserLoading || isUserProfileLoading) {
-        return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-                <p>Cargando y verificando permisos...</p>
-            </div>
-        );
-    }
 
-    if (!user || !userProfile || userProfile.role !== 'Admin') {
-        return null;
+    // --- Consumption Item Management ---
+    const handleOpenConsumptionDialog = (item: ConsumptionItem | null) => {
+        setEditingConsumptionItem(item);
+        if (item) {
+            consumptionForm.reset({ name: item.name, price: item.price });
+        } else {
+            consumptionForm.reset({ name: '', price: 0 });
+        }
+        setIsConsumptionDialogOpen(true);
     }
+    
+    const onConsumptionSubmit = (values: z.infer<typeof consumptionItemSchema>) => {
+        if (!firestore) return;
+
+        if (editingConsumptionItem) { // Update
+            const itemDocRef = doc(firestore, 'consumption_items', editingConsumptionItem.id);
+            updateDocumentNonBlocking(itemDocRef, values);
+            toast({ title: "Consumo Actualizado", description: `Se ha actualizado ${values.name}.` });
+        } else { // Create
+            const itemsColRef = collection(firestore, 'consumption_items');
+            addDocumentNonBlocking(itemsColRef, values);
+            toast({ title: "Consumo Agregado", description: `Se ha creado ${values.name}.` });
+        }
+        setIsConsumptionDialogOpen(false);
+        setEditingConsumptionItem(null);
+    };
+
+    const handleDeleteConsumptionItem = (item: ConsumptionItem) => {
+        if (!firestore) return;
+        deleteDocumentNonBlocking(doc(firestore, 'consumption_items', item.id));
+        toast({ title: 'Consumo Eliminado', description: `${item.name} ha sido eliminado.` });
+    };
+
+    // --- Loading / Permissions ---
+    if (isUserLoading || isUserProfileLoading) {
+        return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8"><p>Cargando y verificando permisos...</p></div>;
+    }
+    if (!user || !userProfile || userProfile.role !== 'Admin') return null;
     
     const roomTypes = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
     const roomStatuses = ["Disponible", "Mantenimiento"];
@@ -222,156 +219,101 @@ export default function RoomSettingsPage() {
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Volver</span>
                 </Button>
-                <h1 className="text-2xl font-bold">Configuración de Habitaciones</h1>
+                <h1 className="text-2xl font-bold">Configuración</h1>
             </header>
 
             <main className="max-w-4xl mx-auto space-y-8">
+                {/* Rooms Management Card */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>Administrar Habitaciones</CardTitle>
                              <Dialog open={isAddRoomDialogOpen} onOpenChange={setIsAddRoomDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline">
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Agregar Habitación
-                                    </Button>
-                                </DialogTrigger>
+                                <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Agregar Habitación</Button></DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
-                                    <DialogHeader>
-                                        <DialogTitle>Agregar Nueva Habitación</DialogTitle>
-                                        <DialogDescription>
-                                            Define los detalles de la nueva habitación. El ID debe ser único.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onAddRoomSubmit)} className="space-y-4 pt-4">
-                                            <FormField control={form.control} name="id" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>ID de Habitación</FormLabel>
-                                                    <FormControl><Input placeholder="Ej: 101" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name="title" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nombre / Título</FormLabel>
-                                                    <FormControl><Input placeholder="Ej: Habitación 101" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                             <FormField control={form.control} name="price" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Precio por Noche (C$)</FormLabel>
-                                                    <FormControl><Input type="number" placeholder="Ej: 500" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name="type" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Tipo de Habitación</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {roomTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <DialogFooter>
-                                                <Button type="submit">Crear Habitación</Button>
-                                            </DialogFooter>
+                                    <DialogHeader><DialogTitle>Agregar Nueva Habitación</DialogTitle><DialogDescription>Define los detalles de la nueva habitación. El ID debe ser único.</DialogDescription></DialogHeader>
+                                    <Form {...roomForm}>
+                                        <form onSubmit={roomForm.handleSubmit(onAddRoomSubmit)} className="space-y-4 pt-4">
+                                            <FormField control={roomForm.control} name="id" render={({ field }) => (<FormItem><FormLabel>ID</FormLabel><FormControl><Input placeholder="Ej: 101" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                            <FormField control={roomForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Nombre / Título</FormLabel><FormControl><Input placeholder="Ej: Habitación 101" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                            <FormField control={roomForm.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio (C$)</FormLabel><FormControl><Input type="number" placeholder="Ej: 500" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                            <FormField control={roomForm.control} name="type" render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger></FormControl><SelectContent>{roomTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                            <DialogFooter><Button type="submit">Crear Habitación</Button></DialogFooter>
                                         </form>
                                     </Form>
                                 </DialogContent>
                             </Dialog>
                         </div>
-                        <CardDescription>Ajusta el precio, tipo y estado de cada habitación. Aquí puedes crear nuevas o eliminarlas.</CardDescription>
+                        <CardDescription>Ajusta el precio, tipo y estado de cada habitación.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {roomsLoading ? (
-                            <div className="space-y-4">
-                                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
-                            </div>
-                        ) : roomsError ? (
-                             <p className="text-destructive">Error: {roomsError.message}</p>
-                        ) : (
-                            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                                {editableRooms.map((room) => (
-                                    <div key={room.id} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 p-3 border rounded-lg">
-                                        <div className="sm:col-span-3">
-                                            <Label htmlFor={`title-${room.id}`} className="font-semibold text-base">{room.title}</Label>
-                                        </div>
-                                        <div className="space-y-2 sm:col-span-2">
-                                            <Label htmlFor={`price-${room.id}`}>Precio (C$)</Label>
-                                            <Input 
-                                                id={`price-${room.id}`} 
-                                                type="number" 
-                                                value={room.price}
-                                                onChange={(e) => handleRoomChange(room.id, 'price', parseInt(e.target.value, 10) || 0)}
-                                            />
-                                        </div>
-                                        <div className="space-y-2 sm:col-span-3">
-                                            <Label htmlFor={`type-${room.id}`}>Tipo</Label>
-                                            <Select value={room.type} onValueChange={(value) => handleRoomChange(room.id, 'type', value)}>
-                                                <SelectTrigger id={`type-${room.id}`}><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {roomTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                         <div className="space-y-2 sm:col-span-3">
-                                            <Label htmlFor={`status-${room.id}`}>Estado</Label>
-                                            <Select value={room.status} onValueChange={(value) => handleRoomChange(room.id, 'status', value)}>
-                                                <SelectTrigger id={`status-${room.id}`}><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {roomStatuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="sm:col-span-1 flex justify-end">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Eliminar habitación?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta acción es permanente y no se puede deshacer. ¿Estás seguro de que quieres eliminar la habitación {room.title}?
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            className="bg-destructive hover:bg-destructive/90"
-                                                            onClick={() => handleDeleteRoom(room.id)}
-                                                        >
-                                                            Eliminar
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        {roomsLoading ? <div className="space-y-4">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+                        : <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">{editableRooms.map((room) => (
+                            <div key={room.id} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3 p-3 border rounded-lg">
+                                <div className="sm:col-span-3"><Label htmlFor={`title-${room.id}`} className="font-semibold text-base">{room.title}</Label></div>
+                                <div className="space-y-2 sm:col-span-2"><Label htmlFor={`price-${room.id}`}>Precio (C$)</Label><Input id={`price-${room.id}`} type="number" value={room.price} onChange={(e) => handleRoomChange(room.id, 'price', parseInt(e.target.value, 10) || 0)} /></div>
+                                <div className="space-y-2 sm:col-span-3"><Label htmlFor={`type-${room.id}`}>Tipo</Label><Select value={room.type} onValueChange={(value) => handleRoomChange(room.id, 'type', value)}><SelectTrigger id={`type-${room.id}`}><SelectValue /></SelectTrigger><SelectContent>{roomTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent></Select></div>
+                                <div className="space-y-2 sm:col-span-3"><Label htmlFor={`status-${room.id}`}>Estado</Label><Select value={room.status} onValueChange={(value) => handleRoomChange(room.id, 'status', value)}><SelectTrigger id={`status-${room.id}`}><SelectValue /></SelectTrigger><SelectContent>{roomStatuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent></Select></div>
+                                <div className="sm:col-span-1 flex justify-end">
+                                    <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
+                                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar habitación?</AlertDialogTitle><AlertDialogDescription>Esta acción es permanente. ¿Seguro que quieres eliminar {room.title}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteRoom(room.id)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </div>))}
+                        </div>}
                     </CardContent>
+                    <CardContent className="flex justify-end"><Button onClick={handleSaveChanges} disabled={isSavingRooms}><Save className="mr-2 h-4 w-4" />{isSavingRooms ? 'Guardando...' : 'Guardar Cambios'}</Button></CardContent>
                 </Card>
 
-                <div className="flex justify-end">
-                    <Button onClick={handleSaveChanges} disabled={isSaving}>
-                        <Save className="mr-2 h-4 w-4" />
-                        {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                    </Button>
-                </div>
+                {/* Consumption Items Management Card */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Administrar Consumos Extras</CardTitle>
+                            <Button variant="outline" onClick={() => handleOpenConsumptionDialog(null)}><PlusCircle className="mr-2 h-4 w-4" />Agregar Consumo</Button>
+                        </div>
+                        <CardDescription>Añade, edita o elimina los productos y servicios disponibles para los huéspedes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {consumptionItemsLoading ? <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                        : <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">{consumptionItemsData?.map((item) => (
+                            <div key={item.id} className="grid grid-cols-12 items-center gap-4 p-2 border rounded-lg">
+                                <div className="col-span-1 flex items-center justify-center"><Package className="h-5 w-5 text-muted-foreground"/></div>
+                                <div className="col-span-5 font-medium">{item.name}</div>
+                                <div className="col-span-3 flex items-center"><DollarSign className="h-4 w-4 mr-1 text-muted-foreground"/>{item.price.toFixed(2)}</div>
+                                <div className="col-span-3 flex justify-end gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => handleOpenConsumptionDialog(item as ConsumptionItem)}><Edit className="h-4 w-4"/></Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button></AlertDialogTrigger>
+                                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Consumo?</AlertDialogTitle><AlertDialogDescription>Esta acción es permanente. ¿Seguro que quieres eliminar {item.name}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteConsumptionItem(item as ConsumptionItem)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </div>
+                            ))}
+                        </div>}
+                    </CardContent>
+                </Card>
             </main>
+
+            {/* Consumption Item Add/Edit Dialog */}
+            <Dialog open={isConsumptionDialogOpen} onOpenChange={setIsConsumptionDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{editingConsumptionItem ? 'Editar' : 'Agregar'} Consumo</DialogTitle>
+                        <DialogDescription>Completa los detalles del producto o servicio.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...consumptionForm}>
+                        <form onSubmit={consumptionForm.handleSubmit(onConsumptionSubmit)} className="space-y-4 pt-4">
+                            <FormField control={consumptionForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Ej: Gaseosa" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={consumptionForm.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio (C$)</FormLabel><FormControl><Input type="number" placeholder="Ej: 30" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsConsumptionDialogOpen(false)}>Cancelar</Button>
+                                <Button type="submit">{editingConsumptionItem ? 'Guardar Cambios' : 'Crear Consumo'}</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

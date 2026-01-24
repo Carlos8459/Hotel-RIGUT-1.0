@@ -62,5 +62,12 @@ service cloud.firestore {
       // Only Admins can read and write settings.
       allow read, write: if isAdmin();
     }
+
+     match /consumption_items/{itemId} {
+      // Admins can manage the items.
+      allow write: if isAdmin();
+      // Any signed-in user can read the list of items to add them to a reservation.
+      allow read: if isSignedIn();
+    }
   }
 }
