@@ -43,7 +43,16 @@ import {
   BookCheck,
   TrendingUp,
   Wrench,
+  ChevronDown,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 function DateRangePicker({
@@ -233,7 +242,24 @@ export default function StatsPage() {
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-        <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                      Ver más
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                  <DropdownMenuLabel>Más Estadísticas</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                      <Link href="/stats/rooms">Estadísticas de Habitaciones</Link>
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         <div className="flex items-center justify-start sm:justify-end gap-2 flex-wrap">
             <DateRangePicker date={dateRange} onDateChange={setDateRange} />
             <Button variant="outline" size="sm" onClick={setToday}>Hoy</Button>
