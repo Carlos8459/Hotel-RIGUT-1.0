@@ -277,6 +277,60 @@
         "price",
         "icon"
       ]
+    },
+    "Expense": {
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents a hotel expense record.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the expense."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the expense."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the expense was incurred."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the expense.",
+          "enum": [
+            "Mantenimiento",
+            "Salarios",
+            "Suministros",
+            "Servicios Públicos",
+            "Marketing",
+            "Otros"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the expense was logged."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who logged the expense."
+        },
+        "creatorName": {
+          "type": "string",
+          "description": "Name of the user who logged the expense."
+        }
+      },
+      "required": [
+        "description",
+        "amount",
+        "date",
+        "category",
+        "createdAt",
+        "createdBy",
+        "creatorName"
+      ]
     }
   },
   "auth": {
@@ -320,6 +374,12 @@
         "$ref": "#/backend/entities/ConsumptionItem"
       },
       "description": "Stores all available items for extra consumption."
+    },
+    "/expenses/{expenseId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Expense"
+      },
+      "description": "Stores all expense records for the hotel."
     }
   }
 }

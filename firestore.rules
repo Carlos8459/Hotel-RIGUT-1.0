@@ -69,5 +69,12 @@ service cloud.firestore {
       // Any signed-in user can read the list of items to add them to a reservation.
       allow read: if isSignedIn();
     }
+
+    match /expenses/{expenseId} {
+      // Any signed-in user can create and read expenses.
+      allow create, read: if isSignedIn();
+      // Only Admins or the creator can update/delete.
+      allow update, delete: if isAdmin() || resource.data.createdBy == request.auth.uid;
+    }
   }
 }

@@ -62,3 +62,14 @@ export type WhatsappConfig = {
   messageTemplate: string;
   isEnabled: boolean;
 };
+
+export type Expense = {
+    id: string;
+    description: string;
+    amount: number;
+    date: string; // ISO string
+    category: 'Mantenimiento' | 'Salarios' | 'Suministros' | 'Servicios Públicos' | 'Marketing' | 'Otros';
+    createdAt: string; // ISO string
+    createdBy: string; // UID
+    creatorName: string;
+};

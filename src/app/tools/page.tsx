@@ -15,6 +15,7 @@ import {
   BarChart2,
   Wrench,
   ChevronRight,
+  Receipt,
 } from 'lucide-react';
 
 export default function ToolsPage() {
@@ -57,7 +58,20 @@ export default function ToolsPage() {
                     </Card>
                 </Link>
 
-                {/* Future tools can be added here */}
+                <Link href="/expenses" className="block w-full">
+                    <Card className="hover:border-primary transition-colors cursor-pointer">
+                        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-4">
+                            <div className="flex items-center gap-4">
+                                <Receipt className="h-6 w-6 text-muted-foreground" />
+                                <div>
+                                    <CardTitle className="text-lg">Gastos</CardTitle>
+                                    <CardDescription>Registra y lleva un control de los gastos del hotel.</CardDescription>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                    </Card>
+                </Link>
 
             </main>
 
