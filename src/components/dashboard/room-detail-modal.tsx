@@ -333,8 +333,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       <ExtraConsumptionModal
         isOpen={isConsumptionModalOpen}
         onClose={() => setIsConsumptionModalOpen(false)}
-        reservationId={room.reservation?.id}
-        currentConsumptions={room.reservation?.extraConsumptions || []}
+        reservation={room.reservation}
+        roomPrice={room.price}
       />
 
        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

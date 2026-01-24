@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,18 +13,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Minus, X, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
-import { updateDoc, collection } from 'firebase/firestore';
-import { doc } from 'firebase/firestore';
+import { updateDoc, collection, doc } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ExtraConsumption, ConsumptionItem } from '@/lib/types';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
+import type { Reservation, ExtraConsumption, ConsumptionItem } from '@/lib/types';
 
 
 type ExtraConsumptionModalProps = {
-  reservationId: string | undefined;
-  currentConsumptions: ExtraConsumption[];
+  reservation: Reservation | undefined;
+  roomPrice: number;
   isOpen: boolean;
   onClose: () => void;
 };
@@ -42,7 +42,7 @@ const consumptionIcons: { [key: string]: React.ReactNode } = {
     Package: <Package className="h-5 w-5" />,
 };
 
-export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOpen, onClose }: ExtraConsumptionModalProps) {
+export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose }: ExtraConsumptionModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [consumptions, setConsumptions] = useState<ExtraConsumption[]>([]);
@@ -55,6 +55,7 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
     if (consumptionItemsLoading || !isOpen) return;
 
     const availableItems = consumptionItemsData || [];
+    const currentConsumptions = reservation?.extraConsumptions || [];
     
     // Initialize state with a full list of items, merging current consumptions
     const initialItems = availableItems.map(predefined => {
@@ -71,7 +72,7 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
 
     setConsumptions(sortedItems as ExtraConsumption[]);
 
-  }, [isOpen, currentConsumptions, consumptionItemsData, consumptionItemsLoading]);
+  }, [isOpen, reservation, consumptionItemsData, consumptionItemsLoading]);
 
 
   const handleQuantityChange = (itemName: string, delta: number) => {
@@ -85,18 +86,26 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
   };
 
   const handleSaveChanges = async () => {
-    if (!firestore || !reservationId) return;
+    if (!firestore || !reservation) return;
 
-    const resDocRef = doc(firestore, 'reservations', reservationId);
+    const resDocRef = doc(firestore, 'reservations', reservation.id);
     const updatedConsumptions = consumptions
       .filter(c => c.quantity > 0)
       .map(({ name, price, quantity, icon }) => ({ name, price, quantity, icon }));
 
+    const nights = differenceInCalendarDays(parseISO(reservation.checkOutDate), parseISO(reservation.checkInDate));
+    const roomTotal = roomPrice * (nights > 0 ? nights : 1);
+    const consumptionsTotal = updatedConsumptions.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const newTotalAmount = roomTotal + consumptionsTotal;
+
     try {
-      await updateDoc(resDocRef, { extraConsumptions: updatedConsumptions });
+      await updateDoc(resDocRef, { 
+        extraConsumptions: updatedConsumptions,
+        'payment.amount': newTotalAmount,
+       });
       toast({
         title: 'Consumos Actualizados',
-        description: 'Se han guardado los cambios correctamente.',
+        description: 'Se han guardado los cambios y el total ha sido recalculado.',
       });
       onClose();
     } catch (error) {
