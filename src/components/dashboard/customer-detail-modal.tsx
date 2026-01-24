@@ -6,7 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck } from "lucide-react";
+import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck, StickyNote } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";
 import type { Customer, Reservation } from "@/lib/types";
@@ -45,7 +45,7 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
         </DialogHeader>
         <Separator />
         <ScrollArea className="flex-grow min-h-0 px-6">
-            <h3 className="font-semibold text-base mb-4">Historial de Visitas ({customer.visitCount})</h3>
+            <h3 className="font-semibold text-base mb-4 pt-4">Historial de Visitas ({customer.visitCount})</h3>
             <div className="space-y-4 pb-6">
                 {customer.history.map((visit, index) => {
                     const paymentColor = visit.payment?.status === 'Cancelado' ? 'text-green-400' : 'text-red-400';
@@ -80,6 +80,12 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
                                 </span>
                                 </div>
                             )}
+                             {visit.notes && (
+                                <div className="flex items-start pt-2 text-foreground/80 border-t border-dashed mt-2">
+                                    <StickyNote className="mr-2 h-4 w-4 shrink-0 mt-0.5" />
+                                    <p className="text-sm">{visit.notes}</p>
+                                </div>
+                            )}
                         </div>
                     )
                 })}
@@ -89,3 +95,5 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
     </Dialog>
   );
 }
+
+    

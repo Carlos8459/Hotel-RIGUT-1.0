@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home, BarChart2, Wrench, ArrowLeft } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home, BarChart2, Wrench, ArrowLeft, StickyNote } from 'lucide-react';
 import { CustomerDetailModal } from '@/components/dashboard/customer-detail-modal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -59,6 +59,7 @@ export default function CustomersPage() {
       return Object.entries(guestVisits).map(([name, visits]) => {
           const sortedVisits = visits.sort((a, b) => parseISO(b.checkInDate).getTime() - parseISO(a.checkInDate).getTime());
           const latestVisit = sortedVisits[0];
+          const allNotes = sortedVisits.map(v => v.notes).filter((note): note is string => !!note);
           
           return {
               name,
@@ -67,6 +68,7 @@ export default function CustomersPage() {
               lastVisitDate: latestVisit.checkInDate,
               visitCount: visits.length,
               history: sortedVisits,
+              notes: allNotes,
           };
       }).sort((a,b) => a.name.localeCompare(b.name));
 
@@ -231,11 +233,16 @@ export default function CustomersPage() {
                             </div>
                         )}
                     </div>
-                    {filter === 'frequent' && (
-                      <div className="text-sm text-muted-foreground font-medium pr-2">
-                          {customer.visitCount} visitas
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {customer.notes && customer.notes.length > 0 && (
+                            <StickyNote className="h-5 w-5 text-muted-foreground" title="Este cliente tiene notas" />
+                        )}
+                        {filter === 'frequent' && (
+                        <div className="text-sm text-muted-foreground font-medium pr-2">
+                            {customer.visitCount} visitas
+                        </div>
+                        )}
+                    </div>
                 </Card>
             ))
         ) : (
@@ -291,3 +298,5 @@ export default function CustomersPage() {
     </div>
   );
 }
+
+    

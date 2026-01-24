@@ -34,10 +34,11 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, FirestorePermissionError, errorEmitter } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const reservationFormSchema = z.object({
@@ -58,6 +59,7 @@ const reservationFormSchema = z.object({
   }),
   roomId: z.string({ required_error: 'Debe seleccionar una habitación.' }),
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
+  notes: z.string().optional(),
 }).refine(data => data.checkOutDate > data.checkInDate, {
     message: "La fecha de check-out debe ser posterior a la de check-in.",
     path: ["checkOutDate"],
@@ -86,6 +88,7 @@ export default function NewReservationPage() {
       cedula: '',
       phone: '',
       vehicle: undefined,
+      notes: '',
     },
   });
 
@@ -138,6 +141,7 @@ export default function NewReservationPage() {
       checkOutDate: data.checkOutDate.toISOString(),
       roomId: data.roomId,
       ...(data.vehicle && { vehicle: data.vehicle }),
+      ...(data.notes && { notes: data.notes }),
       status: 'Checked-In' as const,
       payment: {
         status: 'Pendiente' as const,
@@ -430,6 +434,27 @@ export default function NewReservationPage() {
               )}
             />
 
+             <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+                  <div className="relative flex items-start">
+                    <StickyNote className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Textarea
+                        placeholder="Ej: Cliente prefiere habitaciones silenciosas, alérgico a..."
+                        className="pl-10 resize-none bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Button
               type="submit"
               className="w-full"
@@ -443,3 +468,5 @@ export default function NewReservationPage() {
     </div>
   );
 }
+
+    

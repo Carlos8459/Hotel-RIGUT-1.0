@@ -37,6 +37,7 @@ export type Reservation = {
   createdAt: string; // ISO string
   createdBy: string; // UID
   extraConsumptions?: ExtraConsumption[];
+  notes?: string;
 };
 
 export type Customer = {
@@ -46,6 +47,7 @@ export type Customer = {
   lastVisitDate: string; // ISO string
   visitCount: number;
   history: Reservation[];
+  notes?: string[];
 };
 
 export type Notification = {
@@ -81,3 +83,5 @@ export type Expense = {
     createdBy: string; // UID
     creatorName: string;
 };
+
+    
