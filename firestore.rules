@@ -38,8 +38,12 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      // Any signed-in user can create, read, update, or delete any reservation.
-      allow read, write: if isSignedIn();
+      // Any signed-in user can read reservations.
+      allow read: if isSignedIn();
+      // A user can create a reservation if the 'createdBy' field matches their UID.
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+      // The user who created the reservation or an admin can update or delete it.
+      allow update, delete: if isSignedIn() && (get(/databases/$(database)/documents/reservations/$(reservationId)).data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /notifications/{notificationId} {
