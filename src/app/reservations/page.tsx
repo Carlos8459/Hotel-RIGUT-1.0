@@ -16,6 +16,7 @@ import {
   BarChart2,
   Wrench,
   Home,
+  Camera,
 } from 'lucide-react';
 import { format, parseISO, isSameDay, startOfToday, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -181,15 +182,23 @@ export default function ReservationsPage() {
       <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 mb-4 px-4 sm:px-6 lg:px-8 py-4 border-b">
         <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Reservas</h1>
-            <Button
-            asChild
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-            <Link href="/new-reservation">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Nueva
-            </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="icon">
+                <Link href="/reservations/scan">
+                  <Camera className="h-5 w-5" />
+                  <span className="sr-only">Escanear Cédula</span>
+                </Link>
+              </Button>
+              <Button
+              asChild
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+              <Link href="/new-reservation">
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Nueva
+              </Link>
+              </Button>
+            </div>
         </div>
       </header>
 

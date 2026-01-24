@@ -364,6 +364,38 @@
         "createdBy",
         "creatorName"
       ]
+    },
+    "CustomerProfile": {
+      "title": "Customer Profile",
+      "type": "object",
+      "description": "Represents a hotel customer with their personal information and scanned ID.",
+      "properties": {
+        "guestName": {
+          "type": "string",
+          "description": "Full name of the customer."
+        },
+        "cedula": {
+          "type": "string",
+          "description": "The customer's ID card number (cédula)."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The customer's phone number."
+        },
+        "idCardImage": {
+          "type": "string",
+          "description": "Data URI of the scanned ID card image."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "guestName",
+        "cedula",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -419,8 +451,12 @@
         "$ref": "#/backend/entities/Expense"
       },
       "description": "Stores all expense records for the hotel."
+    },
+    "/customers/{customerId}": {
+      "schema": {
+        "$ref": "#/backend/entities/CustomerProfile"
+      },
+      "description": "Stores customer profiles, including scanned ID cards. The document ID should be the cedula number."
     }
   }
 }
-
-    

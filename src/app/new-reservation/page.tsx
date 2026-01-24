@@ -1,18 +1,17 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { collection, doc, addDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -35,7 +34,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,12 +64,13 @@ const reservationFormSchema = z.object({
     path: ["checkOutDate"],
 });
 
-export default function NewReservationPage() {
+function NewReservationFormComponent() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
 
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
@@ -95,6 +95,17 @@ export default function NewReservationPage() {
   const { watch } = form;
   const checkInDate = watch("checkInDate");
   const checkOutDate = watch("checkOutDate");
+
+  useEffect(() => {
+    const prefillGuestName = searchParams.get('guestName');
+    const prefillCedula = searchParams.get('cedula');
+    if (prefillGuestName) {
+        form.setValue('guestName', prefillGuestName, { shouldValidate: true });
+    }
+    if (prefillCedula) {
+        form.setValue('cedula', prefillCedula, { shouldValidate: true });
+    }
+  }, [searchParams, form]);
 
 
   const availableRooms = useMemo(() => {
@@ -457,4 +468,12 @@ export default function NewReservationPage() {
       </main>
     </div>
   );
+}
+
+export default function NewReservationPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen flex-col items-center justify-center bg-background p-8"><p>Cargando...</p></div>}>
+      <NewReservationFormComponent />
+    </Suspense>
+  )
 }

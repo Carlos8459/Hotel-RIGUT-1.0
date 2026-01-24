@@ -84,4 +84,12 @@ export type Expense = {
     creatorName: string;
 };
 
+export type CustomerProfile = {
+  id: string;
+  guestName: string;
+  cedula: string;
+  phone?: string;
+  idCardImage?: string;
+  createdAt: string; // ISO string
+};
     
