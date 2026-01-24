@@ -139,61 +139,7 @@ export default function WhatsappAutomationPage() {
                 </div>
             </header>
             
-            <main className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-8">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> Automatización</CardTitle>
-                            <CardDescription>
-                                Activa el envío automático de mensajes un día después del check-out del cliente.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             {configLoading ? <Skeleton className="h-10 w-full" /> : (
-                                <div className="flex items-center space-x-4 rounded-md border p-4">
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-medium leading-none">
-                                            {isAutomationEnabled ? 'Automatización Activada' : 'Automatización Desactivada'}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Controla el envío automático de mensajes.
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={isAutomationEnabled}
-                                        onCheckedChange={setIsAutomationEnabled}
-                                    />
-                                </div>
-                             )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Mensaje Predeterminado</CardTitle>
-                            <CardDescription>
-                                Edita el mensaje que se enviará. Puedes usar {'`{guestName}`'} y {'`{hotelName}`'}.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             {configLoading ? <Skeleton className="h-32 w-full" /> : (
-                                <Textarea
-                                    value={messageTemplate}
-                                    onChange={(e) => setMessageTemplate(e.target.value)}
-                                    className="min-h-[150px]"
-                                    placeholder="Escribe tu mensaje aquí..."
-                                />
-                             )}
-                        </CardContent>
-                        <CardFooter>
-                            <Button onClick={handleSaveSettings} disabled={isSaving || configLoading}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                {isSaving ? 'Guardando...' : 'Guardar Ajustes'}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
-                
+            <main className="max-w-3xl mx-auto space-y-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Mensajes Pendientes</CardTitle>
@@ -228,6 +174,58 @@ export default function WhatsappAutomationPage() {
                                 <p>No hay mensajes pendientes de ayer.</p>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Mensaje Predeterminado</CardTitle>
+                        <CardDescription>
+                            Edita el mensaje que se enviará. Puedes usar {'`{guestName}`'} y {'`{hotelName}`'}.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         {configLoading ? <Skeleton className="h-32 w-full" /> : (
+                            <Textarea
+                                value={messageTemplate}
+                                onChange={(e) => setMessageTemplate(e.target.value)}
+                                className="min-h-[150px]"
+                                placeholder="Escribe tu mensaje aquí..."
+                            />
+                         )}
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSaveSettings} disabled={isSaving || configLoading}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            {isSaving ? 'Guardando...' : 'Guardar Ajustes'}
+                        </Button>
+                    </CardFooter>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> Automatización</CardTitle>
+                        <CardDescription>
+                            Activa el envío automático de mensajes un día después del check-out del cliente.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         {configLoading ? <Skeleton className="h-10 w-full" /> : (
+                            <div className="flex items-center space-x-4 rounded-md border p-4">
+                                <div className="flex-1 space-y-1">
+                                    <p className="text-sm font-medium leading-none">
+                                        {isAutomationEnabled ? 'Automatización Activada' : 'Automatización Desactivada'}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Controla el envío automático de mensajes.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={isAutomationEnabled}
+                                    onCheckedChange={setIsAutomationEnabled}
+                                />
+                            </div>
+                         )}
                     </CardContent>
                 </Card>
             </main>
