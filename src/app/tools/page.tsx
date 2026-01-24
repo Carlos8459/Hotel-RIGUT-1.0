@@ -57,7 +57,7 @@ export default function ToolsPage() {
                                 <BookUser className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg">Directorio de Clientes</CardTitle>
+                                <CardTitle className="text-lg">Clientes</CardTitle>
                                 <CardDescription>Busca y revisa el historial de visitas de tus clientes.</CardDescription>
                             </div>
                         </CardHeader>
@@ -77,22 +77,6 @@ export default function ToolsPage() {
                         </CardHeader>
                     </Card>
                 </Link>
-
-                {userProfile?.role === 'Admin' && (
-                    <Link href="/admin/users" className="block w-full">
-                        <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                            <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
-                                <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
-                                    <UserCog className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-lg">Gestionar Socios</CardTitle>
-                                    <CardDescription>Añade, elimina y gestiona los roles de los socios.</CardDescription>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    </Link>
-                )}
 
             </main>
 
