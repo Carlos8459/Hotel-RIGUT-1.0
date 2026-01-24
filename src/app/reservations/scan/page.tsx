@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 import { Button } from '@/components/ui/button';
 import { Camera, ArrowLeft, LoaderCircle, AlertCircle, RefreshCw } from 'lucide-react';
@@ -13,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export default function ScanIdPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -112,7 +116,7 @@ export default function ScanIdPage() {
             const segundoNombre = parts[5] || '';
     
             const toTitleCase = (str: string) => {
-                if (!str) return '';
+                if (!str || str.trim() === '') return '';
                 return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
             };
 
@@ -124,8 +128,14 @@ export default function ScanIdPage() {
             ].filter(Boolean).join(' ');
 
             const formatCedula = (c: string) => {
-                if (c && c.length === 14) {
-                    return `${c.substring(0, 3)}-${c.substring(3, 9)}-${c.substring(9)}`;
+                 if (c && c.length >= 13) { // Ensure it has enough characters
+                    const cleanCedula = c.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (cleanCedula.length === 14) { // Format for 001-000000-0000A
+                        return `${cleanCedula.substring(0, 3)}-${cleanCedula.substring(3, 9)}-${cleanCedula.substring(9)}`;
+                    }
+                    if (cleanCedula.length === 13) { // Format for 001-231005-1005B style from QR
+                         return `${cleanCedula.substring(0, 3)}-${cleanCedula.substring(3, 9)}-${cleanCedula.substring(9)}`;
+                    }
                 }
                 return c;
             };
@@ -134,6 +144,18 @@ export default function ScanIdPage() {
     
             if (!cedula || !guestName.trim()) {
                  throw new Error("No se pudo extraer la información requerida del código QR.");
+            }
+            
+            // Save customer profile non-blockingly
+            if (firestore) {
+                const customerId = cedula.replace(/-/g, '');
+                const customerDocRef = doc(firestore, 'customers', customerId);
+
+                setDocumentNonBlocking(customerDocRef, {
+                    guestName: guestName,
+                    cedula: cedula,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
             }
     
             toast({
