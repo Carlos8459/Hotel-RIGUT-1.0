@@ -24,6 +24,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -55,6 +56,8 @@ import {
   Check,
   BarChart2,
   Bell,
+  LogIn,
+  TrendingUp
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -161,12 +164,45 @@ export default function RoomsDashboard() {
   }, [roomsData, reservationsData, selectedDate]);
 
 
-  const ocupadasCount = processedRooms.filter(
+  const ocupadasCount = useMemo(() => processedRooms.filter(
     (room) => room.statusText === 'Ocupada'
-  ).length;
-  const disponiblesCount = processedRooms.filter(
+  ).length, [processedRooms]);
+
+  const disponiblesCount = useMemo(() => processedRooms.filter(
     (room) => room.statusText === 'Disponible'
-  ).length;
+  ).length, [processedRooms]);
+
+  const dailyStats = useMemo(() => {
+    if (!reservationsData || !roomsData || !selectedDate) {
+      return {
+        checkIns: 0,
+        checkOuts: 0,
+        occupancy: 0,
+      };
+    }
+
+    const startOfSelected = startOfDay(selectedDate);
+
+    const checkInsToday = reservationsData.filter(res => {
+      if (res.status === 'Cancelled') return false;
+      const checkIn = startOfDay(parseISO(res.checkInDate));
+      return isSameDay(checkIn, startOfSelected);
+    }).length;
+
+    const checkOutsToday = reservationsData.filter(res => {
+      if (res.status !== 'Checked-In') return false;
+      const checkOut = startOfDay(parseISO(res.checkOutDate));
+      return isSameDay(checkOut, startOfSelected);
+    }).length;
+    
+    const occupancy = roomsData.length > 0 ? (ocupadasCount / roomsData.length) * 100 : 0;
+
+    return {
+      checkIns: checkInsToday,
+      checkOuts: checkOutsToday,
+      occupancy: occupancy,
+    };
+  }, [reservationsData, roomsData, selectedDate, ocupadasCount]);
 
 
   if (isUserLoading || !user || roomsLoading || reservationsLoading) {
@@ -261,17 +297,59 @@ export default function RoomsDashboard() {
               ))}
             </div>
         </div>
-
-        <div className="flex items-center gap-6 mb-6">
-          <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-400"></div>
-              <p className="text-sm font-medium"><span className="font-bold text-foreground">{disponiblesCount}</span> <span className="text-muted-foreground">Disponibles</span></p>
-          </div>
-          <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-red-400"></div>
-              <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
-          </div>
+        
+        <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">
+                ¡Bienvenido, {userProfile?.username || 'Usuario'}!
+            </h2>
+            <p className="text-muted-foreground">
+                Aquí tienes un resumen del día: {format(selectedDate, "eeee, d 'de' LLLL", { locale: es })}.
+            </p>
         </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Ocupación</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{dailyStats.occupancy.toFixed(0)}%</div>
+                    <p className="text-xs text-muted-foreground">{ocupadasCount} de {roomsData?.length || 0} habitaciones</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Habitaciones Disponibles</CardTitle>
+                    <Check className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{disponiblesCount}</div>
+                    <p className="text-xs text-muted-foreground">Listas para check-in inmediato</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Check-ins Hoy</CardTitle>
+                    <LogIn className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">+{dailyStats.checkIns}</div>
+                    <p className="text-xs text-muted-foreground">Nuevas llegadas para hoy</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Check-outs Hoy</CardTitle>
+                    <LogOut className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{dailyStats.checkOuts}</div>
+                    <p className="text-xs text-muted-foreground">Salidas programadas para hoy</p>
+                </CardContent>
+            </Card>
+        </div>
+
 
         <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {(roomsLoading || reservationsLoading) ? (
