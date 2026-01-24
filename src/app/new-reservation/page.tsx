@@ -137,7 +137,7 @@ export default function NewReservationPage() {
       checkInDate: data.checkInDate.toISOString(),
       checkOutDate: data.checkOutDate.toISOString(),
       roomId: data.roomId,
-      vehicle: data.vehicle,
+      ...(data.vehicle && { vehicle: data.vehicle }),
       status: 'Checked-In' as const,
       payment: {
         status: 'Pendiente' as const,
