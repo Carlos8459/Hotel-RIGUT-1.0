@@ -5,12 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { scanIdCard } from '@/ai/flows/scan-id-card-flow';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, ArrowLeft, LoaderCircle, AlertCircle } from 'lucide-react';
+import { Camera, ArrowLeft, LoaderCircle, AlertCircle, User, Fingerprint } from 'lucide-react';
 import { IdCardOverlay } from '@/components/ui/id-card-overlay';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from '@/components/ui/input';
+
+const customerSchema = z.object({
+  guestName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
+  cedula: z.string().min(1, { message: 'La cédula es obligatoria.' }),
+});
 
 export default function ScanIdPage() {
     const router = useRouter();
@@ -21,13 +30,18 @@ export default function ScanIdPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+
+    const form = useForm<z.infer<typeof customerSchema>>({
+        resolver: zodResolver(customerSchema),
+        defaultValues: { guestName: '', cedula: '' },
+    });
 
     useEffect(() => {
         const getCameraPermission = async () => {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                setError('Tu navegador no soporta el acceso a la cámara.');
+                setCameraError('Tu navegador no soporta el acceso a la cámara.');
                 setHasCameraPermission(false);
                 return;
             }
@@ -41,7 +55,7 @@ export default function ScanIdPage() {
                 }
             } catch (err) {
                 console.error('Error accessing camera:', err);
-                setError('Permiso de cámara denegado. Por favor, habilita el acceso en tu navegador.');
+                setCameraError('Permiso de cámara denegado. Por favor, habilita el acceso en tu navegador.');
                 setHasCameraPermission(false);
             }
         };
@@ -56,7 +70,7 @@ export default function ScanIdPage() {
         };
     }, []);
 
-    const handleScan = async () => {
+    const onSubmit = async (values: z.infer<typeof customerSchema>) => {
         if (!videoRef.current || !canvasRef.current || !firestore) {
             toast({
                 variant: 'destructive',
@@ -66,48 +80,52 @@ export default function ScanIdPage() {
             return;
         }
 
-        setIsProcessing(true);
-        setError(null);
+        setIsSaving(true);
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const context = canvas.getContext('2d');
-        if (!context) return;
+        if (!context) {
+            setIsSaving(false);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'No se pudo procesar la imagen.',
+            });
+            return;
+        };
         
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const photoDataUri = canvas.toDataURL('image/jpeg', 0.9);
 
         try {
-            const result = await scanIdCard({ photoDataUri });
-            if (!result.idNumber || !result.fullName) {
-                throw new Error("No se pudo extraer la información. Inténtalo de nuevo.");
-            }
-            
-            const customerId = result.idNumber.replace(/-/g, '');
+            const customerId = values.cedula.replace(/[^a-zA-Z0-9]/g, ''); // Sanitize ID for document key
             const customerDocRef = doc(firestore, 'customers', customerId);
 
-            // Save customer data in the background
             setDocumentNonBlocking(customerDocRef, {
-                guestName: result.fullName,
-                cedula: result.idNumber,
+                guestName: values.guestName,
+                cedula: values.cedula,
                 idCardImage: photoDataUri,
                 createdAt: new Date().toISOString()
             }, { merge: true });
 
             toast({
                 title: '¡Éxito!',
-                description: `Datos de ${result.fullName} cargados. Redirigiendo...`,
+                description: `Foto de ${values.guestName} guardada. Redirigiendo...`,
             });
             
-            // Redirect to the new reservation page with pre-filled data
-            router.push(`/new-reservation?guestName=${encodeURIComponent(result.fullName)}&cedula=${encodeURIComponent(result.idNumber)}`);
+            router.push(`/new-reservation?guestName=${encodeURIComponent(values.guestName)}&cedula=${encodeURIComponent(values.cedula)}`);
 
         } catch (err: any) {
-            console.error("Scan failed:", err);
-            setError(err.message || 'No se pudo procesar la imagen. Asegúrate de que la cédula sea clara y esté bien iluminada.');
-            setIsProcessing(false);
+            console.error("Save failed:", err);
+            toast({
+                variant: 'destructive',
+                title: 'Error al Guardar',
+                description: err.message || 'No se pudo guardar la información del cliente.',
+            });
+            setIsSaving(false);
         }
     };
 
@@ -119,7 +137,7 @@ export default function ScanIdPage() {
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Volver</span>
                 </Button>
-                <h1 className="text-xl font-bold">Escanear Cédula</h1>
+                <h1 className="text-xl font-bold">Capturar Cédula</h1>
             </header>
             
             <main className="flex-grow flex flex-col items-center justify-center p-4 space-y-4">
@@ -130,37 +148,65 @@ export default function ScanIdPage() {
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
                             <AlertCircle className="h-10 w-10 mb-4" />
                             <h2 className="text-lg font-semibold">Error de Cámara</h2>
-                            <p className="text-sm">{error || "No se pudo acceder a la cámara."}</p>
+                            <p className="text-sm">{cameraError || "No se pudo acceder a la cámara."}</p>
                         </div>
                     )}
                 </div>
 
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error de Escaneo</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                <Button
-                    onClick={handleScan}
-                    disabled={isProcessing || hasCameraPermission !== true}
-                    size="lg"
-                    className="w-full max-w-lg"
-                >
-                    {isProcessing ? (
-                        <>
-                            <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
-                            Procesando...
-                        </>
-                    ) : (
-                        <>
-                            <Camera className="mr-2 h-5 w-5" />
-                            Capturar y Analizar
-                        </>
-                    )}
-                </Button>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-lg">
+                        <FormField
+                            control={form.control}
+                            name="guestName"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nombre del Huésped</FormLabel>
+                                <div className="relative flex items-center">
+                                    <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                                    <FormControl>
+                                    <Input placeholder="Ej: Juan Pérez" {...field} className="pl-10" />
+                                    </FormControl>
+                                </div>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="cedula"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Cédula</FormLabel>
+                                <div className="relative flex items-center">
+                                    <Fingerprint className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                                    <FormControl>
+                                    <Input placeholder="Ej: 001-000000-0000A" {...field} className="pl-10" />
+                                    </FormControl>
+                                </div>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button
+                            type="submit"
+                            disabled={isSaving || hasCameraPermission !== true}
+                            size="lg"
+                            className="w-full"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                    Guardando...
+                                </>
+                            ) : (
+                                <>
+                                    <Camera className="mr-2 h-4 w-4" />
+                                    Capturar y Guardar
+                                </>
+                            )}
+                        </Button>
+                    </form>
+                </Form>
                 
                 <canvas ref={canvasRef} className="hidden"></canvas>
             </main>
