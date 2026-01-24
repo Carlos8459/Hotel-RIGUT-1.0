@@ -28,7 +28,7 @@ import { ArrowLeft, DollarSign, Package, ShoppingCart, Calendar as CalendarIcon,
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Reservation, ConsumptionItem } from '@/lib/types';
+import type { Reservation } from '@/lib/types';
 
 
 interface ConsumptionStats {
@@ -118,8 +118,6 @@ export default function ExtraConsumptionsStatsPage() {
     // Data fetching
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
-    const consumptionItemsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'consumption_items') : null, [firestore]);
-    const { data: consumptionItemsData, isLoading: consumptionItemsLoading } = useCollection<Omit<ConsumptionItem, 'id'>>(consumptionItemsCollection);
     
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -151,17 +149,9 @@ export default function ExtraConsumptionsStatsPage() {
     };
 
     const consumptionStats: ConsumptionStats[] = useMemo(() => {
-        if (!reservationsData || !consumptionItemsData) return [];
+        if (!reservationsData) return [];
 
         const statsMap: { [key: string]: ConsumptionStats } = {};
-        consumptionItemsData.forEach(item => {
-            statsMap[item.name] = {
-                name: item.name,
-                icon: item.icon,
-                totalQuantity: 0,
-                totalIncome: 0,
-            };
-        });
 
         const filteredReservations = reservationsData.filter(res => {
             if (res.payment?.status !== 'Cancelado') return false;
@@ -174,10 +164,16 @@ export default function ExtraConsumptionsStatsPage() {
 
         filteredReservations.forEach(res => {
             res.extraConsumptions?.forEach(consumedItem => {
-                if (statsMap[consumedItem.name]) {
-                    statsMap[consumedItem.name].totalQuantity += consumedItem.quantity;
-                    statsMap[consumedItem.name].totalIncome += consumedItem.quantity * consumedItem.price;
+                if (!statsMap[consumedItem.name]) {
+                    statsMap[consumedItem.name] = {
+                        name: consumedItem.name,
+                        icon: consumedItem.icon || 'Package',
+                        totalQuantity: 0,
+                        totalIncome: 0,
+                    };
                 }
+                statsMap[consumedItem.name].totalQuantity += consumedItem.quantity;
+                statsMap[consumedItem.name].totalIncome += consumedItem.quantity * consumedItem.price;
             });
         });
 
@@ -185,7 +181,7 @@ export default function ExtraConsumptionsStatsPage() {
             .filter(item => item.totalIncome > 0)
             .sort((a, b) => b.totalIncome - a.totalIncome);
 
-    }, [reservationsData, consumptionItemsData, dateRange]);
+    }, [reservationsData, dateRange]);
 
 
     const currencyFormatter = new Intl.NumberFormat('es-NI', {
@@ -194,7 +190,7 @@ export default function ExtraConsumptionsStatsPage() {
         maximumFractionDigits: 0,
     });
 
-    const isLoading = isUserLoading || reservationsLoading || consumptionItemsLoading;
+    const isLoading = isUserLoading || reservationsLoading;
 
     if (isLoading) {
         return (
