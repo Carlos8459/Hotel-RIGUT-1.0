@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +47,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { ProcessedRoom } from "@/app/dashboard/page";
 import type { Room, Reservation } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 type RoomDetailModalProps = {
     room: ProcessedRoom;
@@ -65,6 +66,7 @@ type EditableGuestData = {
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editedGuest, setEditedGuest] = useState<EditableGuestData>({
@@ -89,6 +91,17 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       const nights = differenceInCalendarDays(checkOut, checkIn);
       return `${format(checkIn, 'd LLL', {locale: es})} - ${format(checkOut, 'd LLL', {locale: es})} (${nights} ${nights === 1 ? 'noche' : 'noches'})`;
   }
+
+  const handleDeleteReservation = (reservationId: string) => {
+      if (!firestore || !reservationId) return;
+      const reservationDocRef = doc(firestore, 'reservations', reservationId);
+      deleteDocumentNonBlocking(reservationDocRef);
+      toast({
+          title: 'Reservación Eliminada',
+          description: 'La reservación ha sido eliminada y la habitación está ahora disponible.',
+      });
+      onClose();
+  };
 
   const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
@@ -163,10 +176,36 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
-                            <Button variant="ghost" size="icon" onClick={handleOpenEditModal}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Editar datos del cliente</span>
-                            </Button>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" onClick={handleOpenEditModal}>
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Editar datos del cliente</span>
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            <span className="sr-only">Eliminar reservación</span>
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar Reservación?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción no se puede deshacer. Se eliminará permanentemente la reservación y la habitación quedará disponible.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-destructive hover:bg-destructive/90"
+                                                onClick={() => handleDeleteReservation(room.reservation!.id)}>
+                                                Eliminar
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
