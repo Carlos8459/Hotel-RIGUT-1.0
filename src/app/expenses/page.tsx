@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -89,7 +90,7 @@ export default function ExpensesPage() {
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       description: '',
-      amount: undefined,
+      amount: '' as any,
       date: new Date(),
       category: undefined,
     },
@@ -124,7 +125,7 @@ export default function ExpensesPage() {
         });
         form.reset({
             description: '',
-            amount: undefined,
+            amount: '' as any,
             date: new Date(),
             category: undefined,
         });
