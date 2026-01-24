@@ -105,13 +105,22 @@ export default function ScanIdPage() {
                 throw new Error("Formato de datos de QR inválido.");
             }
     
-            const cedula = parts[1] || '';
+            const cedulaRaw = parts[1] || '';
             const primerApellido = parts[2] || '';
             const segundoApellido = parts[3] || '';
             const primerNombre = parts[4] || '';
             const segundoNombre = parts[5] || '';
     
             const guestName = [primerNombre, segundoNombre, primerApellido, segundoApellido].filter(Boolean).join(' ');
+
+            const formatCedula = (c: string) => {
+                if (c && c.length === 14) {
+                    return `${c.substring(0, 3)}-${c.substring(3, 9)}-${c.substring(9)}`;
+                }
+                return c;
+            };
+
+            const cedula = formatCedula(cedulaRaw);
     
             if (!cedula || !guestName.trim()) {
                  throw new Error("No se pudo extraer la información requerida del código QR.");

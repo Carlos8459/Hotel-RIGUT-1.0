@@ -48,7 +48,7 @@ const reservationFormSchema = z.object({
   cedula: z.string().optional(),
   phone: z
     .string()
-    .length(8, { message: 'El número de teléfono debe tener 8 dígitos.' })
+    .regex(/^\d{4}-\d{4}$/, { message: "El teléfono debe tener el formato 8888-8888." })
     .optional()
     .or(z.literal('')),
   checkInDate: z.date({
@@ -242,7 +242,23 @@ function NewReservationFormComponent() {
                   <div className="relative flex items-center">
                     <Fingerprint className="absolute left-3 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                      <Input placeholder="Ej: 001-000000-0000A" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                      <Input
+                        placeholder="Ej: 001-000000-0000A"
+                        {...field}
+                        onChange={(e) => {
+                            const input = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            if (input.length <= 14) {
+                                let formatted = input;
+                                if (input.length > 9) {
+                                    formatted = `${input.substring(0, 3)}-${input.substring(3, 9)}-${input.substring(9)}`;
+                                } else if (input.length > 3) {
+                                    formatted = `${input.substring(0, 3)}-${input.substring(3)}`;
+                                }
+                                field.onChange(formatted);
+                            }
+                        }}
+                        className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"
+                      />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -258,7 +274,23 @@ function NewReservationFormComponent() {
                    <div className="relative flex items-center">
                     <Phone className="absolute left-3 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                      <Input type="tel" placeholder="Ej: 88888888" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                      <Input
+                        type="tel"
+                        placeholder="Ej: 8888-8888"
+                        {...field}
+                        onChange={(e) => {
+                            const input = e.target.value;
+                            const digitsOnly = input.replace(/[^0-9]/g, '');
+                            if (digitsOnly.length <= 8) {
+                                let formatted = digitsOnly;
+                                if (digitsOnly.length > 4) {
+                                    formatted = `${digitsOnly.substring(0, 4)}-${digitsOnly.substring(4)}`;
+                                }
+                                field.onChange(formatted);
+                            }
+                        }}
+                        className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"
+                      />
                     </FormControl>
                   </div>
                   <FormMessage />
