@@ -1,4 +1,3 @@
-'use client';
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
