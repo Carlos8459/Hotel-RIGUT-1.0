@@ -70,7 +70,7 @@ const personalizeUILoginScreenFlow = ai.defineFlow(
     outputSchema: PersonalizeUILoginScreenOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { model: 'googleai/gemini-pro' });
     return output!;
   }
 );

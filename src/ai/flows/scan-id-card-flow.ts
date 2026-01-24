@@ -45,6 +45,7 @@ const scanIdCardFlow = ai.defineFlow(
   Respond ONLY with the extracted data in JSON format.`;
 
     const {output} = await ai.generate({
+      model: 'googleai/gemini-pro-vision',
       prompt: [
         { text: prompt },
         { media: { url: input.photoDataUri } }
@@ -52,8 +53,8 @@ const scanIdCardFlow = ai.defineFlow(
       output: { schema: ScanIdCardOutputSchema },
     });
     
-    if (!output) {
-      return { fullName: '', idNumber: '' };
+    if (!output || !output.idNumber || !output.fullName) {
+      throw new Error("No se pudo extraer la información. Inténtalo de nuevo.");
     }
     return output;
   }
