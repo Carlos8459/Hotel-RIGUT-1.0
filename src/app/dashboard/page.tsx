@@ -455,7 +455,7 @@ export default function RoomsDashboard() {
       )}
 
       <div className="text-center text-sm text-muted-foreground mt-12">
-        <p>Desarrollado por Carlos Rivera</p>
+        <p>Desarrollado con ❤️ por <span className="font-bold text-foreground">Carlos Rivera</span></p>
       </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">

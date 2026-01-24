@@ -18,11 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Eye } from "lucide-react";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  username: z.string().min(2, { message: "El nombre de usuario debe tener al menos 2 caracteres." }),
   password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
 });
 
@@ -32,12 +33,13 @@ export function LoginForm() {
   const [showPin, setShowPin] = useState(false);
 
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -47,13 +49,36 @@ export function LoginForm() {
     setIsPending(true);
     
     try {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
+        // Find user by username
+        const usersRef = collection(firestore, "users");
+        const q = query(usersRef, where("username", "==", values.username));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            setErrorMessage('Usuario o PIN incorrecto.');
+            setIsPending(false);
+            return;
+        }
+
+        // Assuming username is unique, take the first result
+        const userDoc = querySnapshot.docs[0];
+        const userEmail = userDoc.data().email;
+
+        if (!userEmail) {
+            setErrorMessage('La cuenta de usuario no tiene un correo electrónico asociado.');
+            setIsPending(false);
+            return;
+        }
+        
+        // Attempt to sign in with the found email
+        await signInWithEmailAndPassword(auth, userEmail, values.password);
         router.push('/dashboard');
+
     } catch (error: any) {
         if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
-            setErrorMessage('Correo o PIN incorrecto.');
+            setErrorMessage('Usuario o PIN incorrecto.');
         } else if (error.code === 'auth/invalid-email') {
-            setErrorMessage('El formato del correo electrónico es incorrecto.');
+            setErrorMessage('El formato del correo electrónico del usuario es incorrecto.');
         } else {
             console.error("Authentication error:", error);
             setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
@@ -69,11 +94,11 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="email"
+            name="username"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Correo electrónico" {...field} autoComplete="email" className="h-14 rounded-full px-6 text-base"/>
+                  <Input placeholder="Nombre de usuario" {...field} autoComplete="username" className="h-14 rounded-full px-6 text-base"/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
