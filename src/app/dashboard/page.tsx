@@ -82,6 +82,15 @@ export interface ProcessedRoom extends Room {
   statusColor: string;
 }
 
+const formatPhoneNumber = (phone: string | undefined) => {
+    if (!phone) return '';
+    const digitsOnly = phone.replace(/[^0-9]/g, '');
+    if (digitsOnly.length === 8) {
+      return `${digitsOnly.substring(0, 4)}-${digitsOnly.substring(4)}`;
+    }
+    return phone;
+};
+
 export default function RoomsDashboard() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -336,7 +345,7 @@ export default function RoomsDashboard() {
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   <span>{getStayDate(room.reservation)}</span>
                               </div>
-                              {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{room.reservation.phone}</span></div>}
+                              {room.reservation.phone && <div className="flex items-center text-sm text-muted-foreground"><Phone className="mr-2 h-4 w-4" /><span>{formatPhoneNumber(room.reservation.phone)}</span></div>}
                               {room.reservation.vehicle && <div className="flex items-center text-sm text-muted-foreground">
                                   {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
                                   {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}

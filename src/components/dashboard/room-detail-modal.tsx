@@ -51,6 +51,15 @@ import type { Room, Reservation, ExtraConsumption } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
 
+const formatPhoneNumberForDisplay = (phone: string | undefined) => {
+    if (!phone) return '';
+    const digitsOnly = phone.replace(/[^0-9]/g, '');
+    if (digitsOnly.length === 8) {
+      return `${digitsOnly.substring(0, 4)}-${digitsOnly.substring(4)}`;
+    }
+    return phone;
+};
+
 type RoomDetailModalProps = {
     room: ProcessedRoom;
     isOpen: boolean;
@@ -243,7 +252,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                                 {room.reservation.phone && (
                                 <div className="flex items-center text-sm text-muted-foreground">
                                     <Phone className="mr-2 h-4 w-4" />
-                                    <span>{room.reservation.phone}</span>
+                                    <span>{formatPhoneNumberForDisplay(room.reservation.phone)}</span>
                                 </div>
                                 )}
                             </div>
@@ -388,10 +397,21 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="guest-phone">Teléfono</Label>
-                        <Input 
-                            id="guest-phone" 
+                        <Input
+                            id="guest-phone"
+                            placeholder="8888-8888"
                             value={editedGuest.phone}
-                            onChange={(e) => setEditedGuest(prev => ({...prev, phone: e.target.value}))}
+                            onChange={(e) => {
+                                const input = e.target.value;
+                                const digitsOnly = input.replace(/[^0-9]/g, '');
+                                if (digitsOnly.length <= 8) {
+                                    let formatted = digitsOnly;
+                                    if (digitsOnly.length > 4) {
+                                        formatted = `${digitsOnly.substring(0, 4)}-${digitsOnly.substring(4)}`;
+                                    }
+                                    setEditedGuest(prev => ({...prev, phone: formatted}));
+                                }
+                            }}
                         />
                     </div>
                     <div className="space-y-2">
