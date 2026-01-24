@@ -156,6 +156,32 @@
         "createdBy": {
           "type": "string",
           "description": "UID of the user who created the reservation."
+        },
+        "extraConsumptions": {
+          "type": "array",
+          "description": "List of extra services or products consumed by the guest.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the consumed item (e.g., 'Gaseosa')."
+              },
+              "quantity": {
+                "type": "number",
+                "description": "Quantity of the item consumed."
+              },
+              "price": {
+                "type": "number",
+                "description": "Price per unit of the item."
+              }
+            },
+            "required": [
+              "name",
+              "quantity",
+              "price"
+            ]
+          }
         }
       },
       "required": [

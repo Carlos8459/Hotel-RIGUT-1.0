@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, CupSoda, Bottle, Utensils } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RoomHistoryModal } from "./room-history-modal";
+import { ExtraConsumptionModal } from "./extra-consumption-modal";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import {
@@ -46,7 +47,7 @@ import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { ProcessedRoom } from "@/app/dashboard/page";
-import type { Room, Reservation } from "@/lib/types";
+import type { Room, Reservation, ExtraConsumption } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type RoomDetailModalProps = {
@@ -69,6 +70,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   const { toast } = useToast();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
   const [editedGuest, setEditedGuest] = useState<EditableGuestData>({
     name: "",
     cedula: "",
@@ -152,6 +154,13 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     } catch (error) {
         console.error("Error updating reservation:", error);
     }
+  };
+  
+  const consumptionIcons: { [key: string]: React.ReactNode } = {
+    'Comida': <Utensils className="h-4 w-4" />,
+    'Gaseosa': <CupSoda className="h-4 w-4" />,
+    'Agua 1L': <Bottle className="h-4 w-4" />,
+    'Agua 2L': <Bottle className="h-4 w-4" />,
   };
 
 
@@ -256,6 +265,24 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     </div>
                     </>
                 )}
+
+                {room.reservation?.extraConsumptions && room.reservation.extraConsumptions.length > 0 && (
+                    <>
+                        <Separator />
+                        <div className="space-y-3">
+                            <h3 className="font-semibold text-lg flex items-center"><ShoppingCart className="mr-2 h-5 w-5" />Consumos</h3>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                {room.reservation.extraConsumptions.map(item => (
+                                    <div key={item.name} className="flex items-center text-muted-foreground">
+                                        {consumptionIcons[item.name] || <Utensils className="h-4 w-4" />}
+                                        <span className="ml-2 mr-1 font-medium text-foreground">{item.quantity}x</span>
+                                        <span className="truncate">{item.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </>
+                )}
             
                 {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento') && (
                     <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
@@ -264,13 +291,15 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     </div>
                 )}
 
-                {/* Historial (simplified, can be expanded) */}
             </div>
           </ScrollArea>
           
           {room.statusText === 'Ocupada' && room.reservation && (
-              <div className="p-6 pt-0 mt-auto">
-                   <Separator className="mb-4" />
+              <div className="p-6 pt-2 mt-auto">
+                    <Button variant="outline" className="w-full text-base py-6 mb-4" onClick={() => setIsConsumptionModalOpen(true)}>
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Consumos Extras
+                    </Button>
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
                           <Button variant="destructive" className="w-full text-base py-6">
@@ -296,12 +325,12 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         </DialogContent>
       </Dialog>
 
-      {/* History Modal remains the same for now */}
-      {/* <RoomHistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        room={room}
-      /> */}
+      <ExtraConsumptionModal
+        isOpen={isConsumptionModalOpen}
+        onClose={() => setIsConsumptionModalOpen(false)}
+        reservationId={room.reservation?.id}
+        currentConsumptions={room.reservation?.extraConsumptions || []}
+      />
 
        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-md">

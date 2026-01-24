@@ -6,6 +6,12 @@ export type Room = {
     status: 'Disponible' | 'Mantenimiento';
 };
 
+export type ExtraConsumption = {
+  name: string;
+  quantity: number;
+  price: number;
+};
+
 export type Reservation = {
   id: string;
   guestName: string;
@@ -22,6 +28,7 @@ export type Reservation = {
   };
   createdAt: string; // ISO string
   createdBy: string; // UID
+  extraConsumptions?: ExtraConsumption[];
 };
 
 export type Customer = {
