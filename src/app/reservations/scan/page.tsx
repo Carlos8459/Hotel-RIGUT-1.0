@@ -100,32 +100,35 @@ export default function ScanIdPage() {
         setIsScanning(false);
         try {
             const parts = data.split('<');
-            if (parts.length < 6) throw new Error("Formato de datos de QR inválido.");
-
-            const cedula = parts[1];
-            const primerApellido = parts[2];
-            const segundoApellido = parts[3];
-            const primerNombre = parts[4];
-            const segundoNombre = parts[5];
-
+            // We need at least the cedula at index 1 to proceed.
+            if (parts.length < 2) {
+                throw new Error("Formato de datos de QR inválido.");
+            }
+    
+            const cedula = parts[1] || '';
+            const primerApellido = parts[2] || '';
+            const segundoApellido = parts[3] || '';
+            const primerNombre = parts[4] || '';
+            const segundoNombre = parts[5] || '';
+    
             const guestName = [primerNombre, segundoNombre, primerApellido, segundoApellido].filter(Boolean).join(' ');
-
-            if (!cedula || !guestName) {
+    
+            if (!cedula || !guestName.trim()) {
                  throw new Error("No se pudo extraer la información requerida del código QR.");
             }
-
+    
             toast({
                 title: '¡QR Escaneado!',
                 description: 'Redirigiendo al formulario de check-in...',
             });
-
+    
             if (videoRef.current && videoRef.current.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
-
+    
             router.push(`/new-reservation?guestName=${encodeURIComponent(guestName)}&cedula=${encodeURIComponent(cedula)}`);
-
+    
         } catch (error: any) {
             console.error("Error parsing QR code:", error);
             setScanError(error.message || 'El código QR no tiene el formato esperado. Inténtalo de nuevo.');
