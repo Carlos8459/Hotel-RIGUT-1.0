@@ -23,8 +23,9 @@ service cloud.firestore {
       // An admin can create a user, or a user can create their own profile.
       allow create: if isOwner(userId) || isAdmin();
       
-      // Only admins can list all users.
-      allow list: if isAdmin();
+      // Allow list for login by username and for admins to manage users.
+      // NOTE: For production, a more secure method like a Cloud Function is recommended.
+      allow list: if true;
       
       // A user can read their own profile, and an admin can read any profile.
       allow read: if isOwner(userId) || isAdmin();
