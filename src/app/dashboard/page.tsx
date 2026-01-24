@@ -240,7 +240,7 @@ export default function RoomsDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Buscar por huésped..."
+                    placeholder="Buscar"
                     className="bg-card border-border pl-10 w-full"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
