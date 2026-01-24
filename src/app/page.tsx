@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
+import { HotelRigutLogo } from '@/components/ui/hotel-rigut-logo';
 
 
 export default function LoginPage() {
@@ -39,14 +40,17 @@ export default function LoginPage() {
         />
       )}
       <div className="absolute inset-0 bg-black/60" />
-      <div className="z-10 w-full max-w-sm space-y-16">
-        <div className="text-center">
-          <h1 className="font-headline text-5xl font-bold text-white drop-shadow-md">
-            Hotel RIGUT
-          </h1>
-          <p className="mt-2 text-white/80 drop-shadow-sm">
-            Bienvenido de nuevo. Inicia sesión en tu cuenta.
-          </p>
+      <div className="z-10 w-full max-w-sm space-y-8">
+        <div className="text-center space-y-4">
+          <HotelRigutLogo className="w-32 h-32 mx-auto" />
+          <div>
+            <h1 className="font-headline text-4xl font-bold text-white drop-shadow-md">
+              Hotel RIGUT
+            </h1>
+            <p className="mt-2 text-white/80 drop-shadow-sm">
+              Bienvenido de nuevo. Inicia sesión en tu cuenta.
+            </p>
+          </div>
         </div>
         <LoginForm />
       </div>
