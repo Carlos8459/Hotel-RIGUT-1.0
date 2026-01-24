@@ -97,14 +97,8 @@ export default function ScanIdPage() {
 
             toast({
                 title: '¡Éxito!',
-                description: 'Cédula escaneada. Redirigiendo para crear reserva...',
+                description: `Cliente ${result.fullName} guardado. Ya puedes crear la reserva.`,
             });
-
-            // Redirect to new reservation page with pre-filled data
-            const params = new URLSearchParams();
-            params.set('guestName', result.fullName);
-            params.set('cedula', result.idNumber);
-            router.push(`/new-reservation?${params.toString()}`);
 
         } catch (err: any) {
             console.error("Scan failed:", err);
