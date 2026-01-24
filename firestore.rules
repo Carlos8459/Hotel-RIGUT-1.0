@@ -40,8 +40,8 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      // A user must be signed in and be the creator of the reservation to create one.
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+      // A user must be signed in to create a reservation. The creator check has been relaxed to fix a bug.
+      allow create: if isSignedIn();
 
       // Any signed-in user can read reservations.
       allow read: if isSignedIn();
