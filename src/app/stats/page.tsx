@@ -257,6 +257,9 @@ export default function StatsPage() {
                   <DropdownMenuItem asChild>
                       <Link href="/stats/rooms">Estadísticas de Habitaciones</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                      <Link href="/stats/extra-consumptions">Ingresos Extras</Link>
+                  </DropdownMenuItem>
               </DropdownMenuContent>
           </DropdownMenu>
         </div>
