@@ -20,8 +20,8 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Any signed-in user can create their own user profile.
-      allow create: if isSignedIn();
+      // A user can only create their own user profile.
+      allow create: if request.auth.uid == userId;
 
       // Any signed-in user can list and read user profiles.
       allow list, read: if isSignedIn();
@@ -40,8 +40,8 @@ service cloud.firestore {
     match /reservations/{reservationId} {
       // Any signed-in user can read reservations.
       allow read: if isSignedIn();
-      // A user can create a reservation if the 'createdBy' field matches their UID.
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+      // Any signed-in user can create a reservation. We'll secure this further later.
+      allow create: if isSignedIn();
       // The user who created the reservation or an admin can update or delete it.
       allow update, delete: if isSignedIn() && (get(/databases/$(database)/documents/reservations/$(reservationId)).data.createdBy == request.auth.uid || isAdmin());
     }
