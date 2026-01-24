@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { collection, addDoc, doc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
 
 
@@ -121,64 +121,73 @@ export default function NewReservationPage() {
     }
   }, [user, isUserLoading, router]);
 
-  async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
+  function onSubmit(data: z.infer<typeof reservationFormSchema>) {
     if (!firestore || !user || !roomsData) return;
     setIsSubmitting(true);
 
-    try {
-      const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
-      const room = roomsData.find(r => r.id === data.roomId);
-      const totalAmount = room && nights > 0 ? room.price * nights : 0;
+    const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
+    const room = roomsData.find(r => r.id === data.roomId);
+    const totalAmount = room && nights > 0 ? room.price * nights : 0;
 
-      const reservationData = {
-        guestName: data.guestName,
-        cedula: data.cedula || '',
-        phone: data.phone || '',
-        checkInDate: data.checkInDate.toISOString(),
-        checkOutDate: data.checkOutDate.toISOString(),
-        roomId: data.roomId,
-        vehicle: data.vehicle,
-        status: 'Checked-In' as const,
-        payment: {
-          status: 'Pendiente' as const,
-          amount: totalAmount,
-        },
-        createdAt: new Date().toISOString(),
-        createdBy: user.uid,
-      };
+    const reservationData = {
+      guestName: data.guestName,
+      cedula: data.cedula || '',
+      phone: data.phone || '',
+      checkInDate: data.checkInDate.toISOString(),
+      checkOutDate: data.checkOutDate.toISOString(),
+      roomId: data.roomId,
+      vehicle: data.vehicle,
+      status: 'Checked-In' as const,
+      payment: {
+        status: 'Pendiente' as const,
+        amount: totalAmount,
+      },
+      createdAt: new Date().toISOString(),
+      createdBy: user.uid,
+    };
 
-      await addDoc(collection(firestore, 'reservations'), reservationData);
-      
-      const creatorName = userProfile?.username || user.email;
-      const roomTitle = room?.title || `Habitación ${data.roomId}`;
+    const reservationsColRef = collection(firestore, 'reservations');
+    const reservationPromise = addDocumentNonBlocking(reservationsColRef, reservationData);
+    
+    reservationPromise.then(docRef => {
+        if (docRef) { // Successfully created reservation
+            const creatorName = userProfile?.username || user.email;
+            const roomTitle = room?.title || `Habitación ${data.roomId}`;
 
-      if (creatorName) {
-          const notificationsColRef = collection(firestore, 'notifications');
-          const notificationMessage = `${creatorName} registró a ${data.guestName} en la ${roomTitle}.`;
-          addDoc(notificationsColRef, {
-              message: notificationMessage,
-              createdAt: new Date().toISOString(),
-              createdBy: user.uid,
-              creatorName: creatorName,
-              isRead: false,
-          });
-      }
+            if (creatorName) {
+                const notificationsColRef = collection(firestore, 'notifications');
+                const notificationMessage = `${creatorName} registró a ${data.guestName} en la ${roomTitle}.`;
+                addDocumentNonBlocking(notificationsColRef, {
+                    message: notificationMessage,
+                    createdAt: new Date().toISOString(),
+                    createdBy: user.uid,
+                    creatorName: creatorName,
+                    isRead: false,
+                });
+            }
 
-      toast({
-        title: 'Check-in Realizado',
-        description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
-      });
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Error creating reservation: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo crear la reserva. Inténtalo de nuevo.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+            toast({
+              title: 'Check-in Realizado',
+              description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
+            });
+            router.push('/dashboard');
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error de Permiso',
+                description: 'No se pudo crear la reserva.',
+            });
+        }
+    }).catch((error) => {
+        console.error('Error creating reservation: ', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudo crear la reserva. Inténtalo de nuevo.',
+        });
+    }).finally(() => {
+        setIsSubmitting(false);
+    });
   }
 
 

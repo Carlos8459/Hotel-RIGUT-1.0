@@ -3,11 +3,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
-import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -121,25 +121,15 @@ export default function ManageUsersPage() {
         setNewRole(userToEdit.role);
     };
 
-    const handleSaveChanges = async () => {
+    const handleSaveChanges = () => {
         if (editingUser && firestore) {
             const userDocRef = doc(firestore, "users", editingUser.id);
-            try {
-                await updateDoc(userDocRef, { role: newRole });
-                toast({
-                    title: "Rol actualizado",
-                    description: `El rol de ${editingUser.name} ha sido cambiado a ${newRole}.`,
-                });
-            } catch (error) {
-                console.error("Error updating role:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "No se pudo actualizar el rol del socio.",
-                });
-            } finally {
-                setEditingUser(null);
-            }
+            updateDocumentNonBlocking(userDocRef, { role: newRole });
+            toast({
+                title: "Rol actualizado",
+                description: `El rol de ${editingUser.name} ha sido cambiado a ${newRole}.`,
+            });
+            setEditingUser(null);
         }
     };
     
