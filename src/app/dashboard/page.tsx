@@ -72,20 +72,7 @@ import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-
-const WhatsAppIcon = (props) => (
-    <svg
-      role="img"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      {...props}
-    >
-      <title>WhatsApp</title>
-      <path fillRule="evenodd" clipRule="evenodd" d="M18.4,5.6c-1.9-1.9-4.4-2.9-7.1-2.9c-5.5,0-9.9,4.4-9.9,9.9c0,1.8,0.5,3.5,1.3,5l-1.5,5.4l5.5-1.4c1.4,0.8,3,1.3,4.7,1.3h0c5.5,0,9.9-4.4,9.9-9.9C21.3,10,20.3,7.5,18.4,5.6z" fill="#25D366"/>
-      <path d="M15.1,12.5l-0.9-0.4c-0.2-0.1-0.3-0.1-0.5,0.1l-0.7,0.8c-0.2,0.2-0.3,0.3-0.5,0.2c-0.8-0.3-1.8-0.7-2.9-1.6 c-1-0.8-1.7-1.7-2.1-2.4c-0.1-0.2-0.1-0.3,0-0.5l0.6-0.7c0.2-0.2,0.1-0.4,0-0.5L9.3,8.9C9.2,8.7,9.1,8.7,9,8.7c-0.1,0-0.3,0-0.4,0 l-1,0.1c-0.2,0-0.4,0.1-0.5,0.2c-0.7,0.5-1.1,1.1-1.1,2.1c0,0.2,0,0.5,0.1,0.8c0.1,0.3,0.4,0.9,1,1.8c0.8,1.2,1.9,2.4,3.2,3.5 c1.7,1.4,3.2,2.2,4.9,2.9c0.4,0.2,0.8,0.3,1.2,0.3c0.5,0,1-0.1,1.4-0.4c0.7-0.5,1.2-1.3,1.4-2.3c0.1-0.3,0.1-0.7,0.1-1 c0-0.1,0-0.2,0-0.2c0-0.2-0.1-0.4-0.2-0.5c-0.1-0.1-0.3-0.2-0.5-0.2L15.1,12.5z" fill="#FFFFFF"/>
-    </svg>
-);
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 
 
 // Combined type for display purposes
@@ -267,7 +254,10 @@ export default function RoomsDashboard() {
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
+          <p className="text-sm text-muted-foreground">Panel de Habitaciones</p>
+        </div>
         <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -396,7 +386,7 @@ export default function RoomsDashboard() {
                           room.reservation.payment?.status === 'Pendiente' ? (
                               <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <Button className="w-full font-semibold text-white bg-yellow-600 hover:bg-yellow-700">
+                                  <Button variant="secondary" className="w-full font-semibold">
                                   <DollarSign className="mr-2 h-4 w-4" />
                                   Registrar Pago
                                   </Button>

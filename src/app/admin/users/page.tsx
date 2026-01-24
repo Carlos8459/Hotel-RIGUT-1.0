@@ -358,7 +358,7 @@ export default function ManageUsersPage() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta del socio de la base de datos. La eliminación de la autenticación del usuario debe hacerse desde la consola de Firebase.
+                                                                Esta acción eliminará el perfil del socio en la base de datos de la app. Para revocar su acceso por completo, también debes eliminar su cuenta desde la Consola de Firebase.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>

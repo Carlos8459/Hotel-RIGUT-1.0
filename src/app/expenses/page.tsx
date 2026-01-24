@@ -34,7 +34,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Receipt, DollarSign, Tag, List, Trash2 } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Receipt, DollarSign, Tag, List, Trash2, Pencil } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { Expense } from '@/lib/types';
@@ -188,22 +188,25 @@ export default function ExpensesPage() {
         <div className="lg:col-span-1">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Receipt className="h-5 w-5" />Nuevo Gasto</h2>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Ej: Pago de factura de luz" {...field} />
-                    </FormControl>
+                    <div className="relative flex items-center">
+                        <Pencil className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                        <FormControl>
+                            <Input placeholder="Ej: Pago de factura de luz" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
+                        </FormControl>
+                    </div>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-8">
                     <FormField
                     control={form.control}
                     name="amount"
@@ -213,7 +216,7 @@ export default function ExpensesPage() {
                         <div className="relative flex items-center">
                             <DollarSign className="absolute left-3 h-5 w-5 text-muted-foreground" />
                             <FormControl>
-                                <Input type="number" placeholder="0.00" {...field} className="pl-10"/>
+                                <Input type="number" placeholder="0.00" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"/>
                             </FormControl>
                         </div>
                         <FormMessage />
@@ -224,15 +227,15 @@ export default function ExpensesPage() {
                         control={form.control}
                         name="date"
                         render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                             <FormLabel>Fecha del Gasto</FormLabel>
                             <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button
-                                    variant={'outline'}
+                                    variant={'ghost'}
                                     className={cn(
-                                    'w-full justify-start text-left font-normal',
+                                    'w-full justify-start text-left font-normal border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary',
                                     !field.value && 'text-muted-foreground'
                                     )}
                                 >
@@ -270,9 +273,12 @@ export default function ExpensesPage() {
                     <FormLabel>Categoría</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar una categoría" />
-                            </SelectTrigger>
+                            <div className="relative flex items-center">
+                                <Tag className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                                <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus:ring-0 focus:ring-offset-0 focus:border-primary">
+                                    <SelectValue placeholder="Seleccionar una categoría" />
+                                </SelectTrigger>
+                            </div>
                         </FormControl>
                         <SelectContent>
                         {expenseCategories.map(cat => (
