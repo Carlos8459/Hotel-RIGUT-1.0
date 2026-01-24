@@ -71,6 +71,7 @@ import {
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 const WhatsAppIcon = (props) => (
@@ -104,6 +105,7 @@ export default function RoomsDashboard() {
   const [selectedRoom, setSelectedRoom] = useState<ProcessedRoom | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -135,6 +137,21 @@ export default function RoomsDashboard() {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+        if (window.scrollY > 20) {
+            setIsScrolled(true);
+        } else {
+            setIsScrolled(false);
+        }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const visibleDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
@@ -437,12 +454,21 @@ export default function RoomsDashboard() {
 
       <Link href="/new-reservation">
         <Button
-          size="lg"
-          className="fixed z-20 bottom-24 right-4 rounded-full shadow-xl h-auto py-3 px-5 md:bottom-8 md:right-8 flex items-center gap-2"
-          aria-label="Nueva Reserva"
+          className={cn(
+            'fixed z-20 bottom-24 right-4 rounded-full shadow-xl transition-all duration-300 ease-in-out md:bottom-8 md:right-8 flex items-center justify-center overflow-hidden',
+            isScrolled ? 'h-14 w-14 p-0' : 'h-auto py-2 px-4 gap-2'
+          )}
+          aria-label="Reservación"
         >
-          <PlusCircle className="h-6 w-6" />
-          <span className="text-base font-semibold">Nueva Reserva</span>
+          <PlusCircle className={cn('transition-transform flex-shrink-0', isScrolled ? 'h-6 w-6' : 'h-5 w-5')} />
+          <span
+            className={cn(
+              'text-sm font-semibold whitespace-nowrap transition-all duration-200',
+              isScrolled ? 'w-0 opacity-0' : 'w-auto opacity-100'
+            )}
+          >
+            Reservación
+          </span>
         </Button>
       </Link>
 
