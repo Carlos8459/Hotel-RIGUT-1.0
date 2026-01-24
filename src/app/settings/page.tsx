@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Wrench, User as UserIcon, BarChart2 } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Wrench, User as UserIcon, BarChart2, Bell } from 'lucide-react';
 
 const WhatsAppIcon = (props) => (
     <svg
@@ -52,8 +52,8 @@ export default function SettingsPage() {
                         <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                             <Settings className="h-6 w-6 text-muted-foreground" />
                             <div>
-                                <CardTitle className="text-lg">Configuración</CardTitle>
-                                <CardDescription>Administra habitaciones y consumos extras.</CardDescription>
+                                <CardTitle className="text-lg">Habitaciones y Consumos</CardTitle>
+                                <CardDescription>Administra las habitaciones y los productos de consumo extra.</CardDescription>
                             </div>
                         </CardHeader>
                     </Card>
@@ -67,6 +67,18 @@ export default function SettingsPage() {
                                 <CardTitle className="text-lg">Cuenta</CardTitle>
                                 <CardDescription>Gestiona los detalles de tu cuenta y la seguridad.</CardDescription>
                              </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
+
+                 <Link href="/settings/notifications" className="block w-full">
+                    <Card className="hover:border-primary transition-colors cursor-pointer">
+                        <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                            <Bell className="h-6 w-6 text-muted-foreground" />
+                            <div>
+                                <CardTitle className="text-lg">Notificaciones</CardTitle>
+                                <CardDescription>Configura cuándo y cómo recibir notificaciones.</CardDescription>
+                            </div>
                         </CardHeader>
                     </Card>
                 </Link>

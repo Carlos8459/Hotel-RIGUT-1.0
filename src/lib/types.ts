@@ -63,6 +63,14 @@ export type WhatsappConfig = {
   isEnabled: boolean;
 };
 
+export type NotificationConfig = {
+  id: string;
+  isEnabled: boolean;
+  onNewReservation: boolean;
+  onCheckOut: boolean;
+  onNewExpense: boolean;
+};
+
 export type Expense = {
     id: string;
     description: string;

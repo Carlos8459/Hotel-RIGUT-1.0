@@ -235,6 +235,35 @@
         "isRead"
       ]
     },
+    "NotificationConfig": {
+      "title": "Notification Config",
+      "type": "object",
+      "description": "Stores configuration for system-wide notifications.",
+      "properties": {
+        "isEnabled": {
+          "type": "boolean",
+          "description": "Global switch to enable or disable all notifications."
+        },
+        "onNewReservation": {
+          "type": "boolean",
+          "description": "Send notification on new reservation check-in."
+        },
+        "onCheckOut": {
+          "type": "boolean",
+          "description": "Send notification on guest check-out."
+        },
+        "onNewExpense": {
+          "type": "boolean",
+          "description": "Send notification when a new expense is logged."
+        }
+      },
+      "required": [
+        "isEnabled",
+        "onNewReservation",
+        "onCheckOut",
+        "onNewExpense"
+      ]
+    },
     "WhatsappConfig": {
       "title": "WhatsappConfig",
       "type": "object",
@@ -363,11 +392,17 @@
       },
       "description": "Stores system-wide notifications for all users."
     },
-    "/settings/{settingId}": {
+    "/settings/whatsapp_config": {
       "schema": {
         "$ref": "#/backend/entities/WhatsappConfig"
       },
-      "description": "Stores general application settings. The document ID should be descriptive, e.g., 'whatsapp_config'."
+      "description": "Stores configuration for WhatsApp automation. The document ID must be 'whatsapp_config'."
+    },
+    "/settings/notification_config": {
+      "schema": {
+        "$ref": "#/backend/entities/NotificationConfig"
+      },
+      "description": "Stores global notification settings. The document ID must be 'notification_config'."
     },
     "/consumption_items/{itemId}": {
       "schema": {
