@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { subDays, isSameDay, parseISO } from 'date-fns';
 
@@ -40,11 +40,14 @@ export default function WhatsappAutomationPage() {
     const { toast } = useToast();
 
     // Data fetching
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
+    
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
     
     const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'whatsapp_config') : null, [firestore]);
-    const { data: whatsappConfigData, isLoading: configLoading } = useDoc<Omit<WhatsappConfig, 'id'>>(settingsDocRef);
+    const { data: whatsappConfigData, isLoading: configLoading, error: configError } = useDoc<Omit<WhatsappConfig, 'id'>>(settingsDocRef);
     
     // State management
     const [messageTemplate, setMessageTemplate] = useState('');
@@ -55,7 +58,15 @@ export default function WhatsappAutomationPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+            toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para acceder a esta página.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     useEffect(() => {
         if (whatsappConfigData) {
@@ -116,14 +127,18 @@ export default function WhatsappAutomationPage() {
         window.open(whatsappUrl, '_blank');
     };
     
-    const isLoading = isUserLoading || reservationsLoading || configLoading;
+    const isLoading = isUserLoading || isUserProfileLoading || reservationsLoading || configLoading;
 
-    if (isUserLoading && !user) {
+    if (isLoading) {
          return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-                <p>Cargando...</p>
+                <p>Cargando y verificando permisos...</p>
             </div>
         );
+    }
+
+    if (!user || !userProfile || userProfile.role !== 'Admin') {
+        return null;
     }
     
     return (
@@ -140,6 +155,7 @@ export default function WhatsappAutomationPage() {
             </header>
             
             <main className="max-w-3xl mx-auto space-y-8">
+                 {configError && <p className="text-destructive">Error al cargar la configuración: {configError.message}</p>}
                 <Card>
                     <CardHeader>
                         <CardTitle>Mensajes Pendientes</CardTitle>
@@ -194,14 +210,8 @@ export default function WhatsappAutomationPage() {
                             />
                          )}
                     </CardContent>
-                    <CardFooter>
-                        <Button onClick={handleSaveSettings} disabled={isSaving || configLoading}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            {isSaving ? 'Guardando...' : 'Guardar Ajustes'}
-                        </Button>
-                    </CardFooter>
                 </Card>
-                
+
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> Automatización</CardTitle>
@@ -227,6 +237,12 @@ export default function WhatsappAutomationPage() {
                             </div>
                          )}
                     </CardContent>
+                     <CardFooter>
+                        <Button onClick={handleSaveSettings} disabled={isSaving || configLoading}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            {isSaving ? 'Guardando...' : 'Guardar Ajustes'}
+                        </Button>
+                    </CardFooter>
                 </Card>
             </main>
       </div>

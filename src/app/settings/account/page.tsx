@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { signOut, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,7 +47,12 @@ export default function AccountSettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const auth = useAuth();
+    const firestore = useFirestore();
     const { toast } = useToast();
+
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
+
     const [isPending, setIsPending] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -112,7 +118,7 @@ export default function AccountSettingsPage() {
     };
 
 
-    if (isUserLoading || !user) {
+    if (isUserLoading || isUserProfileLoading || !user) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
@@ -140,6 +146,10 @@ export default function AccountSettingsPage() {
                         <div className="space-y-2">
                             <Label htmlFor="email">Correo Electrónico</Label>
                             <Input id="email" type="email" defaultValue={user.email || ''} disabled />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="role">Rol</Label>
+                            <Input id="role" type="text" defaultValue={userProfile?.role || 'Socio'} disabled />
                         </div>
                     </CardContent>
                 </Card>
@@ -231,20 +241,22 @@ export default function AccountSettingsPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Gestión de Socios</CardTitle>
-                        <CardDescription>Agrega o administra las cuentas de tus socios.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Button asChild>
-                           <Link href="/admin/users">
-                               <Users className="mr-2 h-4 w-4" />
-                               Gestionar Socios
-                           </Link>
-                       </Button>
-                    </CardContent>
-                </Card>
+                {userProfile?.role === 'Admin' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Gestión de Socios</CardTitle>
+                            <CardDescription>Agrega o administra las cuentas de tus socios.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <Button asChild>
+                            <Link href="/admin/users">
+                                <Users className="mr-2 h-4 w-4" />
+                                Gestionar Socios
+                            </Link>
+                        </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>

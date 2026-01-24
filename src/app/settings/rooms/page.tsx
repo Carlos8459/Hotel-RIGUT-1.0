@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -66,8 +66,11 @@ export default function RoomSettingsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
+
     const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
-    const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
+    const { data: roomsData, isLoading: roomsLoading, error: roomsError } = useCollection<Omit<Room, 'id'>>(roomsCollection);
 
     const [editableRooms, setEditableRooms] = useState<EditableRoom[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -87,7 +90,15 @@ export default function RoomSettingsPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+         if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+            toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para acceder a esta página.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     useEffect(() => {
         if (roomsData) {
@@ -116,22 +127,37 @@ export default function RoomSettingsPage() {
         if (!firestore) return;
         setIsSaving(true);
         
-        editableRooms.forEach(room => {
-            const hasChanged = room.price !== room.originalPrice || room.type !== room.originalType || room.status !== room.originalStatus;
-            if (hasChanged) {
-                const roomDocRef = doc(firestore, 'rooms', room.id);
-                const dataToUpdate = {
-                    price: room.price,
-                    type: room.type,
-                    status: room.status,
-                };
-                updateDocumentNonBlocking(roomDocRef, dataToUpdate);
-            }
+        const changedRooms = editableRooms.filter(room => 
+            room.price !== room.originalPrice || 
+            room.type !== room.originalType || 
+            room.status !== room.originalStatus
+        );
+
+        if (changedRooms.length === 0) {
+            toast({
+                title: "Sin Cambios",
+                description: "No se detectaron modificaciones para guardar.",
+            });
+            setIsSaving(false);
+            return;
+        }
+
+        const promises = changedRooms.map(room => {
+            const roomDocRef = doc(firestore, 'rooms', room.id);
+            const dataToUpdate = {
+                price: room.price,
+                type: room.type,
+                status: room.status,
+            };
+            // Using updateDoc and returning the promise
+            return updateDocumentNonBlocking(roomDocRef, dataToUpdate);
         });
 
+        // We aren't really waiting for promises here due to non-blocking nature
+        // but this structure is useful if we ever switch back.
         toast({
             title: "Cambios Guardados",
-            description: "La configuración de las habitaciones ha sido actualizada.",
+            description: `Se han actualizado ${changedRooms.length} habitacion(es).`,
         });
         setIsSaving(false);
     };
@@ -173,12 +199,16 @@ export default function RoomSettingsPage() {
         });
     };
 
-    if (isUserLoading || !user) {
+    if (isUserLoading || isUserProfileLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-                <p>Cargando...</p>
+                <p>Cargando y verificando permisos...</p>
             </div>
         );
+    }
+
+    if (!user || !userProfile || userProfile.role !== 'Admin') {
+        return null;
     }
     
     const roomTypes = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
@@ -266,6 +296,8 @@ export default function RoomSettingsPage() {
                             <div className="space-y-4">
                                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
                             </div>
+                        ) : roomsError ? (
+                             <p className="text-destructive">Error: {roomsError.message}</p>
                         ) : (
                             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
                                 {editableRooms.map((room) => (

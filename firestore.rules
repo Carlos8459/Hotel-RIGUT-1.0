@@ -10,9 +10,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Helper function to check if a user has a specific role
     function hasRole(role) {
-      // Ensure the user document exists and has the specified role
       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
@@ -22,13 +20,16 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // A user can create their own profile document
-      allow create: if isOwner(userId);
+      // An admin can create a user, or a user can create their own profile.
+      allow create: if isOwner(userId) || isAdmin();
       
-      // Any signed-in user can read user profiles.
-      allow list, read: if isSignedIn();
+      // Only admins can list all users.
+      allow list: if isAdmin();
       
-      // Only the user themselves or an Admin can update or delete their own profile.
+      // A user can read their own profile, and an admin can read any profile.
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // A user can update their own profile, and an admin can update any profile.
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth as getTempAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -83,6 +83,9 @@ export default function ManageUsersPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
+
     const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: usersData, isLoading: usersLoading, error: usersError } = useCollection<UserDocument>(usersCollection);
     
@@ -114,7 +117,15 @@ export default function ManageUsersPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+            toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para acceder a esta página.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     const handleEditRoleClick = (userToEdit: User) => {
         setEditingUser(userToEdit);
@@ -195,15 +206,15 @@ export default function ManageUsersPage() {
         }
     };
 
-    if (isUserLoading) {
+    if (isUserLoading || isUserProfileLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-                <p>Cargando...</p>
+                <p>Cargando y verificando permisos...</p>
             </div>
         );
     }
 
-    if (!user) {
+    if (!user || !userProfile || userProfile.role !== 'Admin') {
         return null;
     }
 
