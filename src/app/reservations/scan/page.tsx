@@ -70,7 +70,7 @@ export default function ScanIdPage() {
         setError(null);
 
         const video = videoRef.current;
-        const canvas = canvas.current;
+        const canvas = canvasRef.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const context = canvas.getContext('2d');
