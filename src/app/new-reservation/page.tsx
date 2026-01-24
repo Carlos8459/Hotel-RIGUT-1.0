@@ -33,11 +33,12 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera } from 'lucide-react';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 
 const reservationFormSchema = z.object({
@@ -204,7 +205,13 @@ function NewReservationFormComponent() {
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Volver</span>
         </Button>
-        <h1 className="text-2xl font-bold">Registrar Check-in</h1>
+        <h1 className="text-2xl font-bold flex-grow">Registrar Check-in</h1>
+        <Button asChild variant="outline" size="icon">
+          <Link href="/reservations/scan">
+            <Camera className="h-5 w-5" />
+            <span className="sr-only">Escanear Cédula</span>
+          </Link>
+        </Button>
       </header>
 
       <main className="max-w-2xl mx-auto">
