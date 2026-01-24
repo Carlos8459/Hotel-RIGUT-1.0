@@ -200,7 +200,7 @@ export default function RoomsDashboard() {
   }, [roomsData, reservationsData, selectedDate]);
 
 
-  if (isUserLoading || !user || roomsLoading || reservationsLoading) {
+  if (isUserLoading || !user || roomsLoading || reservationsLoading || isUserProfileLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
