@@ -230,87 +230,35 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profile information, accessible only by the user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/User"
       },
-      {
-        "path": "/rooms/{roomId}",
-        "definition": {
-          "entityName": "Room",
-          "schema": {
-            "$ref": "#/backend/entities/Room"
-          },
-          "description": "Stores individual room information like price, type, and maintenance status. Room documents should be created manually in Firestore for now.",
-          "params": [
-            {
-              "name": "roomId",
-              "description": "The unique identifier for the room, corresponding to its title, e.g., 'Habitación 1'."
-            }
-          ]
-        }
+      "description": "Stores user profile information, accessible only by the user."
+    },
+    "/rooms/{roomId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Room"
       },
-      {
-        "path": "/reservations/{reservationId}",
-        "definition": {
-          "entityName": "Reservation",
-          "schema": {
-            "$ref": "#/backend/entities/Reservation"
-          },
-          "description": "Stores all reservation records for the hotel.",
-          "params": [
-            {
-              "name": "reservationId",
-              "description": "The unique identifier of the reservation."
-            }
-          ]
-        }
+      "description": "Stores individual room information like price, type, and maintenance status. Room documents should be created manually in Firestore for now."
+    },
+    "/reservations/{reservationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Reservation"
       },
-      {
-        "path": "/notifications/{notificationId}",
-        "definition": {
-          "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
-          "description": "Stores system-wide notifications for all users.",
-          "params": [
-            {
-              "name": "notificationId",
-              "description": "The unique identifier of the notification."
-            }
-          ]
-        }
+      "description": "Stores all reservation records for the hotel."
+    },
+    "/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Notification"
       },
-      {
-        "path": "/settings/{settingId}",
-        "definition": {
-          "entityName": "WhatsappConfig",
-          "schema": {
-            "$ref": "#/backend/entities/WhatsappConfig"
-          },
-          "description": "Stores general application settings. The document ID should be descriptive, e.g., 'whatsapp_config'.",
-          "params": [
-            {
-              "name": "settingId",
-              "description": "The unique identifier for the setting document."
-            }
-          ]
-        }
-      }
-    ]
+      "description": "Stores system-wide notifications for all users."
+    },
+    "/settings/{settingId}": {
+      "schema": {
+        "$ref": "#/backend/entities/WhatsappConfig"
+      },
+      "description": "Stores general application settings. The document ID should be descriptive, e.g., 'whatsapp_config'."
+    }
   }
 }

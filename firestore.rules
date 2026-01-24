@@ -38,8 +38,8 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      // Temporarily allow read and write for any signed-in user for debugging
-      allow read, write: if isSignedIn();
+      // Any signed-in user can create, read, update, or delete reservations.
+      allow create, read, update, delete: if isSignedIn();
     }
 
     match /notifications/{notificationId} {
