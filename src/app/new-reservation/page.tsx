@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { collection, addDoc, serverTimestamp, where, query, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
 
 
@@ -72,9 +72,11 @@ export default function NewReservationPage() {
 
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
 
 
   const form = useForm<z.infer<typeof reservationFormSchema>>({
@@ -136,9 +138,9 @@ export default function NewReservationPage() {
         checkOutDate: data.checkOutDate.toISOString(),
         roomId: data.roomId,
         vehicle: data.vehicle,
-        status: 'Confirmed',
+        status: 'Checked-In' as const,
         payment: {
-          status: 'Pendiente',
+          status: 'Pendiente' as const,
           amount: totalAmount,
         },
         createdAt: new Date().toISOString(),
@@ -146,12 +148,27 @@ export default function NewReservationPage() {
       };
 
       await addDoc(collection(firestore, 'reservations'), reservationData);
+      
+      const creatorName = userProfile?.username || user.email;
+      const roomTitle = room?.title || `Habitación ${data.roomId}`;
+
+      if (creatorName) {
+          const notificationsColRef = collection(firestore, 'notifications');
+          const notificationMessage = `${creatorName} registró a ${data.guestName} en la ${roomTitle}.`;
+          addDoc(notificationsColRef, {
+              message: notificationMessage,
+              createdAt: new Date().toISOString(),
+              createdBy: user.uid,
+              creatorName: creatorName,
+              isRead: false,
+          });
+      }
 
       toast({
-        title: 'Reserva Creada',
-        description: `Se ha creado una reserva para ${data.guestName}.`,
+        title: 'Check-in Realizado',
+        description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
       });
-      router.push('/reservations');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error creating reservation: ', error);
       toast({
@@ -165,7 +182,7 @@ export default function NewReservationPage() {
   }
 
 
-  if (isUserLoading || !user || roomsLoading || reservationsLoading) {
+  if (isUserLoading || !user || roomsLoading || reservationsLoading || isUserProfileLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
@@ -185,7 +202,7 @@ export default function NewReservationPage() {
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Volver</span>
         </Button>
-        <h1 className="text-2xl font-bold">Nueva Reserva</h1>
+        <h1 className="text-2xl font-bold">Registrar Check-in</h1>
       </header>
 
       <main className="max-w-2xl mx-auto">
@@ -266,7 +283,7 @@ export default function NewReservationPage() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                      <PopoverContent className="w-auto p-0 bg-popover" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -308,7 +325,7 @@ export default function NewReservationPage() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                      <PopoverContent className="w-auto p-0 bg-popover" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -421,7 +438,7 @@ export default function NewReservationPage() {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creando...' : 'Crear Reserva'}
+              {isSubmitting ? 'Registrando Check-in...' : 'Registrar Check-in'}
             </Button>
           </form>
         </Form>

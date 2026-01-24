@@ -74,8 +74,6 @@ export default function ReservationsPage() {
 
   const getStatusBadge = (status: Reservation['status']) => {
     switch (status) {
-      case 'Confirmed':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
       case 'Checked-In':
         return 'bg-red-500/20 text-red-400 border-red-500/50';
       case 'Checked-Out':

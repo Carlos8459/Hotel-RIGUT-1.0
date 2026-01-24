@@ -147,13 +147,6 @@ export default function RoomsDashboard() {
         if (relevantReservation.status === 'Checked-In') {
            statusText = 'Ocupada';
            statusColor = 'bg-red-500/20 text-red-400 border-red-500/50';
-        } else if (relevantReservation.status === 'Confirmed') {
-            if (isSameDay(startOfDay(parseISO(relevantReservation.checkInDate)), startOfSelected)) {
-                statusText = 'Llegada';
-            } else {
-                statusText = 'Reserva';
-            }
-           statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
         }
       }
       
@@ -174,9 +167,6 @@ export default function RoomsDashboard() {
   const disponiblesCount = processedRooms.filter(
     (room) => room.statusText === 'Disponible'
   ).length;
-  const reservasCount = processedRooms.filter(
-    (room) => room.statusText === 'Reserva' || room.statusText === 'Llegada'
-  ).length;
 
 
   if (isUserLoading || !user || roomsLoading || reservationsLoading) {
@@ -195,33 +185,6 @@ export default function RoomsDashboard() {
     setSelectedRoom(null);
   };
   
-  const handleCheckIn = (reservation: Reservation, roomTitle: string) => {
-    if (!firestore || !user) return;
-
-    // 1. Update reservation status to 'Checked-In'
-    const resDocRef = doc(firestore, 'reservations', reservation.id);
-    updateDoc(resDocRef, { status: 'Checked-In' });
-
-    // 2. Create notification
-    const creatorName = userProfile?.username || user.email;
-    if (creatorName) {
-        const notificationsColRef = collection(firestore, 'notifications');
-        const notificationMessage = `${creatorName} registró a ${reservation.guestName} en la ${roomTitle}.`;
-        addDoc(notificationsColRef, {
-            message: notificationMessage,
-            createdAt: new Date().toISOString(),
-            createdBy: user.uid,
-            creatorName: creatorName,
-            isRead: false,
-        });
-    }
-    
-    toast({
-        title: "Check-in realizado",
-        description: `${reservation.guestName} ha sido registrado en ${roomTitle}.`
-    });
-  };
-
   const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
@@ -307,10 +270,6 @@ export default function RoomsDashboard() {
           <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-red-400"></div>
               <p className="text-sm font-medium"><span className="font-bold text-foreground">{ocupadasCount}</span> <span className="text-muted-foreground">Ocupadas</span></p>
-          </div>
-          <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-blue-400"></div>
-              <p className="text-sm font-medium"><span className="font-bold text-foreground">{reservasCount}</span> <span className="text-muted-foreground">Reservas</span></p>
           </div>
         </div>
 
@@ -420,8 +379,6 @@ export default function RoomsDashboard() {
                           )
                       ) : room.statusText === 'Disponible' ? (
                           <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
-                      ) : room.reservation && (room.statusText === 'Reserva' || room.statusText === 'Llegada') ? (
-                          <Button className="w-full" onClick={() => handleCheckIn(room.reservation!, room.title)} disabled={isUserProfileLoading}><Check className="mr-2 h-4 w-4" />Check-in</Button>
                       ) : null }
 
                   </CardFooter>

@@ -15,7 +15,7 @@ export type Reservation = {
   checkOutDate: string; // ISO string
   roomId: string;
   vehicle?: 'car' | 'bike' | 'truck';
-  status: 'Confirmed' | 'Checked-In' | 'Checked-Out' | 'Cancelled';
+  status: 'Checked-In' | 'Checked-Out' | 'Cancelled';
   payment: {
     status: 'Pendiente' | 'Cancelado';
     amount: number;

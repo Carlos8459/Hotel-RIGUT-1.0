@@ -121,7 +121,6 @@
         "status": {
           "type": "string",
           "enum": [
-            "Confirmed",
             "Checked-In",
             "Checked-Out",
             "Cancelled"
