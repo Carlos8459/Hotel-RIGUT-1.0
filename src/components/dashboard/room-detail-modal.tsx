@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import type { ProcessedRoom } from "@/app/dashboard/page";
 import type { Room, Reservation, ExtraConsumption } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "../ui/textarea";
 
 type RoomDetailModalProps = {
     room: ProcessedRoom;
@@ -63,6 +64,7 @@ type EditableGuestData = {
     roomId: string;
     vehicle: 'car' | 'bike' | 'truck' | undefined;
     checkOutDate: Date | undefined;
+    notes: string;
 }
 
 const consumptionIcons: { [key: string]: React.ReactNode } = {
@@ -91,6 +93,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     roomId: "",
     vehicle: undefined,
     checkOutDate: undefined,
+    notes: "",
   });
 
   // Fetch available rooms for the select dropdown
@@ -142,6 +145,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       roomId: room.reservation.roomId,
       vehicle: room.reservation.vehicle,
       checkOutDate: parseISO(room.reservation.checkOutDate),
+      notes: room.reservation.notes || '',
     });
     setIsEditModalOpen(true);
   };
@@ -158,14 +162,17 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         roomId: editedGuest.roomId,
         vehicle: editedGuest.vehicle,
         checkOutDate: editedGuest.checkOutDate?.toISOString(),
+        notes: editedGuest.notes,
     };
 
     try {
         await updateDoc(resDocRef, updatedData);
+        toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
         setIsEditModalOpen(false);
         onClose(); // Close main modal after saving
     } catch (error) {
         console.error("Error updating reservation:", error);
+        toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
     }
   };
 
@@ -268,6 +275,15 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             )}
                         </div>
                     </div>
+                    {room.reservation.notes && (
+                        <>
+                            <Separator />
+                            <div className="space-y-3">
+                                <h3 className="font-semibold text-lg flex items-center"><StickyNote className="mr-2 h-5 w-5" />Notas</h3>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{room.reservation.notes}</p>
+                            </div>
+                        </>
+                    )}
                     </>
                 )}
 
@@ -433,6 +449,16 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                                 />
                             </PopoverContent>
                         </Popover>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="guest-notes">Notas Adicionales</Label>
+                        <Textarea
+                            id="guest-notes"
+                            placeholder="Anotaciones sobre el huésped..."
+                            value={editedGuest.notes}
+                            onChange={(e) => setEditedGuest(prev => ({...prev, notes: e.target.value}))}
+                            className="min-h-[100px]"
+                        />
                     </div>
                 </div>
             </ScrollArea>

@@ -66,6 +66,7 @@ import {
   CakeSlice,
   IceCream,
   Package,
+  StickyNote,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -337,6 +338,14 @@ export default function RoomsDashboard() {
                                                 <span className="ml-1 font-bold text-foreground">{item.quantity}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+                              )}
+                              {room.reservation.notes && (
+                                <div className="pt-2 border-t border-border/50">
+                                    <div className="flex items-start gap-2 text-xs text-muted-foreground mt-2">
+                                        <StickyNote className="h-4 w-4 shrink-0 mt-0.5" />
+                                        <p className="line-clamp-2">{room.reservation.notes}</p>
                                     </div>
                                 </div>
                               )}
