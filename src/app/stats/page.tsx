@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import {
   format,
   parseISO,
@@ -32,7 +32,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { Reservation } from '@/lib/types';
+import type { Reservation, Expense } from '@/lib/types';
 import {
   LayoutGrid,
   Calendar as CalendarIcon,
@@ -44,6 +44,9 @@ import {
   TrendingUp,
   Wrench,
   ChevronDown,
+  ArrowDown,
+  ArrowUp,
+  Minus,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -122,6 +125,12 @@ export default function StatsPage() {
     [firestore]
   );
   const { data: reservations, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
+  
+  const expensesCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'expenses') : null),
+    [firestore]
+  );
+  const { data: expenses, isLoading: expensesLoading } = useCollection<Omit<Expense, 'id'>>(expensesCollection);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -168,55 +177,82 @@ export default function StatsPage() {
     });
   }, [paidReservations, dateRange]);
 
-  const { totalIncome, paidReservationsCount, averageIncome } = useMemo(() => {
-    const count = filteredReservations.length;
-    const total = filteredReservations.reduce((acc, res) => acc + (res.payment?.amount || 0), 0);
-    return {
-      totalIncome: total,
-      paidReservationsCount: count,
-      averageIncome: count > 0 ? total / count : 0,
-    };
-  }, [filteredReservations]);
+  const filteredExpenses = useMemo(() => {
+    if (!expenses) return [];
+    if (!dateRange?.from) return expenses;
+    const endOfRange = dateRange.to ?? dateRange.from;
+    return expenses.filter(exp => {
+        const expenseDate = parseISO(exp.date);
+        return isWithinInterval(expenseDate, { start: dateRange.from!, end: endOfRange });
+    });
+  }, [expenses, dateRange]);
 
-  const dailyIncomeData = useMemo(() => {
+  const { totalIncome, totalExpenses, netIncome } = useMemo(() => {
+    const income = filteredReservations.reduce((acc, res) => acc + (res.payment?.amount || 0), 0);
+    const expenseTotal = filteredExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+    return {
+      totalIncome: income,
+      totalExpenses: expenseTotal,
+      netIncome: income - expenseTotal,
+    };
+  }, [filteredReservations, filteredExpenses]);
+
+  const dailyChartData = useMemo(() => {
     if (!dateRange?.from) return [];
     const endOfRange = dateRange.to ?? dateRange.from;
     const days = eachDayOfInterval({ start: dateRange.from, end: endOfRange });
     
-    const dailyData = days.map(day => {
+    return days.map(day => {
         const dayString = format(day, 'yyyy-MM-dd');
+        
         const income = filteredReservations
             .filter(res => format(parseISO(res.checkOutDate), 'yyyy-MM-dd') === dayString)
             .reduce((acc, res) => acc + (res.payment?.amount || 0), 0);
+            
+        const expense = filteredExpenses
+            .filter(exp => format(parseISO(exp.date), 'yyyy-MM-dd') === dayString)
+            .reduce((acc, exp) => acc + exp.amount, 0);
+
         return {
             date: format(day, 'd LLL', { locale: es }),
             Ingresos: income,
+            Gastos: expense,
         };
     });
+  }, [filteredReservations, filteredExpenses, dateRange]);
 
-    return dailyData;
 
-  }, [filteredReservations, dateRange]);
-
-  const monthlyIncomeData = useMemo(() => {
+  const monthlyChartData = useMemo(() => {
       const yearlyReservations = paidReservations.filter(res => {
           const checkOut = parseISO(res.checkOutDate);
           return isWithinInterval(checkOut, { start: startOfYear(new Date()), end: endOfYear(new Date()) });
       });
+      
+      const yearlyExpenses = expenses?.filter(exp => {
+          const expenseDate = parseISO(exp.date);
+          return isWithinInterval(expenseDate, { start: startOfYear(new Date()), end: endOfYear(new Date()) });
+      }) || [];
 
       const months = eachMonthOfInterval({ start: startOfYear(new Date()), end: endOfYear(new Date())});
 
       return months.map(month => {
           const monthString = format(month, 'yyyy-MM');
+          
           const income = yearlyReservations
             .filter(res => format(parseISO(res.checkOutDate), 'yyyy-MM') === monthString)
             .reduce((acc, res) => acc + (res.payment?.amount || 0), 0);
+            
+          const expense = yearlyExpenses
+            .filter(exp => format(parseISO(exp.date), 'yyyy-MM') === monthString)
+            .reduce((acc, exp) => acc + exp.amount, 0);
+            
           return {
               month: format(month, 'LLL', { locale: es }),
               Ingresos: income,
+              Gastos: expense,
           };
       });
-  }, [paidReservations]);
+  }, [paidReservations, expenses]);
 
   const currencyFormatter = new Intl.NumberFormat('es-NI', {
     style: 'currency',
@@ -227,11 +263,17 @@ export default function StatsPage() {
   const chartConfig = {
     Ingresos: {
       label: 'Ingresos',
-      color: 'hsl(var(--primary))',
+      color: 'hsl(var(--chart-2))',
     },
+    Gastos: {
+      label: 'Gastos',
+      color: 'hsl(var(--chart-5))',
+    }
   };
   
-  if (isUserLoading || !user) {
+  const isLoading = isUserLoading || !user || reservationsLoading || expensesLoading;
+
+  if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
@@ -243,7 +285,7 @@ export default function StatsPage() {
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
       <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Estadísticas de Ingresos</h1>
+          <h1 className="text-2xl font-bold">Resumen Financiero</h1>
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
                   <Button variant="outline">
@@ -255,13 +297,13 @@ export default function StatsPage() {
                   <DropdownMenuLabel>Más Estadísticas</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                      <Link href="/stats/rooms">Estadísticas de Habitaciones</Link>
+                      <Link href="/stats/rooms">Habitaciones</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                       <Link href="/stats/extra-consumptions">Ingresos Extras</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                      <Link href="/stats/expenses">Estadísticas de Gastos</Link>
+                      <Link href="/stats/expenses">Gastos</Link>
                   </DropdownMenuItem>
               </DropdownMenuContent>
           </DropdownMenu>
@@ -280,32 +322,32 @@ export default function StatsPage() {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+                    <CardTitle className="text-sm font-medium">Ingresos Netos</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {reservationsLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(totalIncome)}</div>}
-                    <p className="text-xs text-muted-foreground">Ingresos totales en el período seleccionado</p>
+                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(netIncome)}</div>}
+                    <p className="text-xs text-muted-foreground">Ingresos brutos menos gastos en el período</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Reservas Pagadas</CardTitle>
-                    <BookCheck className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Ingresos Brutos</CardTitle>
+                    <ArrowUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                    {reservationsLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{paidReservationsCount}</div>}
-                    <p className="text-xs text-muted-foreground">Total de estadías finalizadas y pagadas</p>
+                    {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{currencyFormatter.format(totalIncome)}</div>}
+                    <p className="text-xs text-muted-foreground">Total de ingresos por estadías pagadas</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ingreso Promedio</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                    <ArrowDown className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                    {reservationsLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(averageIncome)}</div>}
-                    <p className="text-xs text-muted-foreground">Ingreso promedio por reserva pagada</p>
+                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(totalExpenses)}</div>}
+                    <p className="text-xs text-muted-foreground">Total de gastos registrados en el período</p>
                 </CardContent>
             </Card>
         </section>
@@ -313,13 +355,13 @@ export default function StatsPage() {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Ingresos Diarios</CardTitle>
-                    <CardDescription>Ingresos generados por día en el período seleccionado.</CardDescription>
+                    <CardTitle>Rendimiento Diario</CardTitle>
+                    <CardDescription>Ingresos vs. Gastos por día en el período seleccionado.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {reservationsLoading ? <Skeleton className="h-[250px] w-full" /> : (
+                    {isLoading ? <Skeleton className="h-[250px] w-full" /> : (
                     <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                        <BarChart data={dailyIncomeData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                        <BarChart data={dailyChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                             <YAxis tickFormatter={(value) => currencyFormatter.format(value as number)} />
@@ -328,7 +370,9 @@ export default function StatsPage() {
                                     formatter={(value) => currencyFormatter.format(value as number)}
                                 />}
                             />
+                            <Legend />
                             <Bar dataKey="Ingresos" fill="var(--color-Ingresos)" radius={4} />
+                            <Bar dataKey="Gastos" fill="var(--color-Gastos)" radius={4} />
                         </BarChart>
                     </ChartContainer>
                     )}
@@ -336,13 +380,13 @@ export default function StatsPage() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Ingresos Mensuales ({format(new Date(), 'yyyy')})</CardTitle>
-                    <CardDescription>Ingresos generados por mes durante el año actual.</CardDescription>
+                    <CardTitle>Rendimiento Mensual ({format(new Date(), 'yyyy')})</CardTitle>
+                    <CardDescription>Ingresos vs. Gastos por mes durante el año actual.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {reservationsLoading ? <Skeleton className="h-[250px] w-full" /> : (
+                    {isLoading ? <Skeleton className="h-[250px] w-full" /> : (
                     <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                        <BarChart data={monthlyIncomeData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                        <BarChart data={monthlyChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                             <YAxis tickFormatter={(value) => currencyFormatter.format(value as number).replace('C$', 'C$ ')} />
@@ -351,7 +395,9 @@ export default function StatsPage() {
                                     formatter={(value) => currencyFormatter.format(value as number)}
                                 />}
                             />
+                            <Legend />
                             <Bar dataKey="Ingresos" fill="var(--color-Ingresos)" radius={4} />
+                            <Bar dataKey="Gastos" fill="var(--color-Gastos)" radius={4} />
                         </BarChart>
                     </ChartContainer>
                     )}
