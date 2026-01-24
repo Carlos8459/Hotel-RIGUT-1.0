@@ -111,7 +111,17 @@ export default function ScanIdPage() {
             const primerNombre = parts[4] || '';
             const segundoNombre = parts[5] || '';
     
-            const guestName = [primerNombre, segundoNombre, primerApellido, segundoApellido].filter(Boolean).join(' ');
+            const toTitleCase = (str: string) => {
+                if (!str) return '';
+                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            };
+
+            const guestName = [
+                toTitleCase(primerNombre),
+                toTitleCase(segundoNombre),
+                toTitleCase(primerApellido),
+                toTitleCase(segundoApellido)
+            ].filter(Boolean).join(' ');
 
             const formatCedula = (c: string) => {
                 if (c && c.length === 14) {
