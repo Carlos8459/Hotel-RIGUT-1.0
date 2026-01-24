@@ -148,23 +148,9 @@ export default function NewReservationPage() {
     };
 
     try {
-        const docRef = await addDoc(reservationsColRef, reservationData);
+        await addDoc(reservationsColRef, reservationData);
         
-        const creatorName = userProfile?.username || user.email;
         const roomTitle = room?.title || `Habitación ${data.roomId}`;
-
-        if (creatorName) {
-            const notificationsColRef = collection(firestore, 'notifications');
-            const notificationMessage = `${creatorName} registró a ${data.guestName} en la ${roomTitle}.`;
-            
-            addDocumentNonBlocking(notificationsColRef, {
-                message: notificationMessage,
-                createdAt: new Date().toISOString(),
-                createdBy: user.uid,
-                creatorName: creatorName,
-                isRead: false,
-            });
-        }
 
         toast({
           title: 'Check-in Realizado',
