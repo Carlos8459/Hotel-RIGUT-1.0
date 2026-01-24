@@ -15,6 +15,7 @@ import {
   PlusCircle,
   AlertCircle,
   BarChart2,
+  Wrench,
 } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -205,13 +206,13 @@ export default function ReservationsPage() {
               <span className="text-xs font-medium">Reservas</span>
             </Button>
           </Link>
-          <Link href="/customers">
+          <Link href="/tools">
             <Button
               variant="ghost"
               className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
             >
-              <Users className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Clientes</span>
+              <Wrench className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Herramientas</span>
             </Button>
           </Link>
           <Link href="/stats">

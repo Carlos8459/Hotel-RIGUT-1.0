@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home, BarChart2 } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Search, Phone, Home, BarChart2, Wrench, ArrowLeft } from 'lucide-react';
 import { CustomerDetailModal } from '@/components/dashboard/customer-detail-modal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -143,9 +143,15 @@ export default function CustomersPage() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
-      <header className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-        <h1 className="text-2xl font-bold">Clientes</h1>
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
+      <header className="flex items-center gap-4 mb-8">
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Volver</span>
+        </Button>
+        <div className="flex-grow">
+            <h1 className="text-2xl font-bold">Clientes</h1>
+        </div>
+        <div className="relative flex-grow-0 sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
@@ -262,10 +268,10 @@ export default function CustomersPage() {
               <span className="text-xs font-medium">Reservas</span>
             </Button>
           </Link>
-          <Link href="/customers">
+          <Link href="/tools">
             <Button variant="ghost" className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1">
-              <Users className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Clientes</span>
+              <Wrench className="h-5 w-5 mb-1" />
+              <span className="text-xs font-medium">Herramientas</span>
             </Button>
           </Link>
           <Link href="/stats">
