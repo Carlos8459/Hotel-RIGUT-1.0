@@ -11,10 +11,11 @@ import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, ArrowLeft, LoaderCircle, AlertCircle, User, Fingerprint } from 'lucide-react';
+import { Camera, ArrowLeft, LoaderCircle, AlertCircle, User, Fingerprint, Sparkles } from 'lucide-react';
 import { IdCardOverlay } from '@/components/ui/id-card-overlay';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
+import { scanIdCard } from '@/ai/flows/scan-id-card-flow';
 
 const customerSchema = z.object({
   guestName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
@@ -30,8 +31,10 @@ export default function ScanIdPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [capturedPhotoUri, setCapturedPhotoUri] = useState<string | null>(null);
 
     const form = useForm<z.infer<typeof customerSchema>>({
         resolver: zodResolver(customerSchema),
@@ -70,35 +73,67 @@ export default function ScanIdPage() {
         };
     }, []);
 
-    const onSubmit = async (values: z.infer<typeof customerSchema>) => {
-        if (!videoRef.current || !canvasRef.current || !firestore) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'El componente de la cámara no está listo.',
-            });
+    const handleScan = async () => {
+        if (!videoRef.current || !canvasRef.current) {
+             toast({ variant: 'destructive', title: 'Error', description: 'El componente de la cámara no está listo.' });
             return;
         }
-
-        setIsSaving(true);
+        setIsScanning(true);
+        toast({ title: 'Escaneando...', description: 'Analizando la imagen de la cédula.' });
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const context = canvas.getContext('2d');
+
         if (!context) {
-            setIsSaving(false);
+            setIsScanning(false);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar la imagen.' });
+            return;
+        }
+
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const photoDataUri = canvas.toDataURL('image/jpeg', 0.9);
+        setCapturedPhotoUri(photoDataUri);
+
+        try {
+            const result = await scanIdCard({ photoDataUri });
+            if (result && result.fullName && result.idNumber) {
+                form.setValue('guestName', result.fullName);
+                form.setValue('cedula', result.idNumber);
+                toast({ title: '¡Datos extraídos!', description: 'Verifica la información antes de guardar.' });
+            } else {
+                throw new Error('No se pudo extraer la información.');
+            }
+        } catch (error: any) {
+            console.error("Scan failed:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Escaneo',
+                description: error.message || 'No se pudo leer la información de la cédula. Inténtalo de nuevo.',
+            });
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+
+    const onSubmit = async (values: z.infer<typeof customerSchema>) => {
+        if (!capturedPhotoUri) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'No se pudo procesar la imagen.',
+                description: 'Primero debes escanear la cédula para capturar una foto.',
             });
             return;
-        };
-        
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-        const photoDataUri = canvas.toDataURL('image/jpeg', 0.9);
+        }
+        if (!firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'La base de datos no está disponible.' });
+            return;
+        }
+
+        setIsSaving(true);
 
         try {
             const customerId = values.cedula.replace(/[^a-zA-Z0-9]/g, ''); // Sanitize ID for document key
@@ -107,13 +142,13 @@ export default function ScanIdPage() {
             setDocumentNonBlocking(customerDocRef, {
                 guestName: values.guestName,
                 cedula: values.cedula,
-                idCardImage: photoDataUri,
+                idCardImage: capturedPhotoUri,
                 createdAt: new Date().toISOString()
             }, { merge: true });
 
             toast({
                 title: '¡Éxito!',
-                description: `Foto de ${values.guestName} guardada. Redirigiendo...`,
+                description: `Datos de ${values.guestName} guardados. Redirigiendo...`,
             });
             
             router.push(`/new-reservation?guestName=${encodeURIComponent(values.guestName)}&cedula=${encodeURIComponent(values.cedula)}`);
@@ -137,7 +172,7 @@ export default function ScanIdPage() {
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Volver</span>
                 </Button>
-                <h1 className="text-xl font-bold">Capturar Cédula</h1>
+                <h1 className="text-xl font-bold">Escanear Cédula</h1>
             </header>
             
             <main className="flex-grow flex flex-col items-center justify-center p-4 space-y-4">
@@ -153,6 +188,29 @@ export default function ScanIdPage() {
                     )}
                 </div>
 
+                <div className="w-full max-w-lg">
+                    <Button
+                        onClick={handleScan}
+                        disabled={isScanning || hasCameraPermission !== true}
+                        size="lg"
+                        className="w-full mb-4"
+                        variant="outline"
+                    >
+                        {isScanning ? (
+                            <>
+                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                Escaneando...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Rellenar con IA
+                            </>
+                        )}
+                    </Button>
+                </div>
+
+
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-lg">
                         <FormField
@@ -164,7 +222,7 @@ export default function ScanIdPage() {
                                 <div className="relative flex items-center">
                                     <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
                                     <FormControl>
-                                    <Input placeholder="Ej: Juan Pérez" {...field} className="pl-10" />
+                                    <Input placeholder="Extraído de la cédula..." {...field} className="pl-10" />
                                     </FormControl>
                                 </div>
                                 <FormMessage />
@@ -180,7 +238,7 @@ export default function ScanIdPage() {
                                 <div className="relative flex items-center">
                                     <Fingerprint className="absolute left-3 h-5 w-5 text-muted-foreground" />
                                     <FormControl>
-                                    <Input placeholder="Ej: 001-000000-0000A" {...field} className="pl-10" />
+                                    <Input placeholder="Extraído de la cédula..." {...field} className="pl-10" />
                                     </FormControl>
                                 </div>
                                 <FormMessage />
@@ -189,7 +247,7 @@ export default function ScanIdPage() {
                         />
                         <Button
                             type="submit"
-                            disabled={isSaving || hasCameraPermission !== true}
+                            disabled={isSaving || isScanning || !capturedPhotoUri}
                             size="lg"
                             className="w-full"
                         >
@@ -201,7 +259,7 @@ export default function ScanIdPage() {
                             ) : (
                                 <>
                                     <Camera className="mr-2 h-4 w-4" />
-                                    Capturar y Guardar
+                                    Guardar y Continuar
                                 </>
                             )}
                         </Button>
