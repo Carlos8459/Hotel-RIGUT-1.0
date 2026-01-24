@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, X, Utensils, CupSoda, GlassWater, PlusCircle } from 'lucide-react';
+import { Plus, Minus, X, Utensils, Wine, Droplet, Droplets, PlusCircle } from 'lucide-react';
 import { updateDoc } from 'firebase/firestore';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -104,9 +104,9 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
 
   const consumptionIcons: { [key: string]: React.ReactNode } = {
     'Comida': <Utensils className="h-5 w-5" />,
-    'Gaseosa': <CupSoda className="h-5 w-5" />,
-    'Agua 1L': <GlassWater className="h-5 w-5" />,
-    'Agua 2L': <GlassWater className="h-5 w-5" />,
+    'Gaseosa': <Wine className="h-5 w-5" />,
+    'Agua 1L': <Droplet className="h-5 w-5" />,
+    'Agua 2L': <Droplets className="h-5 w-5" />,
   };
 
   return (

@@ -57,8 +57,9 @@ import {
   Bell,
   ShoppingCart,
   Utensils,
-  CupSoda,
-  GlassWater,
+  Wine,
+  Droplet,
+  Droplets,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -108,9 +109,9 @@ export default function RoomsDashboard() {
 
   const consumptionIcons: { [key: string]: React.ReactNode } = {
     'Comida': <Utensils className="h-4 w-4" />,
-    'Gaseosa': <CupSoda className="h-4 w-4" />,
-    'Agua 1L': <GlassWater className="h-4 w-4" />,
-    'Agua 2L': <GlassWater className="h-4 w-4" />,
+    'Gaseosa': <Wine className="h-4 w-4" />,
+    'Agua 1L': <Droplet className="h-4 w-4" />,
+    'Agua 2L': <Droplets className="h-4 w-4" />,
   };
 
 

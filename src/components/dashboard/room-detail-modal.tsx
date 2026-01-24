@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, CupSoda, GlassWater, Utensils } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, Wine, Droplet, Droplets } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -158,9 +158,9 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   
   const consumptionIcons: { [key: string]: React.ReactNode } = {
     'Comida': <Utensils className="h-4 w-4" />,
-    'Gaseosa': <CupSoda className="h-4 w-4" />,
-    'Agua 1L': <GlassWater className="h-4 w-4" />,
-    'Agua 2L': <GlassWater className="h-4 w-4" />,
+    'Gaseosa': <Wine className="h-4 w-4" />,
+    'Agua 1L': <Droplet className="h-4 w-4" />,
+    'Agua 2L': <Droplets className="h-4 w-4" />,
   };
 
 
