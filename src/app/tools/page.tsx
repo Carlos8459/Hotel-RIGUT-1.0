@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -10,17 +11,21 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import {
   LayoutGrid,
   Calendar as CalendarIcon,
-  Users,
   Settings,
   BarChart2,
   Wrench,
-  ChevronRight,
   Receipt,
+  UserCog,
+  BookUser,
 } from 'lucide-react';
 
 export default function ToolsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -28,7 +33,9 @@ export default function ToolsPage() {
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user) {
+    const isLoading = isUserLoading || isUserProfileLoading;
+
+    if (isLoading || !user) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
@@ -42,36 +49,50 @@ export default function ToolsPage() {
                 <h1 className="text-2xl font-bold">Herramientas</h1>
             </header>
 
-            <main className="max-w-2xl mx-auto space-y-4">
+            <main className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Link href="/customers" className="block w-full">
-                    <Card className="hover:border-primary transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-4">
-                            <div className="flex items-center gap-4">
-                                <Users className="h-6 w-6 text-muted-foreground" />
-                                <div>
-                                    <CardTitle className="text-lg">Clientes</CardTitle>
-                                    <CardDescription>Ver y gestionar el historial de clientes.</CardDescription>
-                                </div>
+                    <Card className="hover:border-primary transition-colors cursor-pointer h-full">
+                        <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
+                            <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
+                                <BookUser className="h-6 w-6 text-primary" />
                             </div>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                                <CardTitle className="text-lg">Directorio de Clientes</CardTitle>
+                                <CardDescription>Busca y revisa el historial de visitas de tus clientes.</CardDescription>
+                            </div>
                         </CardHeader>
                     </Card>
                 </Link>
 
                 <Link href="/expenses" className="block w-full">
-                    <Card className="hover:border-primary transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-4">
-                            <div className="flex items-center gap-4">
-                                <Receipt className="h-6 w-6 text-muted-foreground" />
-                                <div>
-                                    <CardTitle className="text-lg">Gastos</CardTitle>
-                                    <CardDescription>Registra y lleva un control de los gastos del hotel.</CardDescription>
-                                </div>
+                    <Card className="hover:border-primary transition-colors cursor-pointer h-full">
+                        <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
+                             <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
+                                <Receipt className="h-6 w-6 text-primary" />
                             </div>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                                <CardTitle className="text-lg">Registro de Gastos</CardTitle>
+                                <CardDescription>Lleva un control detallado de los gastos del hotel.</CardDescription>
+                            </div>
                         </CardHeader>
                     </Card>
                 </Link>
+
+                {userProfile?.role === 'Admin' && (
+                    <Link href="/admin/users" className="block w-full">
+                        <Card className="hover:border-primary transition-colors cursor-pointer h-full">
+                            <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
+                                <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
+                                    <UserCog className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg">Gestionar Socios</CardTitle>
+                                    <CardDescription>Añade, elimina y gestiona los roles de los socios.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                )}
 
             </main>
 
