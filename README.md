@@ -1,6 +1,6 @@
-# Firebase Studio
+# Hotel RIGUT
 
-This is a NextJS starter in Firebase Studio.
+This is a NextJS starter for Hotel RIGUT.
 
 To get started, take a look at src/app/page.tsx.
 
