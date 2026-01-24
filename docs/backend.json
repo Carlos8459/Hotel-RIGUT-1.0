@@ -204,6 +204,25 @@
         "creatorName",
         "isRead"
       ]
+    },
+    "WhatsappConfig": {
+      "title": "WhatsappConfig",
+      "type": "object",
+      "description": "Stores configuration for WhatsApp automation.",
+      "properties": {
+        "messageTemplate": {
+          "type": "string",
+          "description": "The message template for post-checkout feedback."
+        },
+        "isEnabled": {
+          "type": "boolean",
+          "description": "Whether the WhatsApp automation is enabled."
+        }
+      },
+      "required": [
+        "messageTemplate",
+        "isEnabled"
+      ]
     }
   },
   "auth": {
@@ -273,6 +292,22 @@
             {
               "name": "notificationId",
               "description": "The unique identifier of the notification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/settings/{settingId}",
+        "definition": {
+          "entityName": "WhatsappConfig",
+          "schema": {
+            "$ref": "#/backend/entities/WhatsappConfig"
+          },
+          "description": "Stores general application settings. The document ID should be descriptive, e.g., 'whatsapp_config'.",
+          "params": [
+            {
+              "name": "settingId",
+              "description": "The unique identifier for the setting document."
             }
           ]
         }

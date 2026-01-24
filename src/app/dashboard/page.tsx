@@ -60,6 +60,22 @@ import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
+
+const WhatsAppIcon = (props) => (
+    <svg
+      role="img"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+      className={props.className}
+      fill="currentColor"
+    >
+      <title>WhatsApp</title>
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.46 3.48 1.34 4.94l-1.48 5.45 5.58-1.45c1.41.83 3.02 1.26 4.7 1.26h.01c5.46 0 9.9-4.45 9.9-9.91s-4.45-9.9-9.91-9.9zM12.04 21.9c-1.61 0-3.14-.42-4.46-1.21l-.32-.19-3.31.87.89-3.23-.21-.33c-.88-1.4-1.34-3.04-1.34-4.79 0-4.43 3.6-8.03 8.04-8.03s8.04 3.6 8.04 8.03-3.6 8.03-8.04 8.03zm4.83-5.99c-.28-.14-1.65-.81-1.9-.91-.26-.1-.45-.14-.64.14-.19.28-.72.91-.88 1.1-.16.19-.33.21-.61.07-.28-.14-1.18-.43-2.25-1.39-1.02-.91-1.71-2.04-1.92-2.39-.21-.35-.02-.54.12-.68.13-.13.28-.33.42-.51.14-.17.19-.28.28-.47.1-.19.05-.38-.02-.51-.07-.14-.64-1.54-.88-2.1-.24-.56-.48-.48-.64-.48-.17,0-.35-.03-.54-.03-.19,0-.51.08-.77.35-.26.28-.99 1.02-1.2 1.25-.21.23-.42.54-.42.92s.43 1.57.48 1.69c.05.12.99 1.63 2.4 2.26.33.15.59.24.79.3.3.08.58.07.79-.04.25-.13.72-.29.82-.58.1-.28.1-.54.07-.68-.03-.14-.12-.21-.26-.35z" />
+    </svg>
+);
+
+
 // Combined type for display purposes
 export interface ProcessedRoom extends Room {
   reservation?: Reservation;
@@ -238,7 +254,7 @@ export default function RoomsDashboard() {
     <div className="dark min-h-screen bg-background text-foreground pb-24">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold">Hotel RIGUT</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -249,6 +265,12 @@ export default function RoomsDashboard() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
+            <Link href="/whatsapp">
+                <Button variant="ghost" size="icon">
+                    <WhatsAppIcon className="h-6 w-6 fill-current" />
+                    <span className="sr-only">WhatsApp Automation</span>
+                </Button>
+            </Link>
             <Link href="/notifications">
                 <Button variant="ghost" size="icon">
                     <Bell className="h-6 w-6" />

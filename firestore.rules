@@ -48,5 +48,11 @@ service cloud.firestore {
       // For now, disallow updates and deletes from the client.
       allow update, delete: if false;
     }
+
+    match /settings/{settingId} {
+      // Any signed-in user can read and write settings.
+      // For a production app, you might want to restrict this to admins.
+      allow read, write: if isSignedIn();
+    }
   }
 }

@@ -41,3 +41,9 @@ export type Notification = {
   creatorName: string;
   isRead: boolean;
 };
+
+export type WhatsappConfig = {
+  id: string;
+  messageTemplate: string;
+  isEnabled: boolean;
+};
