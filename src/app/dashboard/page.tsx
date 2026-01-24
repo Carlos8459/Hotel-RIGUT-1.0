@@ -55,6 +55,10 @@ import {
   Wrench,
   BarChart2,
   Bell,
+  ShoppingCart,
+  Utensils,
+  CupSoda,
+  GlassWater,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -101,6 +105,13 @@ export default function RoomsDashboard() {
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
+
+  const consumptionIcons: { [key: string]: React.ReactNode } = {
+    'Comida': <Utensils className="h-4 w-4" />,
+    'Gaseosa': <CupSoda className="h-4 w-4" />,
+    'Agua 1L': <GlassWater className="h-4 w-4" />,
+    'Agua 2L': <GlassWater className="h-4 w-4" />,
+  };
 
 
   useEffect(() => {
@@ -280,7 +291,7 @@ export default function RoomsDashboard() {
                       </div>
                   </CardHeader>
                   <CardContent className="space-y-3 flex-grow">
-                      {room.reservation && (
+                      {room.reservation ? (
                           <>
                               <div className="flex items-center text-sm">
                                   <User className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -303,12 +314,23 @@ export default function RoomsDashboard() {
                                       <span>{room.reservation.payment.status}{room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}</span>
                                   </div>
                               )}
+                              {room.reservation.extraConsumptions && room.reservation.extraConsumptions.length > 0 && (
+                                <div className="pt-2 border-t border-border/50">
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 flex-wrap">
+                                        <ShoppingCart className="h-4 w-4" />
+                                        {room.reservation.extraConsumptions.map(item => (
+                                            <div key={item.name} className="flex items-center" title={`${item.quantity} x ${item.name}`}>
+                                                {consumptionIcons[item.name] || <Utensils className="h-4 w-4" />}
+                                                <span className="ml-1 font-bold text-foreground">{item.quantity}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                              )}
                           </>
-                      )}
-                      {room.statusText === 'Mantenimiento' && (
+                      ) : room.statusText === 'Mantenimiento' ? (
                           <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
-                      )}
-                      {room.statusText === 'Disponible' && (
+                      ) : (
                           <div className="text-center flex-grow flex flex-col justify-center items-center">
                               <p className="text-muted-foreground">Limpia y lista</p>
                           </div>
