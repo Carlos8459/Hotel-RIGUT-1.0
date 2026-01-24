@@ -3,44 +3,30 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import jsQR from 'jsqr';
 
 import { Button } from '@/components/ui/button';
-import { Camera, ArrowLeft, LoaderCircle, AlertCircle, User, Fingerprint } from 'lucide-react';
-import { IdCardOverlay } from '@/components/ui/id-card-overlay';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from '@/components/ui/input';
-
-const customerSchema = z.object({
-  guestName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  cedula: z.string().min(1, { message: 'La cédula es obligatoria.' }),
-});
+import { Camera, ArrowLeft, LoaderCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { QrCodeOverlay } from '@/components/ui/qr-code-overlay';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ScanIdPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const firestore = useFirestore();
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationFrameId = useRef<number>();
 
     const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
-    const [cameraError, setCameraError] = useState<string | null>(null);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const [isScanning, setIsScanning] = useState<boolean>(true);
 
-    const form = useForm<z.infer<typeof customerSchema>>({
-        resolver: zodResolver(customerSchema),
-        defaultValues: { guestName: '', cedula: '' },
-    });
-
+    // Camera Permission Effect
     useEffect(() => {
         const getCameraPermission = async () => {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                setCameraError('Tu navegador no soporta el acceso a la cámara.');
+                setScanError('Tu navegador no soporta el acceso a la cámara.');
                 setHasCameraPermission(false);
                 return;
             }
@@ -54,82 +40,102 @@ export default function ScanIdPage() {
                 }
             } catch (err) {
                 console.error('Error accessing camera:', err);
-                setCameraError('Permiso de cámara denegado. Por favor, habilita el acceso en tu navegador.');
+                setScanError('Permiso de cámara denegado. Por favor, habilita el acceso en tu navegador.');
                 setHasCameraPermission(false);
             }
         };
         getCameraPermission();
 
         return () => {
-            // Cleanup: stop video stream when component unmounts
+            // Cleanup: stop video stream and animation frame
             if (videoRef.current && videoRef.current.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
         };
     }, []);
 
-    const onSubmit = async (values: z.infer<typeof customerSchema>) => {
-        setIsSaving(true);
+    // QR Scanning Effect
+    useEffect(() => {
+        if (hasCameraPermission && isScanning && videoRef.current) {
+            const video = videoRef.current;
+            const scan = () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
 
-        if (!videoRef.current || !canvasRef.current) {
-             toast({ variant: 'destructive', title: 'Error', description: 'El componente de la cámara no está listo.' });
-             setIsSaving(false);
-            return;
+                    const context = canvas.getContext('2d');
+                    if (!context) return;
+                    
+                    canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'dontInvert',
+                    });
+
+                    if (code) {
+                        handleScanResult(code.data);
+                        return; // Stop scanning
+                    }
+                }
+                animationFrameId.current = requestAnimationFrame(scan);
+            };
+            animationFrameId.current = requestAnimationFrame(scan);
         }
-
-        if (!firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'La base de datos no está disponible.' });
-            setIsSaving(false);
-            return;
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
         }
-        
-        // Capture photo
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext('2d');
+    }, [hasCameraPermission, isScanning]);
 
-        if (!context) {
-            setIsSaving(false);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar la imagen.' });
-            return;
-        }
 
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-        const photoDataUri = canvas.toDataURL('image/jpeg', 0.9);
-
-        // Save data
+    const handleScanResult = (data: string) => {
+        setIsScanning(false);
         try {
-            const customerId = values.cedula.replace(/[^a-zA-Z0-9]/g, ''); // Sanitize ID for document key
-            const customerDocRef = doc(firestore, 'customers', customerId);
+            const parts = data.split('<');
+            if (parts.length < 6) throw new Error("Formato de datos de QR inválido.");
 
-            setDocumentNonBlocking(customerDocRef, {
-                guestName: values.guestName,
-                cedula: values.cedula,
-                idCardImage: photoDataUri,
-                createdAt: new Date().toISOString()
-            }, { merge: true });
+            const cedula = parts[1];
+            const primerApellido = parts[2];
+            const segundoApellido = parts[3];
+            const primerNombre = parts[4];
+            const segundoNombre = parts[5];
+
+            const guestName = [primerNombre, segundoNombre, primerApellido, segundoApellido].filter(Boolean).join(' ');
+
+            if (!cedula || !guestName) {
+                 throw new Error("No se pudo extraer la información requerida del código QR.");
+            }
 
             toast({
-                title: '¡Éxito!',
-                description: `Datos de ${values.guestName} guardados. Redirigiendo...`,
+                title: '¡QR Escaneado!',
+                description: 'Redirigiendo al formulario de check-in...',
             });
-            
-            router.push(`/new-reservation?guestName=${encodeURIComponent(values.guestName)}&cedula=${encodeURIComponent(values.cedula)}`);
 
-        } catch (err: any) {
-            console.error("Save failed:", err);
-            toast({
-                variant: 'destructive',
-                title: 'Error al Guardar',
-                description: err.message || 'No se pudo guardar la información del cliente.',
-            });
-            setIsSaving(false);
+            if (videoRef.current && videoRef.current.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+            router.push(`/new-reservation?guestName=${encodeURIComponent(guestName)}&cedula=${encodeURIComponent(cedula)}`);
+
+        } catch (error: any) {
+            console.error("Error parsing QR code:", error);
+            setScanError(error.message || 'El código QR no tiene el formato esperado. Inténtalo de nuevo.');
         }
     };
 
+    const restartScan = () => {
+        setScanError(null);
+        setIsScanning(true);
+    };
 
     return (
         <div className="dark min-h-screen bg-background text-foreground flex flex-col">
@@ -138,78 +144,54 @@ export default function ScanIdPage() {
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Volver</span>
                 </Button>
-                <h1 className="text-xl font-bold">Registrar Cliente con Foto</h1>
+                <h1 className="text-xl font-bold">Escanear Cédula (QR)</h1>
             </header>
             
             <main className="flex-grow flex flex-col items-center justify-center p-4 space-y-4">
-                <div className="w-full max-w-lg aspect-[16/10] bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                <div className="w-full max-w-md aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    <IdCardOverlay />
-                    {hasCameraPermission === false && (
+                    {isScanning && <QrCodeOverlay />}
+                    
+                    {hasCameraPermission === null && (
+                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
+                            <LoaderCircle className="h-10 w-10 mb-4 animate-spin" />
+                            <p>Solicitando acceso a la cámara...</p>
+                        </div>
+                    )}
+
+                    {hasCameraPermission === false && scanError && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
-                            <AlertCircle className="h-10 w-10 mb-4" />
-                            <h2 className="text-lg font-semibold">Error de Cámara</h2>
-                            <p className="text-sm">{cameraError || "No se pudo acceder a la cámara."}</p>
+                             <Alert variant="destructive" className="border-0 bg-transparent text-white">
+                                <AlertCircle className="h-5 w-5" />
+                                <AlertTitle className="text-lg font-semibold">Error de Cámara</AlertTitle>
+                                <AlertDescription>
+                                    {scanError}
+                                </AlertDescription>
+                             </Alert>
                         </div>
                     )}
                 </div>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-lg">
-                        <FormField
-                            control={form.control}
-                            name="guestName"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Nombre del Huésped</FormLabel>
-                                <div className="relative flex items-center">
-                                    <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                                    <FormControl>
-                                    <Input placeholder="Ingresa el nombre completo..." {...field} className="pl-10" />
-                                    </FormControl>
-                                </div>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="cedula"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Cédula</FormLabel>
-                                <div className="relative flex items-center">
-                                    <Fingerprint className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                                    <FormControl>
-                                    <Input placeholder="Ingresa el número de cédula..." {...field} className="pl-10" />
-                                    </FormControl>
-                                </div>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button
-                            type="submit"
-                            disabled={isSaving || hasCameraPermission !== true}
-                            size="lg"
-                            className="w-full"
-                        >
-                            {isSaving ? (
-                                <>
-                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                    Guardando...
-                                </>
-                            ) : (
-                                <>
-                                    <Camera className="mr-2 h-4 w-4" />
-                                    Capturar y Guardar
-                                </>
-                            )}
-                        </Button>
-                    </form>
-                </Form>
-                
                 <canvas ref={canvasRef} className="hidden"></canvas>
+                
+                {!isScanning && scanError && (
+                    <Alert variant="destructive" className="max-w-md">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error de Escaneo</AlertTitle>
+                        <AlertDescription>{scanError}</AlertDescription>
+                        <Button onClick={restartScan} variant="link" className="p-0 h-auto mt-2 text-destructive">
+                            <RefreshCw className="mr-2 h-4 w-4"/>
+                            Escanear de nuevo
+                        </Button>
+                    </Alert>
+                )}
+
+                {!scanError && (
+                    <p className="text-muted-foreground text-center max-w-md">
+                        {isScanning ? 'Apunta la cámara al código QR en la parte trasera de la cédula.' : 'Procesando...'}
+                    </p>
+                )}
+
             </main>
         </div>
     );
