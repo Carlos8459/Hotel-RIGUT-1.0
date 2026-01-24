@@ -455,11 +455,11 @@ export default function RoomsDashboard() {
         <Button
           className={cn(
             'fixed z-20 bottom-24 right-4 rounded-full shadow-xl transition-all duration-300 ease-in-out md:bottom-8 md:right-8 flex items-center justify-center overflow-hidden',
-            isScrolled ? 'h-14 w-14 p-0' : 'h-auto py-2 px-4 gap-2'
+            isScrolled ? 'h-12 w-12 p-0' : 'h-auto py-2 px-4 gap-2'
           )}
           aria-label="Reservación"
         >
-          <PlusCircle className={cn('transition-transform flex-shrink-0', isScrolled ? 'h-6 w-6' : 'h-5 w-5')} />
+          <PlusCircle className={cn('transition-transform duration-300 ease-in-out flex-shrink-0', isScrolled ? 'h-7 w-7' : 'h-5 w-5')} />
           <span
             className={cn(
               'text-sm font-semibold whitespace-nowrap transition-all duration-200',
