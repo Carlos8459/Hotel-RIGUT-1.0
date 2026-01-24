@@ -41,8 +41,8 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      // A user must own the reservation document to create it.
-      allow create: if request.resource.data.createdBy == request.auth.uid;
+      // Any signed-in user can create a reservation.
+      allow create: if isSignedIn();
 
       // Any signed-in user can read reservations.
       allow read: if isSignedIn();
