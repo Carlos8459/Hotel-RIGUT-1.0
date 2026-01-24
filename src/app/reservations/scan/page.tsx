@@ -70,7 +70,7 @@ export default function ScanIdPage() {
         setError(null);
 
         const video = videoRef.current;
-        const canvas = canvasRef.current;
+        const canvas = canvas.current;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const context = canvas.getContext('2d');
@@ -88,7 +88,8 @@ export default function ScanIdPage() {
             const customerId = result.idNumber.replace(/-/g, '');
             const customerDocRef = doc(firestore, 'customers', customerId);
 
-            await setDocumentNonBlocking(customerDocRef, {
+            // Save customer data in the background
+            setDocumentNonBlocking(customerDocRef, {
                 guestName: result.fullName,
                 cedula: result.idNumber,
                 idCardImage: photoDataUri,
@@ -97,13 +98,15 @@ export default function ScanIdPage() {
 
             toast({
                 title: '¡Éxito!',
-                description: `Cliente ${result.fullName} guardado. Ya puedes crear la reserva.`,
+                description: `Datos de ${result.fullName} cargados. Redirigiendo...`,
             });
+            
+            // Redirect to the new reservation page with pre-filled data
+            router.push(`/new-reservation?guestName=${encodeURIComponent(result.fullName)}&cedula=${encodeURIComponent(result.idNumber)}`);
 
         } catch (err: any) {
             console.error("Scan failed:", err);
             setError(err.message || 'No se pudo procesar la imagen. Asegúrate de que la cédula sea clara y esté bien iluminada.');
-        } finally {
             setIsProcessing(false);
         }
     };
