@@ -260,6 +260,9 @@ export default function StatsPage() {
                   <DropdownMenuItem asChild>
                       <Link href="/stats/extra-consumptions">Ingresos Extras</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                      <Link href="/stats/expenses">Estadísticas de Gastos</Link>
+                  </DropdownMenuItem>
               </DropdownMenuContent>
           </DropdownMenu>
         </div>
