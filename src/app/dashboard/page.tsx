@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
 import {
@@ -204,24 +204,40 @@ export default function RoomsDashboard() {
     setSelectedRoom(null);
   };
   
-  const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
+  const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
-      try {
-          if (action === 'checkout') {
-              await updateDoc(resDocRef, { status: 'Checked-Out' });
-          } else if (action === 'confirm_payment') {
-              await updateDoc(resDocRef, { 'payment.status': 'Cancelado' });
-          }
-      } catch (error) {
-          console.error(`Error performing action ${action}:`, error);
+      
+      let dataToUpdate = {};
+      if (action === 'checkout') {
+          dataToUpdate = { status: 'Checked-Out' };
+      } else if (action === 'confirm_payment') {
+          dataToUpdate = { 'payment.status': 'Cancelado' };
       }
+
+      updateDocumentNonBlocking(resDocRef, dataToUpdate)
+        .then(() => {
+            toast({
+                title: 'Acción completada',
+                description: `La reservación ha sido actualizada.`,
+            });
+        })
+        .catch(error => {
+            console.error(`Error performing action ${action}:`, error);
+            toast({
+                title: 'Error',
+                description: 'No se pudo completar la acción.',
+                variant: 'destructive',
+            });
+        });
   };
 
   const filteredRooms = processedRooms.filter((room) => {
-    if (!searchTerm) return true;
-    if (!room.reservation) return false;
-    return room.reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchTermLower = searchTerm.toLowerCase();
+    if (!searchTermLower) return true;
+    if (room.reservation?.guestName.toLowerCase().includes(searchTermLower)) return true;
+    if (room.title.toLowerCase().includes(searchTermLower)) return true;
+    return false;
   });
 
   const getStayDate = (reservation?: Reservation) => {

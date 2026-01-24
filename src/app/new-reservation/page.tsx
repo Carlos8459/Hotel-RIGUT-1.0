@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, FirestorePermissionError, errorEmitter } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -125,10 +125,9 @@ export default function NewReservationPage() {
   }, [user, isUserLoading, router]);
 
   async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
-    if (!firestore || !user || !roomsData) return;
+    if (!firestore || !user || !roomsData || !reservationsCollection) return;
     setIsSubmitting(true);
 
-    const reservationsColRef = collection(firestore, 'reservations');
     const room = roomsData.find(r => r.id === data.roomId);
     const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
     const totalAmount = room && nights > 0 ? room.price * nights : 0;
@@ -151,35 +150,26 @@ export default function NewReservationPage() {
       createdBy: user.uid,
     };
 
-    try {
-        await addDoc(reservationsColRef, reservationData);
-        
-        const roomTitle = room?.title || `Habitación ${data.roomId}`;
-
-        toast({
-          title: 'Check-in Realizado',
-          description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
+    addDocumentNonBlocking(reservationsCollection, reservationData)
+        .then(() => {
+            const roomTitle = room?.title || `Habitación ${data.roomId}`;
+            toast({
+                title: 'Check-in Realizado',
+                description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
+            });
+            router.push('/dashboard');
+        })
+        .catch((error) => {
+            console.error("Error creating reservation:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error al crear la reserva',
+                description: 'No se pudo registrar el check-in. Verifica tus permisos e inténtalo de nuevo.',
+            });
+        })
+        .finally(() => {
+            setIsSubmitting(false);
         });
-        router.push('/dashboard');
-
-    } catch (error) {
-        console.error("Error creating reservation:", error);
-
-        const permissionError = new FirestorePermissionError({
-            path: reservationsColRef.path,
-            operation: 'create',
-            requestResourceData: reservationData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-
-        toast({
-          variant: 'destructive',
-          title: 'Error al crear la reserva',
-          description: 'No se pudo registrar el check-in. Verifica tus permisos e inténtalo de nuevo.',
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
   }
 
 
@@ -468,5 +458,3 @@ export default function NewReservationPage() {
     </div>
   );
 }
-
-    

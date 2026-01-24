@@ -102,7 +102,7 @@ export default function ExpensesPage() {
     }
   }, [user, isUserLoading, router]);
 
-  async function onSubmit(data: z.infer<typeof expenseFormSchema>) {
+  function onSubmit(data: z.infer<typeof expenseFormSchema>) {
     if (!firestore || !user || !userProfile) return;
     setIsSubmitting(true);
 
@@ -117,8 +117,8 @@ export default function ExpensesPage() {
       creatorName: userProfile.username,
     };
 
-    try {
-        await addDocumentNonBlocking(expensesColRef, expenseData);
+    addDocumentNonBlocking(expensesColRef, expenseData)
+      .then(() => {
         toast({
           title: 'Gasto Registrado',
           description: `Se ha registrado el gasto de ${data.description}.`,
@@ -129,16 +129,18 @@ export default function ExpensesPage() {
             date: new Date(),
             category: undefined,
         });
-    } catch (error) {
+      })
+      .catch((error) => {
         console.error("Error creating expense:", error);
         toast({
           variant: 'destructive',
           title: 'Error al registrar el gasto',
           description: 'No se pudo guardar el gasto. Inténtalo de nuevo.',
         });
-    } finally {
+      })
+      .finally(() => {
         setIsSubmitting(false);
-    }
+      });
   }
 
   const handleDeleteExpense = (expenseId: string) => {

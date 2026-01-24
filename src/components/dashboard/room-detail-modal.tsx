@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
@@ -121,19 +121,24 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       onClose();
   };
 
-  const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
+  const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
-      try {
-          if (action === 'checkout') {
-              await updateDoc(resDocRef, { status: 'Checked-Out' });
-          } else if (action === 'confirm_payment') {
-              await updateDoc(resDocRef, { 'payment.status': 'Cancelado' });
-          }
-          onClose(); // Close modal after action
-      } catch (error) {
-          console.error(`Error performing action ${action}:`, error);
+      
+      let dataToUpdate = {};
+      if (action === 'checkout') {
+          dataToUpdate = { status: 'Checked-Out' };
+      } else if (action === 'confirm_payment') {
+          dataToUpdate = { 'payment.status': 'Cancelado' };
       }
+
+      updateDocumentNonBlocking(resDocRef, dataToUpdate)
+        .then(() => {
+          onClose(); // Close modal after action
+        })
+        .catch(error => {
+          console.error(`Error performing action ${action}:`, error);
+        });
   };
   
   const handleOpenEditModal = () => {
@@ -150,7 +155,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     setIsEditModalOpen(true);
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = () => {
     if (!firestore || !room.reservation?.id) return;
     
     const resDocRef = doc(firestore, 'reservations', room.reservation.id);
@@ -165,15 +170,16 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         notes: editedGuest.notes,
     };
 
-    try {
-        await updateDoc(resDocRef, updatedData);
-        toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
-        setIsEditModalOpen(false);
-        onClose(); // Close main modal after saving
-    } catch (error) {
-        console.error("Error updating reservation:", error);
-        toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
-    }
+    updateDocumentNonBlocking(resDocRef, updatedData)
+        .then(() => {
+            toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
+            setIsEditModalOpen(false);
+            onClose(); // Close main modal after saving
+        })
+        .catch(error => {
+            console.error("Error updating reservation:", error);
+            toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
+        });
   };
 
   return (
