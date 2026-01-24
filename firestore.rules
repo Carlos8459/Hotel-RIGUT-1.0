@@ -10,36 +10,44 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    // Helper function to check if a user has a specific role
+    function hasRole(role) {
+      // Ensure the user document exists and has the specified role
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
 
     function isAdmin() {
-      // Check if the user is signed in and their role is 'Admin' in their user document
-      return isSignedIn() && getRole(request.auth.uid) == 'Admin';
+      return isSignedIn() && hasRole('Admin');
     }
 
     match /users/{userId} {
-      // The user creating the document must be the owner of the document.
+      // A user can create their own profile document
       allow create: if isOwner(userId);
       
-      // Any signed-in user can list and read user profiles.
+      // Any signed-in user can read user profiles.
       allow list, read: if isSignedIn();
       
-      // Only the user themselves or an Admin can update or delete a profile.
+      // Only the user themselves or an Admin can update or delete their own profile.
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 
     match /rooms/{roomId} {
       // Any signed-in user can read room information.
       allow read: if isSignedIn();
-      // Any signed-in user can create, update, or delete room documents.
-      allow write: if isSignedIn();
+      // Only Admins can write (create, update, delete) room documents.
+      allow write: if isAdmin();
     }
 
     match /reservations/{reservationId} {
-      // Any signed-in user can create, read, update, or delete reservations.
-      allow create, read, update, delete: if isSignedIn();
+      // A user must be signed in and be the creator of the reservation to create one.
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+
+      // Any signed-in user can read reservations.
+      allow read: if isSignedIn();
+
+      // Only the creator of the reservation or an Admin can update or delete it.
+      allow update, delete: if (resource.data.createdBy == request.auth.uid) || isAdmin();
     }
 
     match /notifications/{notificationId} {
@@ -50,9 +58,8 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      // Any signed-in user can read and write settings.
-      // For a production app, you might want to restrict this to admins.
-      allow read, write: if isSignedIn();
+      // Only Admins can read and write settings.
+      allow read, write: if isAdmin();
     }
   }
 }
