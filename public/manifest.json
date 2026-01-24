@@ -1,0 +1,9 @@
+{
+  "name": "Hotel RIGUT",
+  "short_name": "RIGUT",
+  "description": "Hotel Management Application",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#162125",
+  "theme_color": "#162125"
+}
