@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useForm } from 'react-hook-form';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, PlusCircle, Trash2, Package, Edit, DollarSign } from 'lucide-react';
+import { ArrowLeft, Save, PlusCircle, Trash2, Edit, DollarSign, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -62,8 +62,22 @@ const newRoomSchema = z.object({
 const consumptionItemSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
   price: z.coerce.number().positive({ message: 'El precio debe ser un número positivo.' }),
+  icon: z.string().min(1, { message: 'Debe seleccionar un ícono.' }),
 });
 
+export const availableIcons: { [key: string]: React.ReactNode } = {
+    Utensils: <Utensils className="h-5 w-5" />,
+    GlassWater: <GlassWater className="h-5 w-5" />,
+    Droplet: <Droplet className="h-5 w-5" />,
+    Droplets: <Droplets className="h-5 w-5" />,
+    Beer: <Beer className="h-5 w-5" />,
+    Coffee: <Coffee className="h-5 w-5" />,
+    Sandwich: <Sandwich className="h-5 w-5" />,
+    CakeSlice: <CakeSlice className="h-5 w-5" />,
+    IceCream: <IceCream className="h-5 w-5" />,
+    Package: <Package className="h-5 w-5" />,
+};
+export type IconName = keyof typeof availableIcons;
 
 export default function RoomSettingsPage() {
     const { user, isUserLoading } = useUser();
@@ -101,7 +115,7 @@ export default function RoomSettingsPage() {
 
     const consumptionForm = useForm<z.infer<typeof consumptionItemSchema>>({
         resolver: zodResolver(consumptionItemSchema),
-        defaultValues: { name: "", price: 0 },
+        defaultValues: { name: "", price: 0, icon: 'Package' },
     });
     
 
@@ -173,9 +187,9 @@ export default function RoomSettingsPage() {
     const handleOpenConsumptionDialog = (item: ConsumptionItem | null) => {
         setEditingConsumptionItem(item);
         if (item) {
-            consumptionForm.reset({ name: item.name, price: item.price });
+            consumptionForm.reset({ name: item.name, price: item.price, icon: item.icon });
         } else {
-            consumptionForm.reset({ name: '', price: 0 });
+            consumptionForm.reset({ name: '', price: 0, icon: 'Package' });
         }
         setIsConsumptionDialogOpen(true);
     }
@@ -278,7 +292,9 @@ export default function RoomSettingsPage() {
                         {consumptionItemsLoading ? <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
                         : <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">{consumptionItemsData?.map((item) => (
                             <div key={item.id} className="grid grid-cols-12 items-center gap-4 p-2 border rounded-lg">
-                                <div className="col-span-1 flex items-center justify-center"><Package className="h-5 w-5 text-muted-foreground"/></div>
+                                <div className="col-span-1 flex items-center justify-center text-muted-foreground">
+                                    {availableIcons[item.icon] || <Package className="h-5 w-5"/>}
+                                </div>
                                 <div className="col-span-5 font-medium">{item.name}</div>
                                 <div className="col-span-3 flex items-center"><DollarSign className="h-4 w-4 mr-1 text-muted-foreground"/>{item.price.toFixed(2)}</div>
                                 <div className="col-span-3 flex justify-end gap-1">
@@ -306,6 +322,33 @@ export default function RoomSettingsPage() {
                         <form onSubmit={consumptionForm.handleSubmit(onConsumptionSubmit)} className="space-y-4 pt-4">
                             <FormField control={consumptionForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Ej: Gaseosa" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={consumptionForm.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio (C$)</FormLabel><FormControl><Input type="number" placeholder="Ej: 30" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField
+                                control={consumptionForm.control}
+                                name="icon"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Ícono</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar un ícono" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {Object.entries(availableIcons).map(([name, IconComponent]) => (
+                                        <SelectItem key={name} value={name}>
+                                            <div className="flex items-center gap-3">
+                                            {React.cloneElement(IconComponent as React.ReactElement, { className: "h-5 w-5"})}
+                                            <span>{name}</span>
+                                            </div>
+                                        </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                             <DialogFooter>
                                 <Button type="button" variant="outline" onClick={() => setIsConsumptionDialogOpen(false)}>Cancelar</Button>
                                 <Button type="submit">{editingConsumptionItem ? 'Guardar Cambios' : 'Crear Consumo'}</Button>

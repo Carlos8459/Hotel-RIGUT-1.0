@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, Wine, Droplet, Droplets } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,6 +64,19 @@ type EditableGuestData = {
     vehicle: 'car' | 'bike' | 'truck' | undefined;
     checkOutDate: Date | undefined;
 }
+
+const consumptionIcons: { [key: string]: React.ReactNode } = {
+    Utensils: <Utensils className="h-4 w-4" />,
+    GlassWater: <GlassWater className="h-4 w-4" />,
+    Droplet: <Droplet className="h-4 w-4" />,
+    Droplets: <Droplets className="h-4 w-4" />,
+    Beer: <Beer className="h-4 w-4" />,
+    Coffee: <Coffee className="h-4 w-4" />,
+    Sandwich: <Sandwich className="h-4 w-4" />,
+    CakeSlice: <CakeSlice className="h-4 w-4" />,
+    IceCream: <IceCream className="h-4 w-4" />,
+    Package: <Package className="h-4 w-4" />,
+};
 
 export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
   const firestore = useFirestore();
@@ -155,14 +168,6 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         console.error("Error updating reservation:", error);
     }
   };
-  
-  const consumptionIcons: { [key: string]: React.ReactNode } = {
-    'Comida': <Utensils className="h-4 w-4" />,
-    'Gaseosa': <Wine className="h-4 w-4" />,
-    'Agua 1L': <Droplet className="h-4 w-4" />,
-    'Agua 2L': <Droplets className="h-4 w-4" />,
-  };
-
 
   return (
     <>
@@ -274,7 +279,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                 {room.reservation.extraConsumptions.map(item => (
                                     <div key={item.name} className="flex items-center text-muted-foreground">
-                                        {consumptionIcons[item.name] || <Utensils className="h-4 w-4" />}
+                                        {consumptionIcons[item.icon] || <Package className="h-4 w-4" />}
                                         <span className="ml-2 mr-1 font-medium text-foreground">{item.quantity}x</span>
                                         <span className="truncate">{item.name}</span>
                                     </div>

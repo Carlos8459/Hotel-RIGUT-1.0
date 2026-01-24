@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, X, Utensils, Wine, Droplet, Droplets, PlusCircle } from 'lucide-react';
+import { Plus, Minus, X, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
 import { updateDoc, collection } from 'firebase/firestore';
 import { doc } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -27,6 +27,19 @@ type ExtraConsumptionModalProps = {
   currentConsumptions: ExtraConsumption[];
   isOpen: boolean;
   onClose: () => void;
+};
+
+const consumptionIcons: { [key: string]: React.ReactNode } = {
+    Utensils: <Utensils className="h-5 w-5" />,
+    GlassWater: <GlassWater className="h-5 w-5" />,
+    Droplet: <Droplet className="h-5 w-5" />,
+    Droplets: <Droplets className="h-5 w-5" />,
+    Beer: <Beer className="h-5 w-5" />,
+    Coffee: <Coffee className="h-5 w-5" />,
+    Sandwich: <Sandwich className="h-5 w-5" />,
+    CakeSlice: <CakeSlice className="h-5 w-5" />,
+    IceCream: <IceCream className="h-5 w-5" />,
+    Package: <Package className="h-5 w-5" />,
 };
 
 export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOpen, onClose }: ExtraConsumptionModalProps) {
@@ -46,11 +59,13 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
     // Initialize state with a full list of items, merging current consumptions
     const initialItems = availableItems.map(predefined => {
       const current = currentConsumptions.find(c => c.name === predefined.name);
-      return current ? { ...current, price: predefined.price } : { ...predefined, quantity: 0, id: predefined.id };
+      return current ? { ...current, price: predefined.price, icon: predefined.icon } : { ...predefined, quantity: 0, id: predefined.id };
     });
 
     // Also include items that might have been saved to a reservation but since deleted from the main list
-    const oldCustomItems = currentConsumptions.filter(c => !availableItems.some(p => p.name === c.name));
+    const oldCustomItems = currentConsumptions
+      .filter(c => !availableItems.some(p => p.name === c.name))
+      .map(c => ({...c, icon: c.icon || 'Package'}));
     
     const sortedItems = [...initialItems, ...oldCustomItems].sort((a,b) => a.name.localeCompare(b.name));
 
@@ -73,7 +88,9 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
     if (!firestore || !reservationId) return;
 
     const resDocRef = doc(firestore, 'reservations', reservationId);
-    const updatedConsumptions = consumptions.filter(c => c.quantity > 0);
+    const updatedConsumptions = consumptions
+      .filter(c => c.quantity > 0)
+      .map(({ name, price, quantity, icon }) => ({ name, price, quantity, icon }));
 
     try {
       await updateDoc(resDocRef, { extraConsumptions: updatedConsumptions });
@@ -86,13 +103,6 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
       console.error("Error updating consumptions:", error);
       toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
     }
-  };
-
-  const consumptionIcons: { [key: string]: React.ReactNode } = {
-    'Comida': <Utensils className="h-5 w-5" />,
-    'Gaseosa': <Wine className="h-5 w-5" />,
-    'Agua 1L': <Droplet className="h-5 w-5" />,
-    'Agua 2L': <Droplets className="h-5 w-5" />,
   };
 
   return (
@@ -113,7 +123,7 @@ export function ExtraConsumptionModal({ reservationId, currentConsumptions, isOp
             ) : consumptions.map(item => (
                 <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                     <span className="text-muted-foreground">{consumptionIcons[item.name] || <Utensils className="h-5 w-5" />}</span>
+                     <span className="text-muted-foreground">{consumptionIcons[item.icon] || <Package className="h-5 w-5" />}</span>
                     <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-xs text-muted-foreground">C${item.price.toFixed(2)}</p>

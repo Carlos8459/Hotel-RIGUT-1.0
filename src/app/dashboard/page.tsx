@@ -57,9 +57,15 @@ import {
   Bell,
   ShoppingCart,
   Utensils,
-  Wine,
+  GlassWater,
   Droplet,
   Droplets,
+  Beer,
+  Coffee,
+  Sandwich,
+  CakeSlice,
+  IceCream,
+  Package,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -108,10 +114,16 @@ export default function RoomsDashboard() {
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
 
   const consumptionIcons: { [key: string]: React.ReactNode } = {
-    'Comida': <Utensils className="h-4 w-4" />,
-    'Gaseosa': <Wine className="h-4 w-4" />,
-    'Agua 1L': <Droplet className="h-4 w-4" />,
-    'Agua 2L': <Droplets className="h-4 w-4" />,
+    Utensils: <Utensils className="h-4 w-4" />,
+    GlassWater: <GlassWater className="h-4 w-4" />,
+    Droplet: <Droplet className="h-4 w-4" />,
+    Droplets: <Droplets className="h-4 w-4" />,
+    Beer: <Beer className="h-4 w-4" />,
+    Coffee: <Coffee className="h-4 w-4" />,
+    Sandwich: <Sandwich className="h-4 w-4" />,
+    CakeSlice: <CakeSlice className="h-4 w-4" />,
+    IceCream: <IceCream className="h-4 w-4" />,
+    Package: <Package className="h-4 w-4" />,
   };
 
 
@@ -321,7 +333,7 @@ export default function RoomsDashboard() {
                                         <ShoppingCart className="h-4 w-4" />
                                         {room.reservation.extraConsumptions.map(item => (
                                             <div key={item.name} className="flex items-center" title={`${item.quantity} x ${item.name}`}>
-                                                {consumptionIcons[item.name] || <Utensils className="h-4 w-4" />}
+                                                {consumptionIcons[item.icon] || <Package className="h-4 w-4" />}
                                                 <span className="ml-1 font-bold text-foreground">{item.quantity}</span>
                                             </div>
                                         ))}
