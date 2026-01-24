@@ -28,7 +28,7 @@ import { ArrowLeft, DollarSign, Package, ShoppingCart, Calendar as CalendarIcon,
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Reservation } from '@/lib/types';
+import type { Reservation, ConsumptionItem } from '@/lib/types';
 
 
 interface ConsumptionStats {
@@ -118,6 +118,8 @@ export default function ExtraConsumptionsStatsPage() {
     // Data fetching
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
+    const consumptionItemsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'consumption_items') : null, [firestore]);
+    const { data: consumptionItemsData, isLoading: consumptionItemsLoading } = useCollection<Omit<ConsumptionItem, 'id'>>(consumptionItemsCollection);
     
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -149,8 +151,18 @@ export default function ExtraConsumptionsStatsPage() {
     };
 
     const consumptionStats: ConsumptionStats[] = useMemo(() => {
-        if (!reservationsData) return [];
-        
+        if (!reservationsData || !consumptionItemsData) return [];
+
+        const statsMap: { [key: string]: ConsumptionStats } = {};
+        consumptionItemsData.forEach(item => {
+            statsMap[item.name] = {
+                name: item.name,
+                icon: item.icon,
+                totalQuantity: 0,
+                totalIncome: 0,
+            };
+        });
+
         const filteredReservations = reservationsData.filter(res => {
             if (res.payment?.status !== 'Cancelado') return false;
             if (!dateRange?.from) return true;
@@ -160,26 +172,20 @@ export default function ExtraConsumptionsStatsPage() {
             return isWithinInterval(checkOutDate, { start: dateRange.from, end: endOfRange });
         });
 
-        const statsMap: { [key: string]: ConsumptionStats } = {};
-
         filteredReservations.forEach(res => {
-            res.extraConsumptions?.forEach(item => {
-                if (!statsMap[item.name]) {
-                    statsMap[item.name] = {
-                        name: item.name,
-                        icon: item.icon,
-                        totalQuantity: 0,
-                        totalIncome: 0,
-                    };
+            res.extraConsumptions?.forEach(consumedItem => {
+                if (statsMap[consumedItem.name]) {
+                    statsMap[consumedItem.name].totalQuantity += consumedItem.quantity;
+                    statsMap[consumedItem.name].totalIncome += consumedItem.quantity * consumedItem.price;
                 }
-                statsMap[item.name].totalQuantity += item.quantity;
-                statsMap[item.name].totalIncome += item.quantity * item.price;
             });
         });
 
-        return Object.values(statsMap).sort((a, b) => b.totalIncome - a.totalIncome);
+        return Object.values(statsMap)
+            .filter(item => item.totalIncome > 0)
+            .sort((a, b) => b.totalIncome - a.totalIncome);
 
-    }, [reservationsData, dateRange]);
+    }, [reservationsData, consumptionItemsData, dateRange]);
 
 
     const currencyFormatter = new Intl.NumberFormat('es-NI', {
@@ -188,7 +194,7 @@ export default function ExtraConsumptionsStatsPage() {
         maximumFractionDigits: 0,
     });
 
-    const isLoading = isUserLoading || reservationsLoading;
+    const isLoading = isUserLoading || reservationsLoading || consumptionItemsLoading;
 
     if (isLoading) {
         return (
