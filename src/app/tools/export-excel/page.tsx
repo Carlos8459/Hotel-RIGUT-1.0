@@ -101,8 +101,8 @@ export default function ExportExcelPage() {
                     'Tipo de Habitación': room?.type || 'N/A',
                     'Vehículo': res.vehicle || 'Ninguno',
                     'Estado Reserva': res.status,
-                    'Estado Pago': res.payment.status,
-                    'Monto Total (C$)': res.payment.amount,
+                    'Estado Pago': res.payment?.status || 'N/A',
+                    'Monto Total (C$)': res.payment?.amount || 0,
                     'Consumos Extras': extraConsumptionsString,
                     'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
                     'Creado Por': creatorName || res.createdBy,
@@ -126,8 +126,8 @@ export default function ExportExcelPage() {
                 }
                 const customer = customerMap[res.guestName];
                 customer.visits += 1;
-                if (res.payment.status === 'Cancelado') {
-                    customer.totalSpent += res.payment.amount;
+                if (res.payment?.status === 'Cancelado') {
+                    customer.totalSpent += res.payment.amount || 0;
                 }
                 if (parseISO(res.checkInDate) > parseISO(customer.lastVisit)) {
                     customer.lastVisit = res.checkInDate;
@@ -234,8 +234,8 @@ export default function ExportExcelPage() {
                 'Tipo de Habitación': room?.type || 'N/A',
                 'Vehículo': res.vehicle || 'Ninguno',
                 'Estado Reserva': res.status,
-                'Estado Pago': res.payment.status,
-                'Monto Total (C$)': res.payment.amount,
+                'Estado Pago': res.payment?.status || 'N/A',
+                'Monto Total (C$)': res.payment?.amount || 0,
                 'Consumos Extras': extraConsumptionsString,
                 'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
                 'Creado Por': creatorName || res.createdBy,
@@ -263,8 +263,8 @@ export default function ExportExcelPage() {
             }
             const customer = customerMap[res.guestName];
             customer.visits += 1;
-            if (res.payment.status === 'Cancelado') {
-                customer.totalSpent += res.payment.amount;
+            if (res.payment?.status === 'Cancelado') {
+                customer.totalSpent += res.payment.amount || 0;
             }
             if (parseISO(res.checkInDate) > parseISO(customer.lastVisit)) {
                 customer.lastVisit = res.checkInDate;
