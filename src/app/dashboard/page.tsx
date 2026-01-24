@@ -256,7 +256,6 @@ export default function RoomsDashboard() {
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
-          <p className="text-sm text-muted-foreground">Panel de Habitaciones</p>
         </div>
         <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
