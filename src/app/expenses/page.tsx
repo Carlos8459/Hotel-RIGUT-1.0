@@ -169,7 +169,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 pb-24">
+    <div className="dark min-h-screen bg-background text-foreground p-4 pt-12 sm:p-6 lg:p-8 pb-24">
       <header className="flex items-center gap-4 mb-8">
         <Button
           variant="outline"
@@ -395,3 +395,5 @@ export default function ExpensesPage() {
     </div>
   );
 }
+
+    

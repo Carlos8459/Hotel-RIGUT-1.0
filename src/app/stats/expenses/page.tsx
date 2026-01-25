@@ -191,7 +191,7 @@ export default function ExpensesStatsPage() {
 
   return (
     <>
-      <div className="dark min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
+      <div className="dark min-h-screen bg-background text-foreground p-4 pt-12 sm:p-6 lg:p-8">
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
@@ -309,3 +309,5 @@ export default function ExpensesStatsPage() {
     </>
   );
 }
+
+    

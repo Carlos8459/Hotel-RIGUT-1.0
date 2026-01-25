@@ -261,8 +261,8 @@ export default function RoomsDashboard() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+    <div className="dark min-h-screen bg-background text-foreground pt-8 pb-24">
+      <header className="sticky top-8 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
         </div>
@@ -530,3 +530,5 @@ export default function RoomsDashboard() {
     </div>
   );
 }
+
+    
