@@ -1,18 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Wrench, User as UserIcon, BarChart2, Bell } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Users, Settings, Wrench, User as UserIcon, BarChart2, Bell, Shield } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 
 
 export default function SettingsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -21,7 +26,7 @@ export default function SettingsPage() {
     }, [user, isUserLoading, router]);
 
 
-    if (isUserLoading || !user) {
+    if (isUserLoading || !user || isUserProfileLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
@@ -83,6 +88,21 @@ export default function SettingsPage() {
                         </CardHeader>
                     </Card>
                 </Link>
+                
+                {userProfile?.role === 'Admin' && (
+                    <Link href="/admin/management" className="block w-full">
+                        <Card className="hover:border-primary transition-colors cursor-pointer border-destructive/50">
+                            <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                                <Shield className="h-6 w-6 text-destructive" />
+                                <div>
+                                    <CardTitle className="text-lg text-destructive">Acceso a Administración</CardTitle>
+                                    <CardDescription>Modifica o elimina registros de clientes y finanzas.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                )}
+
             </main>
 
             <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">
@@ -122,5 +142,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
