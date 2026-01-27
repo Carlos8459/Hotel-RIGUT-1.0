@@ -386,6 +386,10 @@
           "type": "string",
           "description": "Data URI of the scanned ID card image."
         },
+        "rawIdData": {
+          "type": "string",
+          "description": "Raw data scanned from the ID card's QR code."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

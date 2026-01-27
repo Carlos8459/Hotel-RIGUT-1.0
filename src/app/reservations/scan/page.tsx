@@ -163,6 +163,7 @@ export default function ScanIdPage() {
                 setDocumentNonBlocking(customerDocRef, {
                     guestName: guestName,
                     cedula: formattedCedula,
+                    rawIdData: data,
                     createdAt: new Date().toISOString()
                 }, { merge: true });
             }

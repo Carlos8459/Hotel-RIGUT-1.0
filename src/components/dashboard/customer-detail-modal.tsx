@@ -3,15 +3,27 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck, StickyNote } from "lucide-react";
+import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck, StickyNote, QrCode } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";
-import type { Customer, Reservation } from "@/lib/types";
+import type { Customer, Reservation, CustomerProfile } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 type CustomerDetailModalProps = {
     customer: Customer | null;
@@ -21,6 +33,17 @@ type CustomerDetailModalProps = {
 };
 
 export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: CustomerDetailModalProps) {
+  const firestore = useFirestore();
+
+  // Fetch the full customer profile using the cedula
+  const customerProfileRef = useMemoFirebase(() => (
+    firestore && customer?.cedula) 
+    ? doc(firestore, 'customers', customer.cedula.replace(/-/g, '')) 
+    : null, 
+  [firestore, customer]);
+
+  const { data: customerProfile } = useDoc<CustomerProfile>(customerProfileRef);
+
   if (!customer) return null;
 
   return (
@@ -43,6 +66,34 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
               </div>
             </div>
         </DialogHeader>
+
+        {customerProfile?.rawIdData && (
+          <div className="px-6 pb-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Ver Datos de Escaneo QR
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Datos Crudos del Escaneo QR</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta es la información completa extraída del código QR de la cédula.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="my-4 p-4 bg-muted rounded-md text-xs font-mono break-words max-h-60 overflow-y-auto">
+                  {customerProfile.rawIdData}
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+        
         <Separator />
         <ScrollArea className="flex-grow min-h-0 px-6">
             <h3 className="font-semibold text-base mb-4 pt-4">Historial de Visitas ({customer.visitCount})</h3>
@@ -95,5 +146,3 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
     </Dialog>
   );
 }
-
-    

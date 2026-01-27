@@ -63,6 +63,7 @@ export default function CustomersPage() {
           
           return {
               name,
+              cedula: latestVisit.cedula,
               phone: latestVisit.phone,
               avatar: name.split(' ').map(n => n[0]).join(''),
               lastVisitDate: latestVisit.checkInDate,

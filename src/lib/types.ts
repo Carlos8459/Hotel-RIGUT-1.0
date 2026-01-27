@@ -42,6 +42,7 @@ export type Reservation = {
 
 export type Customer = {
   name: string;
+  cedula?: string;
   phone?: string;
   avatar: string;
   lastVisitDate: string; // ISO string
@@ -90,6 +91,7 @@ export type CustomerProfile = {
   cedula: string;
   phone?: string;
   idCardImage?: string;
+  rawIdData?: string;
   createdAt: string; // ISO string
 };
     
