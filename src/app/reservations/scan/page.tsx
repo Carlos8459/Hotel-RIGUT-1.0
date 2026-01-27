@@ -10,7 +10,7 @@ import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Camera, ArrowLeft, LoaderCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { QrCodeOverlay } from '@/components/ui/qr-code-overlay';
+import { IdCardOverlay } from '@/components/ui/id-card-overlay';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ScanIdPage() {
@@ -103,21 +103,29 @@ export default function ScanIdPage() {
     const handleScanResult = (data: string) => {
         setIsScanning(false);
         try {
-            const parts = data.split('<');
-            // We need at least the cedula at index 1 to proceed.
-            if (parts.length < 2) {
-                throw new Error("Formato de datos de QR inválido.");
+            // The data from Nicaraguan ID QR codes can be inconsistent.
+            // We split by '<', then clean up by trimming and removing empty parts.
+            const parts = data.split('<').map(p => p.trim()).filter(p => p.length > 0);
+
+            // Find the cedula part. It's usually 13 or 14 chars long.
+            const cedulaPart = parts.find(p => p.length >= 13 && p.length <= 14 && /[A-Z0-9]/.test(p));
+            
+            if (!cedulaPart) {
+                throw new Error("No se pudo encontrar un número de cédula válido en el código.");
             }
-    
-            const cedulaRaw = parts[1] || '';
-            const primerApellido = parts[2] || '';
-            const segundoApellido = parts[3] || '';
-            const primerNombre = parts[4] || '';
-            const segundoNombre = parts[5] || '';
+            
+            const cedulaIndex = parts.indexOf(cedulaPart);
+
+            // The names usually follow the cedula.
+            const primerApellido = parts[cedulaIndex + 1] || '';
+            const segundoApellido = parts[cedulaIndex + 2] || '';
+            const primerNombre = parts[cedulaIndex + 3] || '';
+            const segundoNombre = parts[cedulaIndex + 4] || ''; // Might not exist
     
             const toTitleCase = (str: string) => {
                 if (!str || str.trim() === '') return '';
-                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+                // Converts "JUAN CARLOS" to "Juan Carlos"
+                return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
             };
 
             const guestName = [
@@ -125,25 +133,20 @@ export default function ScanIdPage() {
                 toTitleCase(segundoNombre),
                 toTitleCase(primerApellido),
                 toTitleCase(segundoApellido)
-            ].filter(Boolean).join(' ');
+            ].filter(Boolean).join(' ').trim();
 
             const formatCedula = (c: string) => {
-                 if (c && c.length >= 13) { // Ensure it has enough characters
-                    const cleanCedula = c.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                    if (cleanCedula.length === 14) { // Format for 001-000000-0000A
-                        return `${cleanCedula.substring(0, 3)}-${cleanCedula.substring(3, 9)}-${cleanCedula.substring(9)}`;
-                    }
-                    if (cleanCedula.length === 13) { // Format for 001-231005-1005B style from QR
-                         return `${cleanCedula.substring(0, 3)}-${cleanCedula.substring(3, 9)}-${cleanCedula.substring(9)}`;
-                    }
-                }
-                return c;
+                 const cleanCedula = c.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                 if (cleanCedula.length >= 13) {
+                     return `${cleanCedula.substring(0, 3)}-${cleanCedula.substring(3, 9)}-${cleanCedula.substring(9)}`;
+                 }
+                 return c;
             };
 
-            const cedula = formatCedula(cedulaRaw);
+            const cedula = formatCedula(cedulaPart);
     
-            if (!cedula || !guestName.trim()) {
-                 throw new Error("No se pudo extraer la información requerida del código QR.");
+            if (!cedula || !guestName) {
+                 throw new Error("No se pudo extraer nombre y cédula del código. Asegúrese de que el código esté bien enfocado.");
             }
             
             // Save customer profile non-blockingly
@@ -159,7 +162,7 @@ export default function ScanIdPage() {
             }
     
             toast({
-                title: '¡QR Escaneado!',
+                title: '¡Cédula Escaneada!',
                 description: 'Redirigiendo al formulario de check-in...',
             });
     
@@ -188,13 +191,13 @@ export default function ScanIdPage() {
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Volver</span>
                 </Button>
-                <h1 className="text-xl font-bold">Escanear Cédula (QR)</h1>
+                <h1 className="text-xl font-bold">Escanear Cédula</h1>
             </header>
             
             <main className="flex-grow flex flex-col items-center justify-center p-4 space-y-4">
-                <div className="w-full max-w-md aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                <div className="w-full max-w-lg aspect-video bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    {isScanning && <QrCodeOverlay />}
+                    {isScanning && <IdCardOverlay />}
                     
                     {hasCameraPermission === null && (
                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
@@ -232,7 +235,7 @@ export default function ScanIdPage() {
 
                 {!scanError && (
                     <p className="text-muted-foreground text-center max-w-md">
-                        {isScanning ? 'Apunta la cámara al código QR en la parte trasera de la cédula.' : 'Procesando...'}
+                        {isScanning ? 'Apunta la cámara al código de barras en la parte trasera de la cédula. Asegúrate de que esté bien iluminado y centrado.' : 'Procesando...'}
                     </p>
                 )}
 
@@ -240,5 +243,3 @@ export default function ScanIdPage() {
         </div>
     );
 }
-
-    
