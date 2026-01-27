@@ -103,14 +103,44 @@ export default function ScanIdPage() {
     const handleScanResult = (data: string) => {
         setIsScanning(false);
         try {
-            // The data format from the QR code is assumed to be: "CEDULA<NOMBRE COMPLETO"
-            const parts = data.split('<');
-            const cedula = parts[0]?.trim();
-            const guestName = parts.slice(1).join(' ').trim();
-    
-            if (!cedula || !guestName) {
-                 throw new Error("No se pudo extraer nombre y cédula del código. Asegúrese de que el código esté bien enfocado.");
+            // The data from Nicaraguan ID cards is complex. We need to parse it carefully.
+            // A common format is a long string with fields separated by '<' or other characters.
+            
+            // 1. Find the Cedula number using a regular expression.
+            // It looks for a pattern like XXX-XXXXXX-XXXXX or XXXXXXXXXXXXXX.
+            const cedulaMatch = data.match(/\d{3}-?\d{6}-?\d{4}[A-Z]/);
+
+            if (!cedulaMatch || cedulaMatch.length === 0) {
+                throw new Error("No se pudo encontrar un número de cédula válido. Asegúrese de que el código QR esté bien enfocado.");
             }
+            const cedula = cedulaMatch[0];
+
+            // 2. Extract the name parts, which usually follow the cedula.
+            const cedulaEndIndex = data.indexOf(cedula) + cedula.length;
+            const remainingData = data.substring(cedulaEndIndex);
+
+            // Split the rest by any non-alphabetic character and clean up the parts.
+            const nameParts = remainingData.split(/[^A-Z]/).filter(p => p.length > 1);
+
+            if (nameParts.length < 2) { // Should have at least one name and one surname
+                throw new Error("No se pudo extraer un nombre válido del código QR.");
+            }
+            
+            // 3. The typical order is Apellido1, Apellido2, Nombre1, Nombre2.
+            // We take up to 4 parts to be safe and join them.
+            const guestNameRaw = nameParts.slice(0, 4).join(' ');
+
+            const toTitleCase = (str: string) => {
+                return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+            };
+
+            const guestName = toTitleCase(guestNameRaw);
+
+            if (!guestName) {
+                throw new Error("El nombre extraído no es válido.");
+            }
+
+            // --- Successfully parsed ---
             
             // Save customer profile non-blockingly
             if (firestore) {
