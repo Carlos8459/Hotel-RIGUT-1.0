@@ -103,33 +103,46 @@ export default function ScanIdPage() {
     const handleScanResult = (data: string) => {
         setIsScanning(false);
         try {
-            // The data from Nicaraguan ID cards is complex. We need to parse it carefully.
-            // A common format is a long string with fields separated by '<' or other characters.
-            
             // 1. Find the Cedula number using a regular expression.
-            // It looks for a pattern like XXX-XXXXXX-XXXXX or XXXXXXXXXXXXXX.
             const cedulaMatch = data.match(/\d{3}-?\d{6}-?\d{4}[A-Z]/);
 
             if (!cedulaMatch || cedulaMatch.length === 0) {
-                throw new Error("No se pudo encontrar un número de cédula válido. Asegúrese de que el código QR esté bien enfocado.");
-            }
-            const cedula = cedulaMatch[0];
-
-            // 2. Extract the name parts, which usually follow the cedula.
-            const cedulaEndIndex = data.indexOf(cedula) + cedula.length;
-            const remainingData = data.substring(cedulaEndIndex);
-
-            // Split the rest by any non-alphabetic character and clean up the parts.
-            const nameParts = remainingData.split(/[^A-Z]/).filter(p => p.length > 1);
-
-            if (nameParts.length < 2) { // Should have at least one name and one surname
-                throw new Error("No se pudo extraer un nombre válido del código QR.");
+                throw new Error("No se pudo encontrar un número de cédula válido en el código QR. Asegúrese de que el código QR esté bien enfocado y haya buena iluminación.");
             }
             
-            // 3. The typical order is Apellido1, Apellido2, Nombre1, Nombre2.
-            // We take up to 4 parts to be safe and join them.
-            const guestNameRaw = nameParts.slice(0, 4).join(' ');
+            // 2. Format the Cedula number with hyphens.
+            const rawCedula = cedulaMatch[0];
+            const cedulaDigits = rawCedula.replace(/-/g, '');
+            let formattedCedula = rawCedula;
+            if (cedulaDigits.length === 14) {
+                formattedCedula = `${cedulaDigits.substring(0, 3)}-${cedulaDigits.substring(3, 9)}-${cedulaDigits.substring(9)}`;
+            }
 
+            // 3. Extract the name parts, which usually follow the cedula.
+            const cedulaEndIndex = data.indexOf(rawCedula) + rawCedula.length;
+            const remainingData = data.substring(cedulaEndIndex);
+
+            const nameParts = remainingData.split(/[^A-Z]/).filter(p => p.length > 1).slice(0, 4);
+
+            if (nameParts.length < 2) { 
+                throw new Error("No se pudo extraer un nombre completo del código QR.");
+            }
+            
+            // 4. Reorder name parts: Names are typically ordered Apellido1, Apellido2, Nombre1, Nombre2.
+            // We want Nombre1, Nombre2, Apellido1, Apellido2.
+            let reorderedNameParts;
+            if (nameParts.length === 4) { // Ap1, Ap2, N1, N2
+                reorderedNameParts = [nameParts[2], nameParts[3], nameParts[0], nameParts[1]];
+            } else if (nameParts.length === 3) { // Ap1, Ap2, N1
+                reorderedNameParts = [nameParts[2], nameParts[0], nameParts[1]];
+            } else if (nameParts.length === 2) { // Ap1, N1
+                reorderedNameParts = [nameParts[1], nameParts[0]];
+            } else {
+                reorderedNameParts = nameParts; // Fallback for other cases
+            }
+
+            const guestNameRaw = reorderedNameParts.join(' ');
+            
             const toTitleCase = (str: string) => {
                 return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
             };
@@ -144,12 +157,12 @@ export default function ScanIdPage() {
             
             // Save customer profile non-blockingly
             if (firestore) {
-                const customerId = cedula.replace(/-/g, '');
+                const customerId = formattedCedula.replace(/-/g, '');
                 const customerDocRef = doc(firestore, 'customers', customerId);
 
                 setDocumentNonBlocking(customerDocRef, {
                     guestName: guestName,
-                    cedula: cedula,
+                    cedula: formattedCedula,
                     createdAt: new Date().toISOString()
                 }, { merge: true });
             }
@@ -165,7 +178,7 @@ export default function ScanIdPage() {
                 stream.getTracks().forEach(track => track.stop());
             }
     
-            router.push(`/new-reservation?guestName=${encodeURIComponent(guestName)}&cedula=${encodeURIComponent(cedula)}`);
+            router.push(`/new-reservation?guestName=${encodeURIComponent(guestName)}&cedula=${encodeURIComponent(formattedCedula)}`);
     
         } catch (error: any) {
             console.error("Error parsing QR code:", error);
