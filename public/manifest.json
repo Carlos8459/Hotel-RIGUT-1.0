@@ -1,21 +1,10 @@
 {
   "name": "Hotel RIGUT",
   "short_name": "Hotel RIGUT",
-  "description": "Hotel Management Application",
+  "description": "Aplicación de gestión para Hotel RIGUT",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#162125",
   "theme_color": "#162125",
-  "icons": [
-    {
-      "src": "/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "icons": []
 }
