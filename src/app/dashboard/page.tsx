@@ -324,7 +324,7 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 flex h-36 items-center justify-between border-b bg-background/50 px-4 pt-12 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
         </div>
@@ -355,7 +355,7 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-2">
+        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
                 <BedDouble className="h-5 w-5 text-red-400" />
                 <span className="font-bold text-foreground">{occupiedToday}</span>
@@ -370,7 +370,7 @@ export default function RoomsDashboard() {
             </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="mt-0 flex justify-center">
           <div className="overflow-x-auto pb-2">
             <div className="flex w-min space-x-1 rounded-lg bg-card p-1">
               {visibleDates.map((date) => (
@@ -390,7 +390,7 @@ export default function RoomsDashboard() {
           </div>
         </div>
         
-        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
               {(roomsLoading || reservationsLoading) ? (
                   [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
               ) : filteredRooms.length > 0 ? (

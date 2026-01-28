@@ -178,8 +178,8 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 pt-12 sm:p-6 lg:p-8 pb-24">
-      <header className="sticky top-12 z-20 bg-background/80 backdrop-blur-sm -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 mb-4 px-4 sm:px-6 lg:px-8 py-4 border-b">
+    <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8 pb-24">
+      <header className="sticky top-16 z-20 bg-background/80 backdrop-blur-sm -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 mb-4 px-4 sm:px-6 lg:px-8 py-4 border-b">
         <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Reservas</h1>
             <div className="flex items-center gap-2">

@@ -39,7 +39,7 @@ export default function ToolsPage() {
     }
 
     return (
-        <div className="dark min-h-screen bg-background text-foreground p-4 pt-12 sm:p-6 lg:p-8 pb-24">
+        <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8 pb-24">
             <header className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold">Herramientas</h1>
             </header>
