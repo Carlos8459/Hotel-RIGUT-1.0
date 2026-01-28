@@ -352,7 +352,7 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground my-4">
+        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
                 <BedDouble className="h-5 w-5 text-red-400" />
                 <span className="font-bold text-foreground">{occupiedToday}</span>
@@ -367,7 +367,7 @@ export default function RoomsDashboard() {
             </div>
         </div>
 
-        <div className="mb-4 flex justify-center">
+        <div className="flex justify-center">
           <div className="overflow-x-auto pb-2">
             <div className="flex w-min space-x-1 rounded-lg bg-card p-1">
               {visibleDates.map((date) => (
@@ -387,7 +387,7 @@ export default function RoomsDashboard() {
           </div>
         </div>
         
-        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
               {(roomsLoading || reservationsLoading) ? (
                   [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
               ) : filteredRooms.length > 0 ? (
