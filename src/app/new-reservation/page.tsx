@@ -307,7 +307,7 @@ function NewReservationFormComponent() {
                       </FormControl>
                     </div>
                     {showSuggestions && filteredCustomers.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {filteredCustomers.map((customer, index) => (
                           <div
                             key={index}
@@ -493,7 +493,7 @@ function NewReservationFormComponent() {
                     <FormControl>
                        <div className="relative flex items-center">
                         <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                        <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus:ring-0 focus:ring-offset-0 focus:border-primary">
+                        <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
                           <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación disponible"} />
                         </SelectTrigger>
                       </div>
