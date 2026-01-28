@@ -324,7 +324,7 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-30 flex h-36 items-center justify-between border-b bg-background/50 px-4 pt-12 backdrop-blur-sm sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b bg-background/50 px-4 pt-8 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
         </div>
@@ -370,7 +370,7 @@ export default function RoomsDashboard() {
             </div>
         </div>
 
-        <div className="mt-0 flex justify-center">
+        <div className="flex justify-center">
           <div className="overflow-x-auto pb-2">
             <div className="flex w-min space-x-1 rounded-lg bg-card p-1">
               {visibleDates.map((date) => (
