@@ -139,20 +139,24 @@ function NewReservationFormComponent() {
   }, [roomsData, reservationsData, checkInDate, checkOutDate]);
 
   const typePriceMap = useMemo(() => {
-    if (!roomsData) return new Map<string, number>();
+    // Custom prices as per user request
+    const customPrices: Record<Room['type'], number> = {
+        "Unipersonal": 400,
+        "Matrimonial": 500,
+        "Doble": 600,
+        "Triple": 700,
+        "Quintuple": 1000,
+        "Unipersonal con A/C": 700,
+        "Matrimonial con A/C": 800,
+    };
+
     const map = new Map<string, number>();
-    const sortedRooms = [...roomsData].sort((a, b) => {
-        if (a.type.includes('A/C') && !b.type.includes('A/C')) return -1;
-        if (!a.type.includes('A/C') && b.type.includes('A/C')) return 1;
-        return 0;
+    roomTypes.forEach(type => {
+        map.set(type, customPrices[type]);
     });
-    sortedRooms.forEach(room => {
-      if (!map.has(room.type)) {
-        map.set(room.type, room.price);
-      }
-    });
+
     return map;
-  }, [roomsData]);
+  }, []);
 
 
   useEffect(() => {
@@ -554,9 +558,9 @@ function NewReservationFormComponent() {
                       </div>
                     </FormControl>
                     <SelectContent>
-                      {roomTypes.map(type => (
+                      {Array.from(typePriceMap.entries()).map(([type, price]) => (
                         <SelectItem key={type} value={type}>
-                          {type} (aprox. C${typePriceMap.get(type) || 'N/A'})
+                          {type} (C${price})
                         </SelectItem>
                       ))}
                     </SelectContent>
