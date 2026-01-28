@@ -306,7 +306,7 @@ function NewReservationFormComponent() {
                         />
                       </FormControl>
                     </div>
-                    {showSuggestions && filteredCustomers.length > 0 && searchQuery !== form.getValues('guestName') && (
+                    {showSuggestions && filteredCustomers.length > 0 && (
                       <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {filteredCustomers.map((customer, index) => (
                           <div
