@@ -109,6 +109,19 @@
           "type": "string",
           "description": "ID of the reserved room."
         },
+        "type": {
+          "type": "string",
+          "description": "The billing type for this specific reservation.",
+          "enum": [
+            "Unipersonal",
+            "Matrimonial",
+            "Doble",
+            "Triple",
+            "Quintuple",
+            "Unipersonal con A/C",
+            "Matrimonial con A/C"
+          ]
+        },
         "vehicle": {
           "type": "string",
           "enum": [
@@ -198,6 +211,7 @@
         "checkInDate",
         "checkOutDate",
         "roomId",
+        "type",
         "status",
         "payment",
         "createdAt",

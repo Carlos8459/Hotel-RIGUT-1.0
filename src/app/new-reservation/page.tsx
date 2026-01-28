@@ -33,13 +33,15 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera, DollarSign } from 'lucide-react';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation, NotificationConfig } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 
+
+const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
 
 const reservationFormSchema = z.object({
   guestName: z
@@ -58,6 +60,7 @@ const reservationFormSchema = z.object({
     required_error: 'La fecha de check-out es obligatoria.',
   }),
   roomId: z.string({ required_error: 'Debe seleccionar una habitación.' }),
+  type: z.enum(roomTypes, { required_error: 'Debe seleccionar un tipo de cobro.' }),
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
   notes: z.string().optional(),
 }).refine(data => data.checkOutDate > data.checkInDate, {
@@ -72,7 +75,6 @@ function NewReservationFormComponent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
-  const [roomTypeFilter, setRoomTypeFilter] = useState<string>('');
 
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
@@ -94,6 +96,7 @@ function NewReservationFormComponent() {
       vehicle: undefined,
       notes: '',
       roomId: '',
+      type: undefined,
     },
   });
 
@@ -131,11 +134,25 @@ function NewReservationFormComponent() {
     );
 
     return roomsData.filter(room => {
-        const isAvailableByDateAndStatus = room.status === 'Disponible' && !reservedRoomIds.has(room.id);
-        const isTypeMatch = !roomTypeFilter || room.type === roomTypeFilter;
-        return isAvailableByDateAndStatus && isTypeMatch;
+        return room.status === 'Disponible' && !reservedRoomIds.has(room.id);
     });
-  }, [roomsData, reservationsData, checkInDate, checkOutDate, roomTypeFilter]);
+  }, [roomsData, reservationsData, checkInDate, checkOutDate]);
+
+  const typePriceMap = useMemo(() => {
+    if (!roomsData) return new Map<string, number>();
+    const map = new Map<string, number>();
+    const sortedRooms = [...roomsData].sort((a, b) => {
+        if (a.type.includes('A/C') && !b.type.includes('A/C')) return -1;
+        if (!a.type.includes('A/C') && b.type.includes('A/C')) return 1;
+        return 0;
+    });
+    sortedRooms.forEach(room => {
+      if (!map.has(room.type)) {
+        map.set(room.type, room.price);
+      }
+    });
+    return map;
+  }, [roomsData]);
 
 
   useEffect(() => {
@@ -192,7 +209,10 @@ function NewReservationFormComponent() {
 
     const room = roomsData.find(r => r.id === data.roomId);
     const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
-    const totalAmount = room && nights > 0 ? room.price * nights : 0;
+    
+    const priceForType = typePriceMap.get(data.type);
+    const priceToUse = priceForType ?? room?.price ?? 0;
+    const totalAmount = priceToUse * (nights > 0 ? nights : 1);
     
     const reservationData = {
       guestName: data.guestName,
@@ -201,6 +221,7 @@ function NewReservationFormComponent() {
       checkInDate: data.checkInDate.toISOString(),
       checkOutDate: data.checkOutDate.toISOString(),
       roomId: data.roomId,
+      type: data.type,
       ...(data.vehicle && { vehicle: data.vehicle }),
       ...(data.notes && { notes: data.notes }),
       status: 'Checked-In' as const,
@@ -255,8 +276,6 @@ function NewReservationFormComponent() {
       </div>
     );
   }
-
-  const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
 
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8">
@@ -487,31 +506,6 @@ function NewReservationFormComponent() {
               />
             </div>
 
-            <FormItem>
-              <FormLabel>Filtrar por Tipo de Habitación</FormLabel>
-              <Select
-                onValueChange={(value) => {
-                  setRoomTypeFilter(value === 'all' ? '' : value);
-                  form.setValue('roomId', ''); // Reset room selection
-                }}
-              >
-                <FormControl>
-                  <div className="relative flex items-center">
-                    <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                    <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
-                      <SelectValue placeholder="Mostrar todos los tipos" />
-                    </SelectTrigger>
-                  </div>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
-                  {roomTypes.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-
             <FormField
               control={form.control}
               name="roomId"
@@ -535,6 +529,34 @@ function NewReservationFormComponent() {
                       {availableRooms.map((room) => (
                         <SelectItem key={room.id} value={String(room.id)}>
                           {room.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Cobro</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <div className="relative flex items-center">
+                        <DollarSign className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                        <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
+                          <SelectValue placeholder="Seleccionar un tipo de cobro" />
+                        </SelectTrigger>
+                      </div>
+                    </FormControl>
+                    <SelectContent>
+                      {roomTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type} (aprox. C${typePriceMap.get(type) || 'N/A'})
                         </SelectItem>
                       ))}
                     </SelectContent>

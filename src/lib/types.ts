@@ -28,6 +28,7 @@ export type Reservation = {
   checkInDate: string; // ISO string
   checkOutDate: string; // ISO string
   roomId: string;
+  type: Room['type'];
   vehicle?: 'car' | 'bike' | 'truck';
   status: 'Checked-In' | 'Checked-Out' | 'Cancelled';
   payment: {
