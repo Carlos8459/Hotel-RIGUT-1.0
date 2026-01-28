@@ -21,6 +21,7 @@ import {
   endOfDay,
   startOfWeek,
   endOfWeek,
+  differenceInCalendarDays,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -32,7 +33,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { Reservation, Expense } from '@/lib/types';
+import type { Reservation, Expense, Room } from '@/lib/types';
 import {
   LayoutGrid,
   Calendar as CalendarIcon,
@@ -131,6 +132,12 @@ export default function StatsPage() {
     [firestore]
   );
   const { data: expenses, isLoading: expensesLoading } = useCollection<Omit<Expense, 'id'>>(expensesCollection);
+  
+  const roomsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'rooms') : null),
+    [firestore]
+  );
+  const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -187,15 +194,41 @@ export default function StatsPage() {
     });
   }, [expenses, dateRange]);
 
-  const { totalIncome, totalExpenses, netIncome } = useMemo(() => {
+  const { totalIncome, totalExpenses, netIncome, occupancyRate } = useMemo(() => {
     const income = filteredReservations.reduce((acc, res) => acc + (res.payment?.amount || 0), 0);
     const expenseTotal = filteredExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+    let occupancy = 0;
+    if (dateRange?.from && roomsData && roomsData.length > 0) {
+        const to = dateRange.to ?? dateRange.from;
+        const daysInPeriod = eachDayOfInterval({ start: dateRange.from, end: to });
+        
+        const availableRoomsCount = roomsData.filter(r => r.status !== 'Mantenimiento').length;
+        const totalAvailableRoomNights = availableRoomsCount * daysInPeriod.length;
+
+        if (totalAvailableRoomNights > 0) {
+            let occupiedRoomNights = 0;
+            daysInPeriod.forEach(day => {
+                const startOfDay_day = startOfDay(day);
+                paidReservations.forEach(res => {
+                    const checkIn = startOfDay(parseISO(res.checkInDate));
+                    const checkOut = startOfDay(parseISO(res.checkOutDate));
+                    if(startOfDay_day >= checkIn && startOfDay_day < checkOut) {
+                        occupiedRoomNights++;
+                    }
+                });
+            });
+            occupancy = (occupiedRoomNights / totalAvailableRoomNights) * 100;
+        }
+    }
+
     return {
       totalIncome: income,
       totalExpenses: expenseTotal,
       netIncome: income - expenseTotal,
+      occupancyRate: occupancy,
     };
-  }, [filteredReservations, filteredExpenses]);
+  }, [filteredReservations, filteredExpenses, dateRange, roomsData, paidReservations]);
 
   const dailyChartData = useMemo(() => {
     if (!dateRange?.from) return [];
@@ -271,7 +304,7 @@ export default function StatsPage() {
     }
   };
   
-  const isLoading = isUserLoading || !user || reservationsLoading || expensesLoading;
+  const isLoading = isUserLoading || !user || reservationsLoading || expensesLoading || roomsLoading;
 
   if (isLoading) {
     return (
@@ -319,7 +352,7 @@ export default function StatsPage() {
       </header>
 
       <main className="space-y-8">
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ingresos Netos</CardTitle>
@@ -327,7 +360,7 @@ export default function StatsPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(netIncome)}</div>}
-                    <p className="text-xs text-muted-foreground">Ingresos brutos menos gastos en el período</p>
+                    <p className="text-xs text-muted-foreground">Ingresos brutos menos gastos</p>
                 </CardContent>
             </Card>
             <Card>
@@ -337,7 +370,7 @@ export default function StatsPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{currencyFormatter.format(totalIncome)}</div>}
-                    <p className="text-xs text-muted-foreground">Total de ingresos por estadías pagadas</p>
+                    <p className="text-xs text-muted-foreground">Total de ingresos por estadías</p>
                 </CardContent>
             </Card>
              <Card>
@@ -347,7 +380,17 @@ export default function StatsPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencyFormatter.format(totalExpenses)}</div>}
-                    <p className="text-xs text-muted-foreground">Total de gastos registrados en el período</p>
+                    <p className="text-xs text-muted-foreground">Total de gastos registrados</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Tasa de Ocupación</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{occupancyRate.toFixed(1)}%</div>}
+                    <p className="text-xs text-muted-foreground">Noches ocupadas vs. disponibles</p>
                 </CardContent>
             </Card>
         </section>
@@ -443,5 +486,3 @@ export default function StatsPage() {
     </div>
   );
 }
-
-    

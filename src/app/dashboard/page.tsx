@@ -67,6 +67,8 @@ import {
   IceCream,
   Package,
   StickyNote,
+  BedDouble,
+  CheckCircle,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -153,6 +155,44 @@ export default function RoomsDashboard() {
   const visibleDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
   }, []);
+
+    const { occupiedToday, availableToday, checkOutsToday } = useMemo(() => {
+    if (!roomsData || !reservationsData) {
+      return { occupiedToday: 0, availableToday: 0, checkOutsToday: 0 };
+    }
+
+    const today = startOfDay(new Date());
+
+    const occupiedRoomIds = new Set();
+    reservationsData.forEach(res => {
+      if (res.status !== 'Checked-In') return;
+      const checkIn = startOfDay(parseISO(res.checkInDate));
+      const checkOut = startOfDay(parseISO(res.checkOutDate));
+      if (today >= checkIn && today < checkOut) {
+        occupiedRoomIds.add(res.roomId);
+      }
+    });
+
+    const maintenanceRoomsCount = roomsData.filter(
+      r => r.status === 'Mantenimiento'
+    ).length;
+
+    const occupied = occupiedRoomIds.size;
+    const available = roomsData.length - occupied - maintenanceRoomsCount;
+
+    const checkOuts = reservationsData.filter(
+      res =>
+        res.status === 'Checked-Out' &&
+        isSameDay(parseISO(res.checkOutDate), today)
+    ).length;
+
+    return {
+      occupiedToday: occupied,
+      availableToday: available,
+      checkOutsToday: checkOuts,
+    };
+  }, [roomsData, reservationsData]);
+
 
   const processedRooms = useMemo((): ProcessedRoom[] => {
     if (!roomsData || !reservationsData || !selectedDate) return [];
@@ -283,6 +323,20 @@ export default function RoomsDashboard() {
       <header className="sticky top-8 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
+            <div className="flex items-center gap-4 text-sm mt-2 text-muted-foreground">
+                <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
+                    <BedDouble className="h-5 w-5 text-red-400" />
+                    <span className="font-bold text-foreground">{occupiedToday}</span>
+                </div>
+                <div className="flex items-center gap-2" title="Habitaciones Disponibles">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    <span className="font-bold text-foreground">{availableToday}</span>
+                </div>
+                <div className="flex items-center gap-2" title="Check-outs de Hoy">
+                    <LogOut className="h-5 w-5 text-blue-400" />
+                    <span className="font-bold text-foreground">{checkOutsToday}</span>
+                </div>
+            </div>
         </div>
         <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
@@ -399,7 +453,7 @@ export default function RoomsDashboard() {
                               )}
                           </>
                       ) : room.statusText === 'Mantenimiento' ? (
-                          <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-4 w-4" /><span>En mantenimiento</span></div>
+                          <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-5 w-5"/><span>En mantenimiento</span></div>
                       ) : (
                           <div className="text-center flex-grow flex flex-col justify-center items-center">
                               <p className="text-muted-foreground">Limpia y lista</p>

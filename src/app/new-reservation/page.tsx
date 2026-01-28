@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { format, differenceInCalendarDays } from 'date-fns';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { collection, doc } from 'firebase/firestore';
 
@@ -137,6 +137,48 @@ function NewReservationFormComponent() {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const allCustomers = useMemo(() => {
+    if (!reservationsData) return [];
+
+    const customerMap: { [key: string]: { name: string; cedula?: string; phone?: string } } = {};
+
+    const sortedReservations = [...reservationsData].sort(
+      (a, b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime()
+    );
+
+    sortedReservations.forEach(res => {
+      if (!res.guestName) return;
+      const key = res.guestName.toLowerCase();
+      if (!customerMap[key]) {
+        customerMap[key] = {
+          name: res.guestName,
+          cedula: res.cedula,
+          phone: res.phone,
+        };
+      }
+    });
+
+    return Object.values(customerMap).sort((a, b) => a.name.localeCompare(b.name));
+  }, [reservationsData]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery) return [];
+    return allCustomers.filter(customer =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, allCustomers]);
+
+  const handleSelectCustomer = (customer: { name: string; cedula?: string; phone?: string }) => {
+    form.setValue('guestName', customer.name, { shouldValidate: true });
+    form.setValue('cedula', customer.cedula || '', { shouldValidate: true });
+    form.setValue('phone', customer.phone || '', { shouldValidate: true });
+    setSearchQuery(customer.name);
+    setShowSuggestions(false);
+  };
 
   async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
     if (!firestore || !user || !roomsData || !reservationsCollection || !userProfile) return;
@@ -238,11 +280,46 @@ function NewReservationFormComponent() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre del Huésped</FormLabel>
-                   <div className="relative flex items-center">
-                    <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                    <FormControl>
-                      <Input placeholder="Ej: Juan Pérez" {...field} className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary" />
-                    </FormControl>
+                  <div className="relative">
+                    <div className="relative flex items-center">
+                      <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                      <FormControl>
+                        <Input
+                          placeholder="Buscar o registrar huésped..."
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            setSearchQuery(e.target.value);
+                            if (!showSuggestions) setShowSuggestions(true);
+                          }}
+                          onFocus={() => {
+                            setSearchQuery(field.value);
+                            setShowSuggestions(true);
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setShowSuggestions(false);
+                            }, 150);
+                          }}
+                          autoComplete="off"
+                          className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"
+                        />
+                      </FormControl>
+                    </div>
+                    {showSuggestions && filteredCustomers.length > 0 && searchQuery !== form.getValues('guestName') && (
+                      <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {filteredCustomers.map((customer, index) => (
+                          <div
+                            key={index}
+                            className="p-3 cursor-pointer hover:bg-muted"
+                            onMouseDown={() => handleSelectCustomer(customer)}
+                          >
+                            <p className="font-medium">{customer.name}</p>
+                            {customer.cedula && <p className="text-sm text-muted-foreground">{customer.cedula}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <FormMessage />
                 </FormItem>
