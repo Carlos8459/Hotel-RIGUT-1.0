@@ -323,7 +323,7 @@ export default function RoomsDashboard() {
       <header className="sticky top-8 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
-            <div className="flex items-center gap-4 text-sm mt-2 text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm mt-4 text-muted-foreground">
                 <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
                     <BedDouble className="h-5 w-5 text-red-400" />
                     <span className="font-bold text-foreground">{occupiedToday}</span>
@@ -365,7 +365,7 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-8 overflow-x-auto pb-2">
+        <div className="mb-4 overflow-x-auto pb-2">
             <div className="flex space-x-1 rounded-lg bg-card p-1 w-min">
               {visibleDates.map((date) => (
                 <Button
