@@ -72,6 +72,7 @@ function NewReservationFormComponent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
+  const [roomTypeFilter, setRoomTypeFilter] = useState<string>('');
 
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
@@ -92,6 +93,7 @@ function NewReservationFormComponent() {
       phone: '',
       vehicle: undefined,
       notes: '',
+      roomId: '',
     },
   });
 
@@ -128,8 +130,12 @@ function NewReservationFormComponent() {
             .map(res => res.roomId)
     );
 
-    return roomsData.filter(room => room.status === 'Disponible' && !reservedRoomIds.has(room.id));
-  }, [roomsData, reservationsData, checkInDate, checkOutDate]);
+    return roomsData.filter(room => {
+        const isAvailableByDateAndStatus = room.status === 'Disponible' && !reservedRoomIds.has(room.id);
+        const isTypeMatch = !roomTypeFilter || room.type === roomTypeFilter;
+        return isAvailableByDateAndStatus && isTypeMatch;
+    });
+  }, [roomsData, reservationsData, checkInDate, checkOutDate, roomTypeFilter]);
 
 
   useEffect(() => {
@@ -250,6 +256,8 @@ function NewReservationFormComponent() {
     );
   }
 
+  const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
+
   return (
     <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8">
       <header className="flex items-center gap-4 mb-8">
@@ -307,7 +315,7 @@ function NewReservationFormComponent() {
                       </FormControl>
                     </div>
                     {showSuggestions && filteredCustomers.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {filteredCustomers.map((customer, index) => (
                           <div
                             key={index}
@@ -479,6 +487,31 @@ function NewReservationFormComponent() {
               />
             </div>
 
+            <FormItem>
+              <FormLabel>Filtrar por Tipo de Habitación</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  setRoomTypeFilter(value === 'all' ? '' : value);
+                  form.setValue('roomId', ''); // Reset room selection
+                }}
+              >
+                <FormControl>
+                  <div className="relative flex items-center">
+                    <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                    <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
+                      <SelectValue placeholder="Mostrar todos los tipos" />
+                    </SelectTrigger>
+                  </div>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  {roomTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+
             <FormField
               control={form.control}
               name="roomId"
@@ -487,21 +520,21 @@ function NewReservationFormComponent() {
                   <FormLabel>Habitación</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     disabled={!checkInDate || !checkOutDate}
                   >
                     <FormControl>
                        <div className="relative flex items-center">
                         <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
                         <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
-                          <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación disponible"} />
+                          <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación"} />
                         </SelectTrigger>
                       </div>
                     </FormControl>
                     <SelectContent>
                       {availableRooms.map((room) => (
                         <SelectItem key={room.id} value={String(room.id)}>
-                          {room.title} - {room.type} (C${room.price})
+                          {room.title}
                         </SelectItem>
                       ))}
                     </SelectContent>
