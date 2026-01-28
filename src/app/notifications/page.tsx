@@ -74,7 +74,7 @@ export default function NotificationsPage() {
                                         <AvatarFallback>{notif.creatorName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <p><span className="font-semibold">{notif.creatorName}</span> {notif.message.substring(notif.message.indexOf(" registró"))}</p>
+                                        <p><span className="font-semibold">{notif.creatorName}</span> {notif.message}</p>
                                         <p className="text-sm text-muted-foreground">
                                             {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: es })}
                                         </p>
