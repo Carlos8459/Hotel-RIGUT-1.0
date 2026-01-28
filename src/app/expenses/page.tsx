@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Receipt, DollarSign, Tag, List, Trash2, Pencil } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import type { Expense } from '@/lib/types';
+import type { Expense, NotificationConfig } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,6 +85,9 @@ export default function ExpensesPage() {
   // Expenses data
   const expensesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'expenses'), orderBy('date', 'desc')) : null, [firestore]);
   const { data: expensesData, isLoading: expensesLoading } = useCollection<Omit<Expense, 'id'>>(expensesQuery);
+  
+  const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
+  const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
 
   const form = useForm<z.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
@@ -123,6 +126,19 @@ export default function ExpensesPage() {
           title: 'Gasto Registrado',
           description: `Se ha registrado el gasto de ${data.description}.`,
         });
+
+        if (notificationConfig?.isEnabled && notificationConfig.onNewExpense) {
+            const notificationsColRef = collection(firestore, 'notifications');
+            const notificationData = {
+                message: `registró un nuevo gasto: ${data.description}.`,
+                createdAt: new Date().toISOString(),
+                createdBy: user.uid,
+                creatorName: userProfile.username,
+                isRead: false,
+            };
+            addDocumentNonBlocking(notificationsColRef, notificationData);
+        }
+
         form.reset({
             description: '',
             amount: '' as any,
@@ -395,5 +411,3 @@ export default function ExpensesPage() {
     </div>
   );
 }
-
-    

@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera } from 'lucide-react';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
-import type { Room, Reservation } from '@/lib/types';
+import type { Room, Reservation, NotificationConfig } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 
@@ -76,10 +76,12 @@ function NewReservationFormComponent() {
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
   
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
+  const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
 
 
   const form = useForm<z.infer<typeof reservationFormSchema>>({
@@ -137,7 +139,7 @@ function NewReservationFormComponent() {
   }, [user, isUserLoading, router]);
 
   async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
-    if (!firestore || !user || !roomsData || !reservationsCollection) return;
+    if (!firestore || !user || !roomsData || !reservationsCollection || !userProfile) return;
     setIsSubmitting(true);
 
     const room = roomsData.find(r => r.id === data.roomId);
@@ -169,6 +171,19 @@ function NewReservationFormComponent() {
                 title: 'Check-in Realizado',
                 description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
             });
+
+            if (notificationConfig?.isEnabled && notificationConfig.onNewReservation) {
+                const notificationsColRef = collection(firestore, 'notifications');
+                const notificationData = {
+                    message: `registró un nuevo check-in para ${data.guestName} en la habitación ${roomTitle}.`,
+                    createdAt: new Date().toISOString(),
+                    createdBy: user.uid,
+                    creatorName: userProfile.username,
+                    isRead: false,
+                };
+                addDocumentNonBlocking(notificationsColRef, notificationData);
+            }
+
             router.push('/dashboard');
         })
         .catch((error) => {
@@ -516,5 +531,3 @@ export default function NewReservationPage() {
     </Suspense>
   )
 }
-
-    

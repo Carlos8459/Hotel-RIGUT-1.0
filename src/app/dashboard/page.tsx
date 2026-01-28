@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
 import {
@@ -15,7 +15,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import type { Room, Reservation } from '@/lib/types';
+import type { Room, Reservation, NotificationConfig } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -106,10 +106,12 @@ export default function RoomsDashboard() {
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
 
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
+  const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
 
   const consumptionIcons: { [key: string]: React.ReactNode } = {
     Utensils: <Utensils className="h-4 w-4" />,
@@ -217,12 +219,28 @@ export default function RoomsDashboard() {
   };
   
   const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {
-      if (!firestore) return;
+      if (!firestore || !user || !userProfile) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
       
       let dataToUpdate = {};
       if (action === 'checkout') {
           dataToUpdate = { status: 'Checked-Out' };
+
+          if (notificationConfig?.isEnabled && notificationConfig.onCheckOut) {
+              const reservation = reservationsData?.find(res => res.id === reservationId);
+              const room = roomsData?.find(r => r.id === reservation?.roomId);
+              if (reservation && room) {
+                  const notificationsColRef = collection(firestore, 'notifications');
+                  addDocumentNonBlocking(notificationsColRef, {
+                      message: `realizó el check-out de ${reservation.guestName} de la ${room.title}.`,
+                      createdAt: new Date().toISOString(),
+                      createdBy: user.uid,
+                      creatorName: userProfile.username,
+                      isRead: false,
+                  });
+              }
+          }
+
       } else if (action === 'confirm_payment') {
           dataToUpdate = { 'payment.status': 'Cancelado' };
       }
@@ -530,5 +548,3 @@ export default function RoomsDashboard() {
     </div>
   );
 }
-
-    
