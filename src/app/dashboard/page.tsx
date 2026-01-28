@@ -320,8 +320,8 @@ export default function RoomsDashboard() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground pt-8 pb-24">
-      <header className="sticky top-8 z-30 flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+    <div className="dark min-h-screen bg-background text-foreground pb-24">
+      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
         </div>
@@ -352,7 +352,7 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-6">
+        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground my-8">
             <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
                 <BedDouble className="h-5 w-5 text-red-400" />
                 <span className="font-bold text-foreground">{occupiedToday}</span>
@@ -367,15 +367,15 @@ export default function RoomsDashboard() {
             </div>
         </div>
 
-        <div className="flex justify-center mb-8">
+        <div className="mb-8 flex justify-center">
           <div className="overflow-x-auto pb-2">
-            <div className="flex space-x-1 rounded-lg bg-card p-1 w-min">
+            <div className="flex w-min space-x-1 rounded-lg bg-card p-1">
               {visibleDates.map((date) => (
                 <Button
                   key={date.toISOString()}
                   variant={isSameDay(date, selectedDate) ? 'secondary' : 'ghost'}
                   onClick={() => setSelectedDate(startOfDay(date))}
-                  className="flex-1 flex-col h-auto px-3 py-2 text-center"
+                  className="h-auto flex-1 flex-col px-3 py-2 text-center"
                 >
                   <span className="text-xs font-medium uppercase text-muted-foreground">
                     {format(date, 'EEE', { locale: es })}
