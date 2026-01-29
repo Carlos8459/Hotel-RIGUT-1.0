@@ -1,9 +1,12 @@
-// Scripts para Firebase y Firebase Messaging (versión de compatibilidad para service workers)
-importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js");
+// Este archivo DEBE estar en la carpeta 'public' para ser servido en la raíz de tu sitio.
 
-// Configuración de Firebase de tu aplicación web.
-// NOTA: Esta información es pública y es seguro tenerla aquí.
+// Aunque este proyecto usa el SDK modular, los service workers tienen requerimientos de importación específicos.
+// Usamos `importScripts` para cargar los SDK de Firebase para service workers.
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+
+// La configuración de tu Firebase Web App.
+// Es la misma configuración de src/firebase/config.ts
 const firebaseConfig = {
   "projectId": "studio-4803952210-fa8bf",
   "appId": "1:332002577508:web:55641406f4e36e7017a371",
@@ -16,17 +19,20 @@ const firebaseConfig = {
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 
-// Obtener una instancia de Firebase Messaging para que pueda manejar los mensajes en segundo plano.
+// Obtener una instancia de Firebase Messaging para que pueda manejar mensajes en segundo plano.
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Mensaje recibido en segundo plano ', payload);
+messaging.onBackgroundMessage((payload) => {
+  console.log(
+    '[firebase-messaging-sw.js] Received background message ',
+    payload
+  );
 
   // Personaliza la notificación aquí
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.notification?.title || 'Nueva Notificación';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icon-192x192.png' // Asegúrate de tener este ícono en tu carpeta /public
+    body: payload.notification?.body || 'Tienes un nuevo mensaje.',
+    icon: '/icon-192x192.png' // Un ícono por defecto para tu app
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

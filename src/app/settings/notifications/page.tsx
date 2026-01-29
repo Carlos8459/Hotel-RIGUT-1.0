@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { getApp } from 'firebase/app';
+import { getMessaging, getToken } from 'firebase/messaging';
+
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -66,6 +69,57 @@ export default function NotificationSettingsPage() {
         setIsSaving(false);
     };
 
+    const handleRequestPushPermission = async () => {
+        toast({
+            title: "Solicitando permiso...",
+            description: "Por favor, acepta la solicitud en tu navegador para recibir notificaciones.",
+        });
+
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+                
+                // --- PASO IMPORTANTE ---
+                // Reemplaza la siguiente línea con tu clave VAPID de Firebase.
+                // La encuentras en: Proyecto > Engranaje (Ajustes) > Configuración del proyecto > Cloud Messaging > Credenciales de notificaciones push web.
+                const VAPID_KEY = 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE';
+
+                const messaging = getMessaging(getApp());
+                const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+                
+                if (token) {
+                    console.log('FCM Token:', token);
+                    // Aquí guardarías el token en la base de datos asociado al usuario.
+                    // Por ejemplo: updateDocumentNonBlocking(userDocRef, { fcmTokens: arrayUnion(token) });
+                    toast({
+                        title: '¡Notificaciones Activadas!',
+                        description: 'Recibirás notificaciones push en este dispositivo.',
+                    });
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: 'No se pudo obtener el token',
+                        description: 'Asegúrate de que la clave VAPID sea correcta y no haya conflictos con otros service workers.',
+                    });
+                }
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Permiso Denegado',
+                    description: 'No se podrán enviar notificaciones si no aceptas el permiso.',
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred while getting the token: ', error);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Configuración',
+                description: 'Ocurrió un error. Revisa la consola y asegúrate de que tu clave VAPID es correcta.',
+            });
+        }
+    };
+
     const isLoading = isUserLoading || isUserProfileLoading || settingsLoading;
 
     if (isLoading) {
@@ -100,8 +154,8 @@ export default function NotificationSettingsPage() {
             <main className="max-w-2xl mx-auto space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Notificaciones Globales</CardTitle>
-                        <CardDescription>Activa o desactiva todas las notificaciones de la aplicación.</CardDescription>
+                        <CardTitle>Notificaciones en la App</CardTitle>
+                        <CardDescription>Activa o desactiva todas las notificaciones dentro de la aplicación.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center space-x-4 rounded-md border p-4">
@@ -121,8 +175,8 @@ export default function NotificationSettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Notificaciones Específicas</CardTitle>
-                        <CardDescription>Elige qué tipo de notificaciones quieres recibir.</CardDescription>
+                        <CardTitle>Tipos de Notificaciones en la App</CardTitle>
+                        <CardDescription>Elige qué tipo de actividad genera una notificación dentro de la app.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2">
@@ -166,9 +220,21 @@ export default function NotificationSettingsPage() {
                         </Button>
                     </CardFooter>
                 </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Notificaciones Push</CardTitle>
+                        <CardDescription>
+                            Recibe notificaciones directamente en tu dispositivo, incluso cuando la aplicación está cerrada.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleRequestPushPermission}>
+                            Activar en este dispositivo
+                        </Button>
+                    </CardContent>
+                </Card>
             </main>
         </div>
     );
 }
-
-    
