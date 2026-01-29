@@ -122,7 +122,7 @@ export default function RoomSettingsPage() {
     // --- Auth & Permissions ---
     useEffect(() => {
         if (!isUserLoading && !user) router.push('/');
-        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+        if (!isUserProfileLoading && userProfile && !['Admin', 'Socio'].includes(userProfile.role)) {
             toast({
                 title: "Acceso Denegado",
                 description: "No tienes permiso para acceder a esta página.",
@@ -220,7 +220,7 @@ export default function RoomSettingsPage() {
     if (isUserLoading || isUserProfileLoading) {
         return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8"><p>Cargando y verificando permisos...</p></div>;
     }
-    if (!user || !userProfile || userProfile.role !== 'Admin') return null;
+    if (!user || !userProfile || !['Admin', 'Socio'].includes(userProfile.role)) return null;
     
     const roomTypes = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
     const roomStatuses = ["Disponible", "Mantenimiento"];
@@ -360,5 +360,3 @@ export default function RoomSettingsPage() {
         </div>
     );
 }
-
-    

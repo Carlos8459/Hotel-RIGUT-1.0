@@ -44,7 +44,7 @@ export default function WhatsappAutomationPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
+        if (!isUserProfileLoading && userProfile && !['Admin', 'Socio'].includes(userProfile.role)) {
             toast({
                 title: "Acceso Denegado",
                 description: "No tienes permiso para acceder a esta página.",
@@ -123,7 +123,7 @@ export default function WhatsappAutomationPage() {
         );
     }
 
-    if (!user || !userProfile || userProfile.role !== 'Admin') {
+    if (!user || !userProfile || !['Admin', 'Socio'].includes(userProfile.role)) {
         return null;
     }
     
@@ -234,5 +234,3 @@ export default function WhatsappAutomationPage() {
       </div>
     );
 }
-
-    
