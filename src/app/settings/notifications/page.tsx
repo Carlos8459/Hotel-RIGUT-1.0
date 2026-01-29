@@ -83,7 +83,7 @@ export default function NotificationSettingsPage() {
                 // --- PASO IMPORTANTE ---
                 // Reemplaza la siguiente línea con tu clave VAPID de Firebase.
                 // La encuentras en: Proyecto > Engranaje (Ajustes) > Configuración del proyecto > Cloud Messaging > Credenciales de notificaciones push web.
-                const VAPID_KEY = 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE';
+                const VAPID_KEY = 'BPTGn0zIaLKxE-duMrY4DA30dshuXgIMuA_Ctfba2vude0aeFWBWP-2EWM7Ws0Az27CjXjIYAQbOE0xXu9h13hk';
 
                 const messaging = getMessaging(getApp());
                 const token = await getToken(messaging, { vapidKey: VAPID_KEY });
