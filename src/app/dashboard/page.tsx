@@ -406,7 +406,7 @@ export default function RoomsDashboard() {
                       <div>
                           <CardTitle className="text-lg">{room.title}</CardTitle>
                           <p className="text-sm text-muted-foreground">
-                          {room.type}
+                          {room.reservation ? room.reservation.type : room.type}
                           </p>
                       </div>
                       <Badge className={`${room.statusColor} flex items-center gap-1`}>
