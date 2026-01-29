@@ -25,10 +25,6 @@ export default function NotificationSettingsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // User profile for role check
-    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio'}>(userDocRef);
-
     // Settings doc
     const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
     const { data: settingsData, isLoading: settingsLoading } = useDoc<NotificationConfig>(settingsDocRef);
@@ -44,11 +40,7 @@ export default function NotificationSettingsPage() {
     
     useEffect(() => {
         if (!isUserLoading && !user) router.push('/');
-        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin') {
-            toast({ title: "Acceso Denegado", description: "No tienes permiso para acceder a esta página.", variant: "destructive" });
-            router.push('/dashboard');
-        }
-    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
+    }, [user, isUserLoading, router]);
 
     useEffect(() => {
         if (settingsData) {
@@ -120,7 +112,7 @@ export default function NotificationSettingsPage() {
         }
     };
 
-    const isLoading = isUserLoading || isUserProfileLoading || settingsLoading;
+    const isLoading = isUserLoading || settingsLoading;
 
     if (isLoading) {
         return (
@@ -137,7 +129,7 @@ export default function NotificationSettingsPage() {
         );
     }
     
-    if (!user || (userProfile && userProfile.role !== 'Admin')) {
+    if (!user) {
         return null; // Redirects are handled in the useEffect
     }
 
