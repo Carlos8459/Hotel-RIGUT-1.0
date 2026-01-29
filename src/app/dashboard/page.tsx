@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -370,7 +371,7 @@ export default function RoomsDashboard() {
             </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center my-4">
           <div className="overflow-x-auto pb-2">
             <div className="flex w-min space-x-1 rounded-lg bg-card p-1">
               {visibleDates.map((date) => (
@@ -390,7 +391,7 @@ export default function RoomsDashboard() {
           </div>
         </div>
         
-        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {(roomsLoading || reservationsLoading) ? (
                   [...Array(8)].map((_, i) => <Skeleton key={i} className="h-64" />)
               ) : filteredRooms.length > 0 ? (
