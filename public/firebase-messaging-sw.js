@@ -1,8 +1,9 @@
-// Scripts for firebase and firebase messaging
-importScripts('https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/11.9.1/firebase-messaging-compat.js');
+// These scripts are imported by the browser.
+import { initializeApp } from "firebase/app";
+import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration.
+// It's safe to expose this, as security is handled by Firestore rules.
 const firebaseConfig = {
   "projectId": "studio-4803952210-fa8bf",
   "appId": "1:332002577508:web:55641406f4e36e7017a371",
@@ -12,23 +13,20 @@ const firebaseConfig = {
   "messagingSenderId": "332002577508"
 };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
 
-// Retrieve an instance of Firebase Messaging so that it can handle background messages.
-const messaging = firebase.messaging();
+onBackgroundMessage(messaging, (payload) => {
+  console.log(
+    "[firebase-messaging-sw.js] Received background message ",
+    payload
+  );
 
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-
-  // Customize notification here
-  const notificationTitle = payload.notification.title || 'Nueva Notificación';
+  const notificationTitle = payload.notification?.title || "Hotel RIGUT";
   const notificationOptions = {
-    body: payload.notification.body || '',
-    icon: '/icon-192x192.png' // Make sure you have this icon in your public folder
+    body: payload.notification?.body || "Tienes una nueva notificación.",
+    icon: "/icon-192x192.png",
   };
 
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
