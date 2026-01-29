@@ -59,7 +59,7 @@ const reservationFormSchema = z.object({
   checkOutDate: z.date({
     required_error: 'La fecha de check-out es obligatoria.',
   }),
-  roomId: z.string({ required_error: 'Debe seleccionar una habitación.' }),
+  roomId: z.string().min(1, { message: 'Debe seleccionar una habitación.' }),
   type: z.enum(roomTypes, { required_error: 'Debe seleccionar un tipo de cobro.' }),
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
   notes: z.string().optional(),
@@ -282,7 +282,7 @@ function NewReservationFormComponent() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8">
+    <div className="dark min-h-screen bg-background text-foreground p-4 pt-24 sm:p-6 lg:p-8">
       <header className="flex items-center gap-4 mb-8">
         <Button
           variant="outline"
