@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, deleteField } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -71,7 +71,7 @@ type EditableGuestData = {
     cedula: string;
     phone: string;
     roomId: string;
-    vehicle: 'car' | 'bike' | 'truck' | undefined;
+    vehicle?: 'car' | 'bike' | 'truck';
     checkOutDate: Date | undefined;
     notes: string;
 }
@@ -105,7 +105,6 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     notes: "",
   });
 
-  // Fetch available rooms for the select dropdown
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   
@@ -143,7 +142,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
       updateDocumentNonBlocking(resDocRef, dataToUpdate)
         .then(() => {
-          onClose(); // Close modal after action
+          onClose();
         })
         .catch(error => {
           console.error(`Error performing action ${action}:`, error);
@@ -169,21 +168,27 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     
     const resDocRef = doc(firestore, 'reservations', room.reservation.id);
     
-    const updatedData: Partial<Reservation> = {
+    const updatedData: { [key: string]: any } = {
         guestName: editedGuest.name,
         cedula: editedGuest.cedula,
         phone: editedGuest.phone,
         roomId: editedGuest.roomId,
-        vehicle: editedGuest.vehicle,
         checkOutDate: editedGuest.checkOutDate?.toISOString(),
         notes: editedGuest.notes,
+        vehicle: editedGuest.vehicle ? editedGuest.vehicle : deleteField(),
     };
+
+    Object.keys(updatedData).forEach(key => {
+        if (updatedData[key] === undefined) {
+            delete updatedData[key];
+        }
+    });
 
     updateDocumentNonBlocking(resDocRef, updatedData)
         .then(() => {
             toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
             setIsEditModalOpen(false);
-            onClose(); // Close main modal after saving
+            onClose();
         })
         .catch(error => {
             console.error("Error updating reservation:", error);
@@ -437,13 +442,14 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     <div className="space-y-2">
                         <Label htmlFor="vehicle-select">Tipo de Vehículo</Label>
                         <Select
-                            value={editedGuest.vehicle}
-                            onValueChange={(value: 'car' | 'bike' | 'truck') => setEditedGuest(prev => ({...prev, vehicle: value}))}
+                            value={editedGuest.vehicle || ''}
+                            onValueChange={(value: 'car' | 'bike' | 'truck' | '') => setEditedGuest(prev => ({...prev, vehicle: value === '' ? undefined : value}))}
                         >
                             <SelectTrigger id="vehicle-select">
                                 <SelectValue placeholder="Seleccionar vehículo" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="">Ninguno</SelectItem>
                                 <SelectItem value="car">Carro</SelectItem>
                                 <SelectItem value="bike">Moto</SelectItem>
                                 <SelectItem value="truck">Camión</SelectItem>
