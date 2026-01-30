@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,12 +34,16 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera, DollarSign } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera, DollarSign, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation, NotificationConfig } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 
 
 const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
@@ -59,7 +64,8 @@ const reservationFormSchema = z.object({
   checkOutDate: z.date({
     required_error: 'La fecha de check-out es obligatoria.',
   }),
-  roomId: z.string().min(1, { message: 'Debe seleccionar una habitación.' }),
+  multipleRooms: z.boolean().default(false),
+  roomIds: z.array(z.string()).min(1, { message: "Debe seleccionar al menos una habitación." }),
   type: z.enum(roomTypes, { required_error: 'Debe seleccionar un tipo de cobro.' }),
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
   notes: z.string().optional(),
@@ -93,9 +99,10 @@ function NewReservationFormComponent() {
       guestName: '',
       cedula: '',
       phone: '',
+      multipleRooms: false,
+      roomIds: [],
       vehicle: undefined,
       notes: '',
-      roomId: '',
       type: undefined,
     },
   });
@@ -103,6 +110,7 @@ function NewReservationFormComponent() {
   const { watch } = form;
   const checkInDate = watch("checkInDate");
   const checkOutDate = watch("checkOutDate");
+  const multipleRooms = watch("multipleRooms");
 
   useEffect(() => {
     const prefillGuestName = searchParams.get('guestName');
@@ -211,65 +219,71 @@ function NewReservationFormComponent() {
     if (!firestore || !user || !roomsData || !reservationsCollection || !userProfile) return;
     setIsSubmitting(true);
 
-    const room = roomsData.find(r => r.id === data.roomId);
-    const nights = differenceInCalendarDays(data.checkOutDate, data.checkInDate);
-    
-    const priceForType = typePriceMap.get(data.type);
-    const priceToUse = priceForType ?? room?.price ?? 0;
-    const totalAmount = priceToUse * (nights > 0 ? nights : 1);
-    
-    const reservationData = {
-      guestName: data.guestName,
-      cedula: data.cedula || '',
-      phone: data.phone || '',
-      checkInDate: data.checkInDate.toISOString(),
-      checkOutDate: data.checkOutDate.toISOString(),
-      roomId: data.roomId,
-      type: data.type,
-      ...(data.vehicle && { vehicle: data.vehicle }),
-      ...(data.notes && { notes: data.notes }),
-      status: 'Checked-In' as const,
-      payment: {
-        status: 'Pendiente' as const,
-        amount: totalAmount,
-      },
-      createdAt: new Date().toISOString(),
-      createdBy: user.uid,
-    };
+    const { roomIds, checkInDate, checkOutDate, type: billingType } = data;
 
-    addDocumentNonBlocking(reservationsCollection, reservationData)
-        .then(() => {
-            const roomTitle = room?.title || `Habitación ${data.roomId}`;
-            toast({
-                title: 'Check-in Realizado',
-                description: `${data.guestName} ha sido registrado en ${roomTitle}.`,
-            });
+    const nights = differenceInCalendarDays(checkOutDate, checkInDate);
+    const priceForType = typePriceMap.get(billingType);
 
-            if (notificationConfig?.isEnabled && notificationConfig.onNewReservation) {
-                const notificationsColRef = collection(firestore, 'notifications');
-                const notificationData = {
-                    message: `registró un nuevo check-in para ${data.guestName} en la habitación ${roomTitle}.`,
-                    createdAt: new Date().toISOString(),
-                    createdBy: user.uid,
-                    creatorName: userProfile.username,
-                    isRead: false,
-                };
-                addDocumentNonBlocking(notificationsColRef, notificationData);
-            }
+    const promises = roomIds.map(roomId => {
+        const room = roomsData.find(r => r.id === roomId);
+        
+        const priceToUse = priceForType ?? room?.price ?? 0;
+        const totalAmount = priceToUse * (nights > 0 ? nights : 1);
+        
+        const reservationData = {
+          guestName: data.guestName,
+          cedula: data.cedula || '',
+          phone: data.phone || '',
+          checkInDate: checkInDate.toISOString(),
+          checkOutDate: checkOutDate.toISOString(),
+          roomId: roomId,
+          type: billingType,
+          ...(data.vehicle && { vehicle: data.vehicle }),
+          ...(data.notes && { notes: data.notes }),
+          status: 'Checked-In' as const,
+          payment: {
+            status: 'Pendiente' as const,
+            amount: totalAmount,
+          },
+          createdAt: new Date().toISOString(),
+          createdBy: user.uid,
+        };
+        return addDocumentNonBlocking(reservationsCollection, reservationData);
+    });
 
-            router.push('/dashboard');
-        })
-        .catch((error) => {
-            console.error("Error creating reservation:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error al crear la reserva',
-                description: 'No se pudo registrar el check-in. Verifica tus permisos e inténtalo de nuevo.',
-            });
-        })
-        .finally(() => {
-            setIsSubmitting(false);
+    try {
+        await Promise.all(promises);
+
+        const roomTitles = roomIds.map(id => roomsData.find(r => r.id === id)?.title || `Habitación ${id}`).join(', ');
+
+        toast({
+            title: 'Check-in Realizado',
+            description: `${data.guestName} ha sido registrado en: ${roomTitles}.`,
         });
+
+        if (notificationConfig?.isEnabled && notificationConfig.onNewReservation) {
+            const notificationsColRef = collection(firestore, 'notifications');
+            const notificationData = {
+                message: `registró un nuevo check-in para ${data.guestName} en las habitaciones: ${roomTitles}.`,
+                createdAt: new Date().toISOString(),
+                createdBy: user.uid,
+                creatorName: userProfile.username,
+                isRead: false,
+            };
+            addDocumentNonBlocking(notificationsColRef, notificationData);
+        }
+
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Error creating reservations:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error al crear la reserva',
+            description: 'No se pudo registrar el check-in. Verifica tus permisos e inténtalo de nuevo.',
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
 
@@ -509,38 +523,125 @@ function NewReservationFormComponent() {
                 )}
               />
             </div>
-
+            
             <FormField
               control={form.control}
-              name="roomId"
+              name="multipleRooms"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Habitación</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!checkInDate || !checkOutDate}
-                  >
-                    <FormControl>
-                       <div className="relative flex items-center">
-                        <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                        <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
-                          <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación"} />
-                        </SelectTrigger>
-                      </div>
-                    </FormControl>
-                    <SelectContent>
-                      {availableRooms.map((room) => (
-                        <SelectItem key={room.id} value={String(room.id)}>
-                          {room.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Seleccionar Múltiples Habitaciones
+                    </FormLabel>
+                    <FormDescription>
+                      Para registrar al mismo huésped en varias habitaciones a la vez.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        form.setValue('roomIds', []);
+                      }}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
+
+            {multipleRooms ? (
+                <FormField
+                  control={form.control}
+                  name="roomIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Habitaciones</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="ghost"
+                              role="combobox"
+                              disabled={!checkInDate || !checkOutDate}
+                              className={cn(
+                                "w-full justify-between text-left font-normal border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary",
+                                !field.value?.length && "text-muted-foreground"
+                              )}
+                            >
+                              <div className="flex items-center">
+                                <Home className="mr-2 h-5 w-5 text-muted-foreground" />
+                                {field.value?.length > 0
+                                  ? `${field.value.length} habitacion(es) seleccionada(s)`
+                                  : "Seleccionar habitaciones"}
+                              </div>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <ScrollArea className="h-48">
+                              {availableRooms.length > 0 ? availableRooms.map((room) => (
+                                <div
+                                  key={room.id}
+                                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    const selected = field.value || [];
+                                    const isSelected = selected.includes(room.id);
+                                    const newSelected = isSelected
+                                      ? selected.filter((id) => id !== room.id)
+                                      : [...selected, room.id];
+                                    field.onChange(newSelected);
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={field.value?.includes(room.id)}
+                                    id={`room-${room.id}`}
+                                  />
+                                  <Label htmlFor={`room-${room.id}`} className="w-full font-normal cursor-pointer">{room.title}</Label>
+                                </div>
+                              )) : <p className="p-4 text-sm text-muted-foreground">No hay habitaciones disponibles para estas fechas.</p>}
+                            </ScrollArea>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            ) : (
+                <FormField
+                  control={form.control}
+                  name="roomIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Habitación</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value ? [value] : [])}
+                        value={field.value?.[0] || ""}
+                        disabled={!checkInDate || !checkOutDate}
+                      >
+                        <FormControl>
+                          <div className="relative flex items-center">
+                            <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                            <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
+                              <SelectValue placeholder={!checkInDate || !checkOutDate ? "Primero selecciona las fechas" : "Seleccionar una habitación"} />
+                            </SelectTrigger>
+                          </div>
+                        </FormControl>
+                        <SelectContent>
+                          {availableRooms.map((room) => (
+                            <SelectItem key={room.id} value={String(room.id)}>
+                              {room.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
             
             <FormField
               control={form.control}
