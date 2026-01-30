@@ -15,15 +15,17 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck, StickyNote, QrCode } from "lucide-react";
+import { Home, Calendar, DollarSign, Phone, Car, Bike, Truck, StickyNote, QrCode, Edit, Save } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";
 import type { Customer, Reservation, CustomerProfile } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { doc, writeBatch, collection, query, where, getDocs } from "firebase/firestore";
+import { useState } from "react";
 
 type CustomerDetailModalProps = {
     customer: Customer | null;
@@ -34,20 +36,53 @@ type CustomerDetailModalProps = {
 
 export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: CustomerDetailModalProps) {
   const firestore = useFirestore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(customer?.name || '');
 
-  // Fetch the full customer profile using the cedula
   const customerProfileRef = useMemoFirebase(() => (
-    firestore && customer?.cedula) 
-    ? doc(firestore, 'customers', customer.cedula.replace(/-/g, '')) 
-    : null, 
+    firestore && customer?.cedula)
+    ? doc(firestore, 'customers', customer.cedula.replace(/-/g, ''))
+    : null,
   [firestore, customer]);
 
   const { data: customerProfile } = useDoc<CustomerProfile>(customerProfileRef);
 
+  const handleSave = async () => {
+    if (!firestore || !customer || !name.trim() || name.trim() === customer.name) {
+        setIsEditing(false);
+        return;
+    }
+
+    const newName = name.trim();
+    const batch = writeBatch(firestore);
+
+    if (customer.cedula) {
+        const customerDocRef = doc(firestore, 'customers', customer.cedula.replace(/-/g, ''));
+        batch.update(customerDocRef, { name: newName });
+    }
+
+    const reservationsRef = collection(firestore, 'reservations');
+    const q = query(reservationsRef, where("cedula", "==", customer.cedula));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            batch.update(doc.ref, { guestName: newName });
+        });
+
+        await batch.commit();
+        onClose();
+    } catch (error) {
+        console.error("Error updating customer name:", error);
+    } finally {
+        setIsEditing(false);
+    }
+  };
+
   if (!customer) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setIsEditing(false); onClose();} }}>
       <DialogContent className="bg-card text-foreground max-w-sm border-border rounded-3xl p-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle>Detalles del Cliente</DialogTitle>
@@ -55,13 +90,32 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
               <Avatar className="h-12 w-12 mr-4">
                 <AvatarFallback>{customer.avatar}</AvatarFallback>
               </Avatar>
-              <div>
-                <p className="font-bold text-lg">{customer.name}</p>
+              <div className="flex-grow">
+                {isEditing ? (
+                    <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="text-lg font-bold"
+                    />
+                ) : (
+                    <p className="font-bold text-lg">{customer.name}</p>
+                )}
                  {customer.phone && (
-                  <div className="flex items-center text-sm text-foreground/80">
+                  <div className="flex items-center text-sm text-foreground/80 mt-1">
                     <Phone className="mr-2 h-4 w-4" />
                     <span>{customer.phone}</span>
                   </div>
+                )}
+              </div>
+              <div className="ml-4">
+                {isEditing ? (
+                    <Button onClick={handleSave} size="icon" variant="default">
+                        <Save className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button onClick={() => { setIsEditing(true); setName(customer.name); }} size="icon" variant="ghost">
+                        <Edit className="h-4 w-4" />
+                    </Button>
                 )}
               </div>
             </div>
@@ -93,7 +147,7 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
             </AlertDialog>
           </div>
         )}
-        
+
         <Separator />
         <ScrollArea className="flex-grow min-h-0 px-6">
             <h3 className="font-semibold text-base mb-4 pt-4">Historial de Visitas ({customer.visitCount})</h3>
