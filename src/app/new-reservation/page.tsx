@@ -34,7 +34,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera, DollarSign, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Car, Bike, Truck, User, Fingerprint, Phone, Home, StickyNote, Camera, DollarSign, ChevronsUpDown, Tag } from 'lucide-react';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import type { Room, Reservation, NotificationConfig } from '@/lib/types';
@@ -58,6 +58,7 @@ const reservationFormSchema = z.object({
     .regex(/^\d{4}-\d{4}$/, { message: "El teléfono debe tener el formato 8888-8888." })
     .optional()
     .or(z.literal('')),
+  nickname: z.string().optional(),
   checkInDate: z.date({
     required_error: 'La fecha de check-in es obligatoria.',
   }),
@@ -99,6 +100,7 @@ function NewReservationFormComponent() {
       guestName: '',
       cedula: '',
       phone: '',
+      nickname: '',
       multipleRooms: false,
       roomIds: [],
       vehicle: undefined,
@@ -179,7 +181,7 @@ function NewReservationFormComponent() {
   const allCustomers = useMemo(() => {
     if (!reservationsData) return [];
 
-    const customerMap: { [key: string]: { name: string; cedula?: string; phone?: string } } = {};
+    const customerMap: { [key: string]: { name: string; cedula?: string; phone?: string; nickname?: string; } } = {};
 
     const sortedReservations = [...reservationsData].sort(
       (a, b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime()
@@ -193,6 +195,7 @@ function NewReservationFormComponent() {
           name: res.guestName,
           cedula: res.cedula,
           phone: res.phone,
+          nickname: res.nickname,
         };
       }
     });
@@ -203,14 +206,16 @@ function NewReservationFormComponent() {
   const filteredCustomers = useMemo(() => {
     if (!searchQuery) return [];
     return allCustomers.filter(customer =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (customer.nickname && customer.nickname.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [searchQuery, allCustomers]);
 
-  const handleSelectCustomer = (customer: { name: string; cedula?: string; phone?: string }) => {
+  const handleSelectCustomer = (customer: { name: string; cedula?: string; phone?: string; nickname?: string; }) => {
     form.setValue('guestName', customer.name, { shouldValidate: true });
     form.setValue('cedula', customer.cedula || '', { shouldValidate: true });
     form.setValue('phone', customer.phone || '', { shouldValidate: true });
+    form.setValue('nickname', customer.nickname || '', { shouldValidate: true });
     setSearchQuery(customer.name);
     setShowSuggestions(false);
   };
@@ -240,6 +245,7 @@ function NewReservationFormComponent() {
           type: billingType,
           ...(data.vehicle && { vehicle: data.vehicle }),
           ...(data.notes && { notes: data.notes }),
+          ...(data.nickname && { nickname: data.nickname }),
           status: 'Checked-In' as const,
           payment: {
             status: 'Pendiente' as const,
@@ -359,7 +365,7 @@ function NewReservationFormComponent() {
                             className="p-3 cursor-pointer hover:bg-muted"
                             onMouseDown={() => handleSelectCustomer(customer)}
                           >
-                            <p className="font-medium">{customer.name}</p>
+                            <p className="font-medium">{customer.name} {customer.nickname && <span className="text-sm text-muted-foreground italic">({customer.nickname})</span>}</p>
                             {customer.cedula && <p className="text-sm text-muted-foreground">{customer.cedula}</p>}
                           </div>
                         ))}
@@ -370,6 +376,32 @@ function NewReservationFormComponent() {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="nickname"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Etiqueta / Sobrenombre (Opcional)</FormLabel>
+                  <div className="relative flex items-center">
+                    <Tag className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input
+                        placeholder="Ej: El Ingeniero, Primo, etc."
+                        {...field}
+                        autoComplete="off"
+                        className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormDescription>
+                    Un apodo o etiqueta para identificar fácilmente al cliente.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="cedula"

@@ -311,6 +311,7 @@ export default function RoomsDashboard() {
     const searchTermLower = searchTerm.toLowerCase();
     if (!searchTermLower) return true;
     if (room.reservation?.guestName.toLowerCase().includes(searchTermLower)) return true;
+    if (room.reservation?.nickname?.toLowerCase().includes(searchTermLower)) return true;
     if (room.title.toLowerCase().includes(searchTermLower)) return true;
     return false;
   });
@@ -421,6 +422,9 @@ export default function RoomsDashboard() {
                               <div className="flex items-center text-sm">
                                   <User className="mr-2 h-4 w-4 text-muted-foreground" />
                                   <span className="font-semibold">{room.reservation.guestName}</span>
+                                  {room.reservation.nickname && (
+                                    <span className="ml-2 text-xs text-muted-foreground italic">({room.reservation.nickname})</span>
+                                  )}
                               </div>
                               <div className="flex items-center text-sm text-muted-foreground">
                                   <CalendarIcon className="mr-2 h-4 w-4" />

@@ -39,6 +39,7 @@ export type Reservation = {
   createdBy: string; // UID
   extraConsumptions?: ExtraConsumption[];
   notes?: string;
+  nickname?: string;
 };
 
 export type Customer = {
