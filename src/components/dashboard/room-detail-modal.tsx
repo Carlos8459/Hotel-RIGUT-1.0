@@ -216,7 +216,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
                     <p className="text-base text-muted-foreground">{room.type}</p>
                 </div>
-                 <div className="flex items-center gap-1">
+                 <div className="flex items-center gap-1 mr-6">
                     <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
                     {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && (
                         <DropdownMenu>
