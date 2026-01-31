@@ -125,19 +125,18 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       return `${format(checkIn, 'd LLL', {locale: es})} - ${format(checkOut, 'd LLL', {locale: es})} (${nights} ${nights === 1 ? 'noche' : 'noches'})`;
   }
 
-  const handleDeleteReservation = (reservationId: string) => {
+  const handleDeleteReservation = async (reservationId: string) => {
       if (!firestore || !reservationId) return;
       const reservationDocRef = doc(firestore, 'reservations', reservationId);
-      deleteDocumentNonBlocking(reservationDocRef).then(() => {
-          toast({
-              title: 'Reservación Eliminada',
-              description: 'La reservación ha sido eliminada y la habitación está ahora disponible.',
-          });
-          onClose();
+      await deleteDocumentNonBlocking(reservationDocRef);
+      toast({
+          title: 'Reservación Eliminada',
+          description: 'La reservación ha sido eliminada y la habitación está ahora disponible.',
       });
+      onClose();
   };
 
-  const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {
+  const handleAction = async (reservationId: string, action: 'checkout' | 'confirm_payment') => {
       if (!firestore) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
       
@@ -148,13 +147,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
           dataToUpdate = { 'payment.status': 'Cancelado' };
       }
 
-      updateDocumentNonBlocking(resDocRef, dataToUpdate)
-        .then(() => {
-          onClose();
-        })
-        .catch(error => {
-          console.error(`Error performing action ${action}:`, error);
-        });
+      await updateDocumentNonBlocking(resDocRef, dataToUpdate);
+      onClose();
   };
   
   const handleOpenEditModal = () => {
@@ -171,7 +165,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
     setIsEditModalOpen(true);
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!firestore || !room.reservation?.id) return;
     
     const resDocRef = doc(firestore, 'reservations', room.reservation.id);
@@ -192,30 +186,23 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         }
     });
 
-    updateDocumentNonBlocking(resDocRef, updatedData)
-        .then(() => {
-            toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
-            setIsEditModalOpen(false);
-            onClose();
-        })
-        .catch(error => {
-            console.error("Error updating reservation:", error);
-            toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
-        });
+    await updateDocumentNonBlocking(resDocRef, updatedData);
+    toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
+    setIsEditModalOpen(false);
+    onClose();
   };
 
-  const handleConfirmStatusChange = () => {
+  const handleConfirmStatusChange = async () => {
     if (!firestore || !pendingStatus || !room) return;
 
     const roomDocRef = doc(firestore, 'rooms', room.id);
-    updateDocumentNonBlocking(roomDocRef, { status: pendingStatus }).then(() => {
-        toast({
-            title: 'Estado Actualizado',
-            description: `La habitación "${room.title}" ahora está en estado: ${pendingStatus}.`,
-        });
-        setPendingStatus(null);
-        onClose(); // Close the main modal
+    await updateDocumentNonBlocking(roomDocRef, { status: pendingStatus });
+    toast({
+        title: 'Estado Actualizado',
+        description: `La habitación "${room.title}" ahora está en estado: ${pendingStatus}.`,
     });
+    setPendingStatus(null);
+    onClose(); // Close the main modal
   };
 
 
@@ -234,7 +221,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
