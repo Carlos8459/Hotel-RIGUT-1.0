@@ -44,6 +44,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 
 const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
@@ -109,10 +110,9 @@ function NewReservationFormComponent() {
     },
   });
 
-  const { watch } = form;
-  const checkInDate = watch("checkInDate");
-  const checkOutDate = watch("checkOutDate");
-  const multipleRooms = watch("multipleRooms");
+  const { watch, setValue } = form;
+  const watchedFormValues = watch();
+  const { roomIds, checkInDate, checkOutDate, multipleRooms } = watchedFormValues;
 
   useEffect(() => {
     const prefillGuestName = searchParams.get('guestName');
@@ -172,6 +172,17 @@ function NewReservationFormComponent() {
 
 
   useEffect(() => {
+    const selectedRoomId = roomIds?.[0];
+    if (!multipleRooms && selectedRoomId && roomsData) {
+      const room = roomsData.find(r => r.id === selectedRoomId);
+      if (room) {
+        setValue('type', room.type, { shouldValidate: true });
+      }
+    }
+  }, [roomIds, multipleRooms, roomsData, setValue]);
+
+
+  useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/');
     }
@@ -221,6 +232,30 @@ function NewReservationFormComponent() {
     setSearchQuery(customer.name);
     setShowSuggestions(false);
   };
+  
+    const nights = useMemo(() => {
+        if (checkInDate && checkOutDate) {
+            const diff = differenceInCalendarDays(checkOutDate, checkInDate);
+            return diff > 0 ? diff : 0;
+        }
+        return 0;
+    }, [checkInDate, checkOutDate]);
+
+    const totalCost = useMemo(() => {
+        const { roomIds, type: billingType } = watchedFormValues;
+        
+        if (nights === 0 || !roomIds || roomIds.length === 0 || !billingType) {
+            return 0;
+        }
+        
+        const priceForBillingType = typePriceMap.get(billingType);
+        if (priceForBillingType === undefined) return 0;
+        
+        const total = priceForBillingType * nights * roomIds.length;
+        return total;
+
+    }, [watchedFormValues, nights, typePriceMap]);
+
 
   async function onSubmit(data: z.infer<typeof reservationFormSchema>) {
     if (!firestore || !user || !roomsData || !reservationsCollection || !userProfile) return;
@@ -705,6 +740,29 @@ function NewReservationFormComponent() {
               )}
             />
 
+            {totalCost > 0 && (
+              <div className="p-4 mt-4 border rounded-lg bg-muted/50 space-y-2">
+                <h3 className="font-semibold text-lg">Resumen de Costo</h3>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Noches</span>
+                  <span className="font-medium">{nights}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Habitaciones</span>
+                  <span className="font-medium">{roomIds?.length || 0}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Precio por noche/habitación</span>
+                  <span className="font-medium">C${(typePriceMap.get(watchedFormValues.type!) || 0).toLocaleString('es-NI')}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between items-center font-bold text-xl">
+                  <span>Total Estimado</span>
+                  <span>C${totalCost.toLocaleString('es-NI')}</span>
+                </div>
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="vehicle"
@@ -802,5 +860,3 @@ export default function NewReservationPage() {
     </Suspense>
   )
 }
-
-    
