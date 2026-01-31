@@ -161,11 +161,12 @@ export default function ExpensesPage() {
 
   const handleDeleteExpense = (expenseId: string) => {
     if (!firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'expenses', expenseId));
-    toast({
-      title: 'Gasto Eliminado',
-      description: 'El registro de gasto ha sido eliminado.',
-      variant: 'destructive'
+    deleteDocumentNonBlocking(doc(firestore, 'expenses', expenseId)).then(() => {
+        toast({
+          title: 'Gasto Eliminado',
+          description: 'El registro de gasto ha sido eliminado.',
+          variant: 'destructive'
+        });
     });
   };
 
@@ -291,7 +292,7 @@ export default function ExpensesPage() {
                         <FormControl>
                             <div className="relative flex items-center">
                                 <Tag className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                                <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus:ring-0 focus:ring-offset-0 focus:border-primary">
+                                <SelectTrigger className="pl-10 bg-transparent border-0 border-b border-input rounded-none focus-ring-0 focus:ring-offset-0 focus:border-primary">
                                     <SelectValue placeholder="Seleccionar una categoría" />
                                 </SelectTrigger>
                             </div>

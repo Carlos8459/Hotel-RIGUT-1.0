@@ -156,30 +156,38 @@ export default function RoomSettingsPage() {
             return;
         }
 
-        changedRooms.forEach(room => {
+        const updatePromises = changedRooms.map(room => {
             const roomDocRef = doc(firestore, 'rooms', room.id);
             const dataToUpdate = { price: room.price, type: room.type, status: room.status };
-            updateDocumentNonBlocking(roomDocRef, dataToUpdate);
+            return updateDocumentNonBlocking(roomDocRef, dataToUpdate);
         });
 
-        toast({ title: "Cambios Guardados", description: `Se han actualizado ${changedRooms.length} habitacion(es).` });
-        setIsSavingRooms(false);
+        Promise.all(updatePromises).then(() => {
+            toast({ title: "Cambios Guardados", description: `Se han actualizado ${changedRooms.length} habitacion(es).` });
+        }).catch((error) => {
+            console.error("Error saving room changes:", error);
+            toast({ title: "Error", description: "No se pudieron guardar todos los cambios.", variant: "destructive" });
+        }).finally(() => {
+            setIsSavingRooms(false);
+        });
     };
     
     const onAddRoomSubmit = (values: z.infer<typeof newRoomSchema>) => {
         if (!firestore) return;
         const newRoomRef = doc(firestore, 'rooms', values.id);
         const newRoomData = { title: values.title, price: values.price, type: values.type, status: 'Disponible' };
-        setDocumentNonBlocking(newRoomRef, newRoomData, { merge: false });
-        toast({ title: "Habitación Agregada", description: `La habitación ${values.title} ha sido creada.` });
-        setIsAddRoomDialogOpen(false);
-        roomForm.reset();
+        setDocumentNonBlocking(newRoomRef, newRoomData, { merge: false }).then(() => {
+            toast({ title: "Habitación Agregada", description: `La habitación ${values.title} ha sido creada.` });
+            setIsAddRoomDialogOpen(false);
+            roomForm.reset();
+        });
     };
 
     const handleDeleteRoom = (roomId: string) => {
         if (!firestore) return;
-        deleteDocumentNonBlocking(doc(firestore, 'rooms', roomId));
-        toast({ title: 'Habitación Eliminada', description: 'La habitación ha sido eliminada permanentemente.' });
+        deleteDocumentNonBlocking(doc(firestore, 'rooms', roomId)).then(() => {
+            toast({ title: 'Habitación Eliminada', description: 'La habitación ha sido eliminada permanentemente.' });
+        });
     };
 
 
@@ -197,23 +205,30 @@ export default function RoomSettingsPage() {
     const onConsumptionSubmit = (values: z.infer<typeof consumptionItemSchema>) => {
         if (!firestore) return;
 
+        let promise;
         if (editingConsumptionItem) { // Update
             const itemDocRef = doc(firestore, 'consumption_items', editingConsumptionItem.id);
-            updateDocumentNonBlocking(itemDocRef, values);
-            toast({ title: "Consumo Actualizado", description: `Se ha actualizado ${values.name}.` });
+            promise = updateDocumentNonBlocking(itemDocRef, values).then(() => {
+                toast({ title: "Consumo Actualizado", description: `Se ha actualizado ${values.name}.` });
+            });
         } else { // Create
             const itemsColRef = collection(firestore, 'consumption_items');
-            addDocumentNonBlocking(itemsColRef, values);
-            toast({ title: "Consumo Agregado", description: `Se ha creado ${values.name}.` });
+            promise = addDocumentNonBlocking(itemsColRef, values).then(() => {
+                toast({ title: "Consumo Agregado", description: `Se ha creado ${values.name}.` });
+            });
         }
-        setIsConsumptionDialogOpen(false);
-        setEditingConsumptionItem(null);
+        
+        promise.then(() => {
+            setIsConsumptionDialogOpen(false);
+            setEditingConsumptionItem(null);
+        });
     };
 
     const handleDeleteConsumptionItem = (item: ConsumptionItem) => {
         if (!firestore) return;
-        deleteDocumentNonBlocking(doc(firestore, 'consumption_items', item.id));
-        toast({ title: 'Consumo Eliminado', description: `${item.name} ha sido eliminado.` });
+        deleteDocumentNonBlocking(doc(firestore, 'consumption_items', item.id)).then(() => {
+            toast({ title: 'Consumo Eliminado', description: `${item.name} ha sido eliminado.` });
+        });
     };
 
     // --- Loading / Permissions ---

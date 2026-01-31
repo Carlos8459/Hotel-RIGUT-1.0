@@ -121,12 +121,13 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   const handleDeleteReservation = (reservationId: string) => {
       if (!firestore || !reservationId) return;
       const reservationDocRef = doc(firestore, 'reservations', reservationId);
-      deleteDocumentNonBlocking(reservationDocRef);
-      toast({
-          title: 'Reservación Eliminada',
-          description: 'La reservación ha sido eliminada y la habitación está ahora disponible.',
+      deleteDocumentNonBlocking(reservationDocRef).then(() => {
+          toast({
+              title: 'Reservación Eliminada',
+              description: 'La reservación ha sido eliminada y la habitación está ahora disponible.',
+          });
+          onClose();
       });
-      onClose();
   };
 
   const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {

@@ -68,11 +68,12 @@ export default function AdminManagementPage() {
 
     const handleDelete = (collectionName: string, docId: string, description: string) => {
         if (!firestore) return;
-        deleteDocumentNonBlocking(doc(firestore, collectionName, docId));
-        toast({
-            title: 'Registro Eliminado',
-            description: `Se ha eliminado: ${description}.`,
-            variant: 'destructive',
+        deleteDocumentNonBlocking(doc(firestore, collectionName, docId)).then(() => {
+            toast({
+                title: 'Registro Eliminado',
+                description: `Se ha eliminado: ${description}.`,
+                variant: 'destructive',
+            });
         });
     };
 

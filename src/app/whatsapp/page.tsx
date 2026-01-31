@@ -91,13 +91,15 @@ export default function WhatsappAutomationPage() {
             isEnabled: isAutomationEnabled,
         };
 
-        setDocumentNonBlocking(settingsDocRef, newConfig, { merge: true });
-
-        toast({
-            title: 'Ajustes guardados',
-            description: 'Tu configuración de WhatsApp ha sido actualizada.',
+        setDocumentNonBlocking(settingsDocRef, newConfig, { merge: true }).then(() => {
+            toast({
+                title: 'Ajustes guardados',
+                description: 'Tu configuración de WhatsApp ha sido actualizada.',
+            });
+            setIsSaving(false);
+        }).catch(() => {
+            setIsSaving(false);
         });
-        setIsSaving(false);
     };
 
     const handleSendMessage = (phone: string, guestName: string) => {

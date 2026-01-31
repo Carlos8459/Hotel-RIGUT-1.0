@@ -56,9 +56,12 @@ export default function NotificationSettingsPage() {
     const handleSave = () => {
         if (!firestore || !settingsDocRef) return;
         setIsSaving(true);
-        setDocumentNonBlocking(settingsDocRef, settings, { merge: true });
-        toast({ title: 'Ajustes guardados', description: 'Tu configuración de notificaciones ha sido actualizada.' });
-        setIsSaving(false);
+        setDocumentNonBlocking(settingsDocRef, settings, { merge: true }).then(() => {
+            toast({ title: 'Ajustes guardados', description: 'Tu configuración de notificaciones ha sido actualizada.' });
+            setIsSaving(false);
+        }).catch(() => {
+            setIsSaving(false);
+        });
     };
 
     const handleRequestPushPermission = async () => {

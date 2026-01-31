@@ -136,22 +136,24 @@ export default function ManageUsersPage() {
     const handleSaveChanges = () => {
         if (editingUser && firestore) {
             const userDocRef = doc(firestore, "users", editingUser.id);
-            updateDocumentNonBlocking(userDocRef, { role: newRole });
-            toast({
-                title: "Rol actualizado",
-                description: `El rol de ${editingUser.name} ha sido cambiado a ${newRole}.`,
+            updateDocumentNonBlocking(userDocRef, { role: newRole }).then(() => {
+                toast({
+                    title: "Rol actualizado",
+                    description: `El rol de ${editingUser.name} ha sido cambiado a ${newRole}.`,
+                });
+                setEditingUser(null);
             });
-            setEditingUser(null);
         }
     };
     
-    const handleDeleteUser = async (userId: string) => {
+    const handleDeleteUser = (userId: string) => {
         if (!firestore) return;
         const userDocRef = doc(firestore, "users", userId);
-        deleteDocumentNonBlocking(userDocRef);
-        toast({
-            title: "Socio eliminado",
-            description: `El documento del socio ha sido eliminado de la base de datos.`,
+        deleteDocumentNonBlocking(userDocRef).then(() => {
+            toast({
+                title: "Socio eliminado",
+                description: `El documento del socio ha sido eliminado de la base de datos.`,
+            });
         });
     };
 
@@ -179,7 +181,7 @@ export default function ManageUsersPage() {
             };
 
             if (firestore) {
-                setDocumentNonBlocking(doc(firestore, "users", newUser.uid), userProfile, {merge: false});
+                await setDocumentNonBlocking(doc(firestore, "users", newUser.uid), userProfile, {merge: false});
             }
             
             await deleteApp(tempApp);

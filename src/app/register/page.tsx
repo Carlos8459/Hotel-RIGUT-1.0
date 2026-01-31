@@ -45,27 +45,26 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setErrorMessage("");
     setIsPending(true);
 
-    createUserWithEmailAndPassword(auth, values.email, values.password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        const userProfile = {
-          username: values.username,
-          email: values.email,
-          registrationDate: new Date().toISOString(),
-          role: "Admin", // Default role for new users
-        };
-        
-        // Create user document in Firestore
-        const userDocRef = doc(firestore, "users", user.uid);
-        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      const userProfile = {
+        username: values.username,
+        email: values.email,
+        registrationDate: new Date().toISOString(),
+        role: "Admin", // Default role for new users
+      };
+      
+      const userDocRef = doc(firestore, "users", user.uid);
+      await setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
-        router.push("/dashboard");
-      })
-      .catch((error) => {
+      router.push("/dashboard");
+
+    } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
             setErrorMessage('Este correo electrónico ya está en uso.');
         } else if (error.code === 'auth/weak-password') {
@@ -74,10 +73,9 @@ export default function RegisterPage() {
         else {
             setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
         }
-      })
-      .finally(() => {
+    } finally {
         setIsPending(false);
-      });
+    }
   };
 
   return (

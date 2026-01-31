@@ -142,13 +142,13 @@ export default function AccountSettingsPage() {
             dataToUpdate.role = values.role;
         }
 
-        updateDocumentNonBlocking(userDocRef, dataToUpdate);
-
-        toast({
-            title: "Perfil actualizado",
-            description: "Tus datos han sido actualizados.",
+        updateDocumentNonBlocking(userDocRef, dataToUpdate).then(() => {
+            toast({
+                title: "Perfil actualizado",
+                description: "Tus datos han sido actualizados.",
+            });
+            setIsEditProfileOpen(false);
         });
-        setIsEditProfileOpen(false);
     };
 
     if (isUserLoading || isUserProfileLoading || !user) {
