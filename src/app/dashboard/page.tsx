@@ -376,35 +376,35 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center text-sm text-muted-foreground">
+        <div className="grid grid-cols-6 gap-2 text-center text-xs text-muted-foreground">
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Ocupadas">
-                <BedDouble className="h-6 w-6 text-red-400" />
-                <span className="font-bold text-lg text-foreground">{occupiedToday}</span>
+                <BedDouble className="h-5 w-5 text-red-400" />
+                <span className="font-bold text-base text-foreground">{occupiedToday}</span>
                 <span className="text-xs">Ocupadas</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Disponibles">
-                <CheckCircle className="h-6 w-6 text-green-400" />
-                <span className="font-bold text-lg text-foreground">{availableToday}</span>
+                <CheckCircle className="h-5 w-5 text-green-400" />
+                <span className="font-bold text-base text-foreground">{availableToday}</span>
                 <span className="text-xs">Disponibles</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-ins de Hoy">
-                <LogIn className="h-6 w-6 text-cyan-400" />
-                <span className="font-bold text-lg text-foreground">{checkInsToday}</span>
+                <LogIn className="h-5 w-5 text-cyan-400" />
+                <span className="font-bold text-base text-foreground">{checkInsToday}</span>
                 <span className="text-xs">Check-ins</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-outs de Hoy">
-                <LogOut className="h-6 w-6 text-blue-400" />
-                <span className="font-bold text-lg text-foreground">{checkOutsToday}</span>
+                <LogOut className="h-5 w-5 text-blue-400" />
+                <span className="font-bold text-base text-foreground">{checkOutsToday}</span>
                 <span className="text-xs">Check-outs</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones en Mantenimiento">
-                <Wrench className="h-6 w-6 text-orange-400" />
-                <span className="font-bold text-lg text-foreground">{maintenanceRoomsCount}</span>
+                <Wrench className="h-5 w-5 text-orange-400" />
+                <span className="font-bold text-base text-foreground">{maintenanceRoomsCount}</span>
                 <span className="text-xs">Mantenim.</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Pagos Pendientes">
-                <DollarSign className="h-6 w-6 text-amber-400" />
-                <span className="font-bold text-lg text-foreground">{pendingPaymentsCount}</span>
+                <DollarSign className="h-5 w-5 text-amber-400" />
+                <span className="font-bold text-base text-foreground">{pendingPaymentsCount}</span>
                 <span className="text-xs">Pagos Pend.</span>
             </div>
         </div>
