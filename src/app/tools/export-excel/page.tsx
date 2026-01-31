@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { Reservation, Room, Expense, ConsumptionItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -172,26 +171,77 @@ export default function ExportExcelPage() {
     };
     
     const exportAllData = () => {
-        if (!roomsData || !usersData || !consumptionItemsData) return;
+        if (!roomsData || !usersData || !consumptionItemsData || !reservationsData || !expensesData) {
+            toast({ title: 'Datos Incompletos', description: 'Algunos datos aún se están cargando. Intenta de nuevo en un momento.', variant: 'destructive' });
+            return;
+        }
 
-        // 1. Reservations Sheet (filtered)
         const roomMap = new Map(roomsData.map(room => [room.id, room]));
         const userMap = new Map(usersData.map(user => [user.id, user.username]));
-        const reservationsSheetData = filteredReservations.map(res => ({
-            'ID Reserva': res.id, 'Huésped': res.guestName, 'Cédula': res.cedula, 'Teléfono': res.phone,
-            'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
-            'Check-Out': format(parseISO(res.checkOutDate), 'yyyy-MM-dd HH:mm'),
-            'Noches': differenceInCalendarDays(parseISO(res.checkOutDate), parseISO(res.checkInDate)),
-            'Habitación': roomMap.get(res.roomId)?.title || 'N/A',
-            'Tipo de Habitación': roomMap.get(res.roomId)?.type || 'N/A',
-            'Vehículo': res.vehicle || 'Ninguno', 'Estado Reserva': res.status,
-            'Estado Pago': res.payment?.status || 'N/A', 'Monto Total (C$)': res.payment?.amount || 0,
-            'Consumos Extras': res.extraConsumptions?.map(c => `${c.quantity}x ${c.name}`).join(', ') || 'Ninguno',
-            'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
-            'Creado Por': userMap.get(res.createdBy) || res.createdBy,
-        }));
 
-        // 2. Customers Sheet (derived from filtered reservations)
+        const paidReservations = filteredReservations.filter(res => res.payment?.status === 'Cancelado');
+
+        const reservationsSheetData = paidReservations.map(res => {
+            const room = roomMap.get(res.roomId);
+            const nights = differenceInCalendarDays(parseISO(res.checkOutDate), parseISO(res.checkInDate));
+            const consumptionTotal = res.extraConsumptions?.reduce((acc, c) => acc + c.price * c.quantity, 0) || 0;
+            const roomTotal = (res.payment?.amount || 0) - consumptionTotal;
+
+            return {
+                'ID Reserva': res.id,
+                'Huésped': res.guestName,
+                'Cédula': res.cedula || '',
+                'Teléfono': res.phone || '',
+                'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
+                'Check-Out': format(parseISO(res.checkOutDate), 'yyyy-MM-dd HH:mm'),
+                'Noches': nights > 0 ? nights : 0,
+                'Habitación': room?.title || 'N/A',
+                'Tipo de Cobro': res.type,
+                'Ingresos por Habitación (C$)': roomTotal,
+                'Ingresos por Consumos (C$)': consumptionTotal,
+                'Monto Total (C$)': res.payment?.amount || 0,
+                'Creado Por': userMap.get(res.createdBy) || res.createdBy,
+                'Notas': res.notes || '',
+            };
+        });
+        
+        const totalRoomIncome = reservationsSheetData.reduce((acc, row) => acc + row['Ingresos por Habitación (C$)'], 0);
+        const totalConsumptionIncome = reservationsSheetData.reduce((acc, row) => acc + row['Ingresos por Consumos (C$)'], 0);
+        const grandTotalIncome = reservationsSheetData.reduce((acc, row) => acc + row['Monto Total (C$)'], 0);
+        
+        reservationsSheetData.push({});
+        reservationsSheetData.push({
+            'Huésped': 'TOTALES',
+            'Ingresos por Habitación (C$)': totalRoomIncome,
+            'Ingresos por Consumos (C$)': totalConsumptionIncome,
+            'Monto Total (C$)': grandTotalIncome,
+        });
+
+        const expensesSheetData = filteredExpenses.map(exp => ({
+            'ID Gasto': exp.id,
+            'Descripción': exp.description,
+            'Monto (C$)': exp.amount,
+            'Categoría': exp.category,
+            'Fecha Gasto': format(parseISO(exp.date), 'yyyy-MM-dd'),
+            'Registrado Por': userMap.get(exp.createdBy) || exp.creatorName,
+        }));
+        
+        const totalExpenses = expensesSheetData.reduce((acc, row) => acc + row['Monto (C$)'], 0);
+        expensesSheetData.push({});
+        expensesSheetData.push({
+            'Descripción': 'TOTAL GASTOS',
+            'Monto (C$)': totalExpenses,
+        });
+
+        const summarySheetData = [
+            { 'Métrica': 'Total Ingresos Brutos', 'Valor (C$)': grandTotalIncome },
+            { 'Métrica': 'Total Gastos', 'Valor (C$)': totalExpenses },
+            { 'Métrica': 'Ingreso Neto (Ganancia)', 'Valor (C$)': grandTotalIncome - totalExpenses },
+            { 'Métrica': '', 'Valor (C$)': '' },
+            { 'Métrica': 'Ingresos por Habitación', 'Valor (C$)': totalRoomIncome },
+            { 'Métrica': 'Ingresos por Consumos Extra', 'Valor (C$)': totalConsumptionIncome },
+        ];
+        
         const customerMap: { [key: string]: { name: string; phone?: string; cedula?: string; visits: number; totalSpent: number, lastVisit: string } } = {};
         filteredReservations.forEach(res => {
             const key = res.cedula || res.guestName;
@@ -211,27 +261,20 @@ export default function ExportExcelPage() {
             'Número de Visitas': c.visits, 'Gasto Total (C$)': c.totalSpent,
             'Última Visita': format(parseISO(c.lastVisit), 'yyyy-MM-dd'),
         }));
-
-        // 3. Expenses Sheet (filtered)
-        const expensesSheetData = filteredExpenses.map(exp => ({
-            'ID Gasto': exp.id, 'Descripción': exp.description, 'Monto (C$)': exp.amount,
-            'Categoría': exp.category, 'Fecha Gasto': format(parseISO(exp.date), 'yyyy-MM-dd'),
-            'Registrado Por': exp.creatorName, 'Fecha Registro': format(parseISO(exp.createdAt), 'yyyy-MM-dd HH:mm'),
-        }));
         
-        // 4. Rooms, Users, Consumption Items (not filtered)
         const roomsSheetData = roomsData.map(room => ({ 'ID': room.id, 'Título': room.title, 'Precio (C$)': room.price, 'Tipo': room.type, 'Estado': room.status }));
         const usersSheetData = usersData.map(user => ({ 'ID': user.id, 'Nombre': user.username, 'Correo': user.email, 'Rol': user.role }));
         const consumptionItemsSheetData = consumptionItemsData.map(item => ({ 'ID': item.id, 'Nombre': item.name, 'Precio (C$)': item.price, 'Icono': item.icon }));
 
         handleExport([
-            { data: reservationsSheetData, name: 'Reservas' },
-            { data: customersSheetData, name: 'Clientes' },
+            { data: summarySheetData, name: 'Resumen' },
+            { data: reservationsSheetData, name: 'Reservas Pagadas' },
             { data: expensesSheetData, name: 'Gastos' },
+            { data: customersSheetData, name: 'Clientes' },
             { data: roomsSheetData, name: 'Habitaciones' },
             { data: usersSheetData, name: 'Socios' },
             { data: consumptionItemsSheetData, name: 'Consumos' },
-        ], 'Reporte_Completo_Hotel_RIGUT');
+        ], 'Reporte_Hotel_RIGUT');
     };
 
     const isLoading = isUserLoading || reservationsLoading || roomsLoading || expensesLoading || usersLoading || consumptionItemsLoading;
@@ -269,7 +312,7 @@ export default function ExportExcelPage() {
                     <CardHeader>
                         <CardTitle>Filtro por Fecha</CardTitle>
                         <CardDescription>
-                            Selecciona un rango de fechas para exportar los datos. El filtro se aplica a reservas, clientes y gastos.
+                            Selecciona un rango de fechas para exportar los datos transaccionales (reservas y gastos).
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col sm:flex-row flex-wrap gap-2">
@@ -288,7 +331,7 @@ export default function ExportExcelPage() {
                     <CardHeader>
                         <CardTitle>Reporte Completo</CardTitle>
                         <CardDescription>
-                            Exporta un archivo Excel con toda la información de la aplicación, aplicando el filtro de fecha seleccionado.
+                            Exporta un archivo Excel con toda la información de la aplicación, aplicando el filtro de fecha.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -298,7 +341,7 @@ export default function ExportExcelPage() {
                             className="w-full sm:w-auto"
                         >
                             <Download className="mr-3 h-5 w-5" />
-                            Exportar Reporte Filtrado
+                            {isExporting ? 'Exportando...' : 'Exportar Reporte Completo'}
                         </Button>
                     </CardContent>
                 </Card>
