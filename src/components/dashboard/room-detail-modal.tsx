@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote, MoreVertical, CheckCircle, BedDouble } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { RoomHistoryModal } from "./room-history-modal";
 import { ExtraConsumptionModal } from "./extra-consumption-modal";
 import { Input } from "../ui/input";
@@ -95,6 +101,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<Room['status'] | null>(null);
   const [editedGuest, setEditedGuest] = useState<EditableGuestData>({
     name: "",
     cedula: "",
@@ -197,6 +204,21 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         });
   };
 
+  const handleConfirmStatusChange = () => {
+    if (!firestore || !pendingStatus || !room) return;
+
+    const roomDocRef = doc(firestore, 'rooms', room.id);
+    updateDocumentNonBlocking(roomDocRef, { status: pendingStatus }).then(() => {
+        toast({
+            title: 'Estado Actualizado',
+            description: `La habitación "${room.title}" ahora está en estado: ${pendingStatus}.`,
+        });
+        setPendingStatus(null);
+        onClose(); // Close the main modal
+    });
+  };
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -207,7 +229,29 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
                     <p className="text-base text-muted-foreground">{room.type}</p>
                 </div>
-                <Badge className={`${room.statusColor} text-sm mr-6`}>{room.statusText}</Badge>
+                 <div className="flex items-center gap-1">
+                    <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
+                    {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => setPendingStatus('Disponible')}>
+                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500"/> Disponible
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setPendingStatus('Mantenimiento')}>
+                                    <Wrench className="mr-2 h-4 w-4 text-orange-500"/> Mantenimiento
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setPendingStatus('No Disponible')}>
+                                    <BedDouble className="mr-2 h-4 w-4 text-gray-500"/> No Disponible
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
             </div>
           </DialogHeader>
 
@@ -326,10 +370,11 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     </>
                 )}
             
-                {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento') && (
+                {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento' || room.statusText === 'No Disponible') && (
                     <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
                         {room.statusText === 'Disponible' && <p className="text-muted-foreground text-lg">Limpia y lista</p>}
                         {room.statusText === 'Mantenimiento' && <p className="text-muted-foreground text-lg flex items-center"><Wrench className="mr-2 h-5 w-5"/>En Mantenimiento</p>}
+                        {room.statusText === 'No Disponible' && <p className="text-muted-foreground text-lg flex items-center"><BedDouble className="mr-2 h-5 w-5"/>No Disponible</p>}
                     </div>
                 )}
 
@@ -501,6 +546,21 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={!!pendingStatus} onOpenChange={(isOpen) => !isOpen && setPendingStatus(null)}>
+        <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esto cambiará el estado de la <strong>{room.title}</strong> a <strong>"{pendingStatus}"</strong>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmStatusChange}>Confirmar</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
