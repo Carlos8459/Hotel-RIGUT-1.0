@@ -4,16 +4,21 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { format, parseISO, differenceInCalendarDays } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays, isWithinInterval, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { DateRange } from 'react-day-picker';
 import * as XLSX from 'xlsx';
 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Download, FileSpreadsheet, Calendar as CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { Reservation, Room, Expense, ConsumptionItem } from '@/lib/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 // Define a user type for the collection data.
 type UserDoc = {
@@ -22,6 +27,60 @@ type UserDoc = {
     email: string;
     role: string;
 };
+
+
+function DateRangePicker({
+  className,
+  date,
+  onDateChange,
+}: {
+  className?: string;
+  date: DateRange | undefined;
+  onDateChange: (date: DateRange | undefined) => void;
+}) {
+  return (
+    <div className={cn('grid gap-2', className)}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={'outline'}
+            className={cn(
+              'w-full sm:w-[300px] justify-start text-left font-normal',
+              !date && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date?.from ? (
+              date.to ? (
+                <>
+                  {format(date.from, 'd LLL, y', { locale: es })} -{' '}
+                  {format(date.to, 'd LLL, y', { locale: es })}
+                </>
+              ) : (
+                format(date.from, 'd LLL, y', { locale: es })
+              )
+            ) : (
+              <span>Seleccione un rango</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={onDateChange}
+            numberOfMonths={2}
+            locale={es}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 
 export default function ExportExcelPage() {
     const { user, isUserLoading } = useUser();
@@ -43,6 +102,10 @@ export default function ExportExcelPage() {
     const { data: consumptionItemsData, isLoading: consumptionItemsLoading } = useCollection<Omit<ConsumptionItem, 'id'>>(consumptionItemsCollection);
 
     const [isExporting, setIsExporting] = useState(false);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+    });
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -50,13 +113,48 @@ export default function ExportExcelPage() {
         }
     }, [user, isUserLoading, router]);
 
-    const handleExport = (data: any[], fileName: string, sheetName: string) => {
+    // Date preset functions
+    const setToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+    const setThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { locale: es }), to: endOfWeek(new Date(), { locale: es }) });
+    const setThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+    const setLastMonth = () => {
+        const lastMonth = subMonths(new Date(), 1);
+        setDateRange({ from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) });
+    };
+    const setThisYear = () => setDateRange({ from: startOfYear(new Date()), to: endOfYear(new Date()) });
+    
+    // Memoized filtered data
+    const filteredReservations = useMemo(() => {
+        if (!reservationsData) return [];
+        if (!dateRange?.from) return reservationsData as Reservation[];
+        const endOfRange = dateRange.to ?? dateRange.from;
+        return reservationsData.filter(res => {
+            const checkOutDate = parseISO(res.checkOutDate);
+            return isWithinInterval(checkOutDate, { start: dateRange.from!, end: endOfRange });
+        }) as Reservation[];
+    }, [reservationsData, dateRange]);
+
+    const filteredExpenses = useMemo(() => {
+        if (!expensesData) return [];
+        if (!dateRange?.from) return expensesData as Expense[];
+        const endOfRange = dateRange.to ?? dateRange.from;
+        return expensesData.filter(exp => {
+            const expenseDate = parseISO(exp.date);
+            return isWithinInterval(expenseDate, { start: dateRange.from!, end: endOfRange });
+        });
+    }, [expensesData, dateRange]);
+
+
+    const handleExport = (sheets: { data: any[], name: string }[], fileName: string) => {
         setIsExporting(true);
         try {
-            const worksheet = XLSX.utils.json_to_sheet(data);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-            XLSX.writeFile(workbook, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            sheets.forEach(sheet => {
+                const worksheet = XLSX.utils.json_to_sheet(sheet.data);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name);
+            });
+
+            XLSX.writeFile(workbook, `${fileName}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
             toast({
                 title: 'Exportación Exitosa',
                 description: `Se han exportado los datos a ${fileName}.xlsx`,
@@ -74,229 +172,66 @@ export default function ExportExcelPage() {
     };
     
     const exportAllData = () => {
-        if (!reservationsData || !roomsData || !usersData || !expensesData || !consumptionItemsData) return;
-        setIsExporting(true);
+        if (!roomsData || !usersData || !consumptionItemsData) return;
 
-        try {
-            const workbook = XLSX.utils.book_new();
-
-            // 1. Reservations Sheet
-            const roomMap = new Map(roomsData.map(room => [room.id, room]));
-            const userMap = new Map(usersData.map(user => [user.id, user.username]));
-            const reservationsSheetData = reservationsData.map(res => {
-                const room = roomMap.get(res.roomId);
-                const creatorName = userMap.get(res.createdBy);
-                const nights = differenceInCalendarDays(parseISO(res.checkOutDate), parseISO(res.checkInDate));
-                const extraConsumptionsString = res.extraConsumptions?.map(c => `${c.quantity}x ${c.name} (C$${(c.price * c.quantity).toFixed(2)})`).join(', ') || 'Ninguno';
-
-                return {
-                    'ID Reserva': res.id,
-                    'Huésped': res.guestName,
-                    'Cédula': res.cedula,
-                    'Teléfono': res.phone,
-                    'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
-                    'Check-Out': format(parseISO(res.checkOutDate), 'yyyy-MM-dd HH:mm'),
-                    'Noches': nights,
-                    'Habitación': room?.title || 'N/A',
-                    'Tipo de Habitación': room?.type || 'N/A',
-                    'Vehículo': res.vehicle || 'Ninguno',
-                    'Estado Reserva': res.status,
-                    'Estado Pago': res.payment?.status || 'N/A',
-                    'Monto Total (C$)': res.payment?.amount || 0,
-                    'Consumos Extras': extraConsumptionsString,
-                    'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
-                    'Creado Por': creatorName || res.createdBy,
-                };
-            });
-            const reservationsWS = XLSX.utils.json_to_sheet(reservationsSheetData);
-            XLSX.utils.book_append_sheet(workbook, reservationsWS, 'Reservas');
-
-            // 2. Customers Sheet
-            const customerMap: { [key: string]: { name: string; phone?: string; cedula?: string; visits: number; totalSpent: number, lastVisit: string } } = {};
-            reservationsData.forEach(res => {
-                if (!customerMap[res.guestName]) {
-                    customerMap[res.guestName] = {
-                        name: res.guestName,
-                        phone: res.phone,
-                        cedula: res.cedula,
-                        visits: 0,
-                        totalSpent: 0,
-                        lastVisit: '1970-01-01T00:00:00.000Z'
-                    };
-                }
-                const customer = customerMap[res.guestName];
-                customer.visits += 1;
-                if (res.payment?.status === 'Cancelado') {
-                    customer.totalSpent += res.payment.amount || 0;
-                }
-                if (parseISO(res.checkInDate) > parseISO(customer.lastVisit)) {
-                    customer.lastVisit = res.checkInDate;
-                    customer.phone = res.phone;
-                    customer.cedula = res.cedula;
-                }
-            });
-            const customersSheetData = Object.values(customerMap).map(c => ({
-                'Nombre Cliente': c.name,
-                'Teléfono': c.phone,
-                'Cédula': c.cedula,
-                'Número de Visitas': c.visits,
-                'Gasto Total (C$)': c.totalSpent,
-                'Última Visita': format(parseISO(c.lastVisit), 'yyyy-MM-dd'),
-            }));
-            const customersWS = XLSX.utils.json_to_sheet(customersSheetData);
-            XLSX.utils.book_append_sheet(workbook, customersWS, 'Clientes');
-
-            // 3. Expenses Sheet
-            const expensesSheetData = expensesData.map(exp => ({
-                'ID Gasto': exp.id,
-                'Descripción': exp.description,
-                'Monto (C$)': exp.amount,
-                'Categoría': exp.category,
-                'Fecha Gasto': format(parseISO(exp.date), 'yyyy-MM-dd'),
-                'Registrado Por': exp.creatorName,
-                'Fecha Registro': format(parseISO(exp.createdAt), 'yyyy-MM-dd HH:mm'),
-            }));
-            const expensesWS = XLSX.utils.json_to_sheet(expensesSheetData);
-            XLSX.utils.book_append_sheet(workbook, expensesWS, 'Gastos');
-            
-            // 4. Rooms Sheet
-            const roomsSheetData = roomsData.map(room => ({
-                'ID Habitación': room.id,
-                'Título': room.title,
-                'Precio (C$)': room.price,
-                'Tipo': room.type,
-                'Estado': room.status,
-            }));
-            const roomsWS = XLSX.utils.json_to_sheet(roomsSheetData);
-            XLSX.utils.book_append_sheet(workbook, roomsWS, 'Habitaciones');
-            
-            // 5. Users Sheet
-            const usersSheetData = usersData.map(user => ({
-                'ID Usuario': user.id,
-                'Nombre de Usuario': user.username,
-                'Correo': user.email,
-                'Rol': user.role,
-            }));
-            const usersWS = XLSX.utils.json_to_sheet(usersSheetData);
-            XLSX.utils.book_append_sheet(workbook, usersWS, 'Socios');
-
-            // 6. Consumption Items Sheet
-            const consumptionItemsSheetData = consumptionItemsData.map(item => ({
-                'ID Consumo': item.id,
-                'Nombre': item.name,
-                'Precio (C$)': item.price,
-                'Icono': item.icon,
-            }));
-            const consumptionItemsWS = XLSX.utils.json_to_sheet(consumptionItemsSheetData);
-            XLSX.utils.book_append_sheet(workbook, consumptionItemsWS, 'Consumos');
-
-            // Write file
-            XLSX.writeFile(workbook, `Reporte_Completo_Hotel_RIGUT_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-            toast({
-                title: 'Exportación Completa Exitosa',
-                description: `Se han exportado todos los datos.`,
-            });
-
-        } catch (error) {
-            console.error('Error exporting all data to Excel:', error);
-            toast({
-                title: 'Error de Exportación',
-                description: 'No se pudieron exportar todos los datos.',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
-    const exportAllReservations = () => {
-        if (!reservationsData || !roomsData || !usersData) return;
-
+        // 1. Reservations Sheet (filtered)
         const roomMap = new Map(roomsData.map(room => [room.id, room]));
         const userMap = new Map(usersData.map(user => [user.id, user.username]));
+        const reservationsSheetData = filteredReservations.map(res => ({
+            'ID Reserva': res.id, 'Huésped': res.guestName, 'Cédula': res.cedula, 'Teléfono': res.phone,
+            'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
+            'Check-Out': format(parseISO(res.checkOutDate), 'yyyy-MM-dd HH:mm'),
+            'Noches': differenceInCalendarDays(parseISO(res.checkOutDate), parseISO(res.checkInDate)),
+            'Habitación': roomMap.get(res.roomId)?.title || 'N/A',
+            'Tipo de Habitación': roomMap.get(res.roomId)?.type || 'N/A',
+            'Vehículo': res.vehicle || 'Ninguno', 'Estado Reserva': res.status,
+            'Estado Pago': res.payment?.status || 'N/A', 'Monto Total (C$)': res.payment?.amount || 0,
+            'Consumos Extras': res.extraConsumptions?.map(c => `${c.quantity}x ${c.name}`).join(', ') || 'Ninguno',
+            'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
+            'Creado Por': userMap.get(res.createdBy) || res.createdBy,
+        }));
 
-        const flattenedData = reservationsData.map(res => {
-            const room = roomMap.get(res.roomId);
-            const creatorName = userMap.get(res.createdBy);
-            const nights = differenceInCalendarDays(parseISO(res.checkOutDate), parseISO(res.checkInDate));
-            const extraConsumptionsString = res.extraConsumptions?.map(c => `${c.quantity}x ${c.name} (C$${(c.price * c.quantity).toFixed(2)})`).join(', ') || 'Ninguno';
-
-            return {
-                'ID Reserva': res.id,
-                'Huésped': res.guestName,
-                'Cédula': res.cedula,
-                'Teléfono': res.phone,
-                'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
-                'Check-Out': format(parseISO(res.checkOutDate), 'yyyy-MM-dd HH:mm'),
-                'Noches': nights,
-                'Habitación': room?.title || 'N/A',
-                'Tipo de Habitación': room?.type || 'N/A',
-                'Vehículo': res.vehicle || 'Ninguno',
-                'Estado Reserva': res.status,
-                'Estado Pago': res.payment?.status || 'N/A',
-                'Monto Total (C$)': res.payment?.amount || 0,
-                'Consumos Extras': extraConsumptionsString,
-                'Fecha Creación': format(parseISO(res.createdAt), 'yyyy-MM-dd HH:mm'),
-                'Creado Por': creatorName || res.createdBy,
-            };
-        });
-
-        handleExport(flattenedData, 'Reservas', 'Reservas');
-    };
-
-    const exportAllCustomers = () => {
-         if (!reservationsData) return;
-
+        // 2. Customers Sheet (derived from filtered reservations)
         const customerMap: { [key: string]: { name: string; phone?: string; cedula?: string; visits: number; totalSpent: number, lastVisit: string } } = {};
-        
-        reservationsData.forEach(res => {
-            if (!customerMap[res.guestName]) {
-                customerMap[res.guestName] = {
-                    name: res.guestName,
-                    phone: res.phone,
-                    cedula: res.cedula,
-                    visits: 0,
-                    totalSpent: 0,
-                    lastVisit: '1970-01-01T00:00:00.000Z'
-                };
+        filteredReservations.forEach(res => {
+            const key = res.cedula || res.guestName;
+            if (!customerMap[key]) {
+                customerMap[key] = { name: res.guestName, phone: res.phone, cedula: res.cedula, visits: 0, totalSpent: 0, lastVisit: '1970-01-01T00:00:00.000Z' };
             }
-            const customer = customerMap[res.guestName];
-            customer.visits += 1;
-            if (res.payment?.status === 'Cancelado') {
-                customer.totalSpent += res.payment.amount || 0;
-            }
-            if (parseISO(res.checkInDate) > parseISO(customer.lastVisit)) {
-                customer.lastVisit = res.checkInDate;
-                customer.phone = res.phone; // update with latest phone
-                customer.cedula = res.cedula; // update with latest cedula
+            customerMap[key].visits += 1;
+            if (res.payment?.status === 'Cancelado') customerMap[key].totalSpent += res.payment.amount || 0;
+            if (parseISO(res.checkInDate) > parseISO(customerMap[key].lastVisit)) {
+                customerMap[key].lastVisit = res.checkInDate;
+                customerMap[key].phone = res.phone;
+                customerMap[key].cedula = res.cedula;
             }
         });
-
-        const flattenedData = Object.values(customerMap).map(c => ({
-            'Nombre Cliente': c.name,
-            'Teléfono': c.phone,
-            'Cédula': c.cedula,
-            'Número de Visitas': c.visits,
-            'Gasto Total (C$)': c.totalSpent,
+        const customersSheetData = Object.values(customerMap).map(c => ({
+            'Nombre Cliente': c.name, 'Teléfono': c.phone, 'Cédula': c.cedula,
+            'Número de Visitas': c.visits, 'Gasto Total (C$)': c.totalSpent,
             'Última Visita': format(parseISO(c.lastVisit), 'yyyy-MM-dd'),
         }));
 
-        handleExport(flattenedData, 'Clientes', 'Clientes');
-    };
-
-    const exportAllExpenses = () => {
-        if (!expensesData) return;
-        const flattenedData = expensesData.map(exp => ({
-            'ID Gasto': exp.id,
-            'Descripción': exp.description,
-            'Monto (C$)': exp.amount,
-            'Categoría': exp.category,
-            'Fecha Gasto': format(parseISO(exp.date), 'yyyy-MM-dd'),
-            'Registrado Por': exp.creatorName,
-            'Fecha Registro': format(parseISO(exp.createdAt), 'yyyy-MM-dd HH:mm'),
+        // 3. Expenses Sheet (filtered)
+        const expensesSheetData = filteredExpenses.map(exp => ({
+            'ID Gasto': exp.id, 'Descripción': exp.description, 'Monto (C$)': exp.amount,
+            'Categoría': exp.category, 'Fecha Gasto': format(parseISO(exp.date), 'yyyy-MM-dd'),
+            'Registrado Por': exp.creatorName, 'Fecha Registro': format(parseISO(exp.createdAt), 'yyyy-MM-dd HH:mm'),
         }));
-        handleExport(flattenedData, 'Gastos', 'Gastos');
+        
+        // 4. Rooms, Users, Consumption Items (not filtered)
+        const roomsSheetData = roomsData.map(room => ({ 'ID': room.id, 'Título': room.title, 'Precio (C$)': room.price, 'Tipo': room.type, 'Estado': room.status }));
+        const usersSheetData = usersData.map(user => ({ 'ID': user.id, 'Nombre': user.username, 'Correo': user.email, 'Rol': user.role }));
+        const consumptionItemsSheetData = consumptionItemsData.map(item => ({ 'ID': item.id, 'Nombre': item.name, 'Precio (C$)': item.price, 'Icono': item.icon }));
+
+        handleExport([
+            { data: reservationsSheetData, name: 'Reservas' },
+            { data: customersSheetData, name: 'Clientes' },
+            { data: expensesSheetData, name: 'Gastos' },
+            { data: roomsSheetData, name: 'Habitaciones' },
+            { data: usersSheetData, name: 'Socios' },
+            { data: consumptionItemsSheetData, name: 'Consumos' },
+        ], 'Reporte_Completo_Hotel_RIGUT');
     };
 
     const isLoading = isUserLoading || reservationsLoading || roomsLoading || expensesLoading || usersLoading || consumptionItemsLoading;
@@ -308,10 +243,9 @@ export default function ExportExcelPage() {
                     <Skeleton className="h-8 w-8 rounded-md" />
                     <Skeleton className="h-7 w-48" />
                 </header>
-                <main className="max-w-2xl mx-auto space-y-4">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
+                <main className="max-w-2xl mx-auto space-y-8">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-40 w-full" />
                 </main>
             </div>
         );
@@ -330,45 +264,44 @@ export default function ExportExcelPage() {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto space-y-4">
-                <Button
-                    onClick={exportAllData}
-                    disabled={isExporting || isLoading}
-                    className="w-full justify-start text-base h-auto py-4"
-                >
-                    <Download className="mr-3 h-5 w-5" />
-                    Exportar Todo (Reporte Completo)
-                </Button>
-                
-                <Separator className="my-6" />
+            <main className="max-w-3xl mx-auto space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Filtro por Fecha</CardTitle>
+                        <CardDescription>
+                            Selecciona un rango de fechas para exportar los datos. El filtro se aplica a reservas, clientes y gastos.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col sm:flex-row flex-wrap gap-2">
+                        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Button variant="ghost" size="sm" onClick={setToday}>Hoy</Button>
+                            <Button variant="ghost" size="sm" onClick={setThisWeek}>Semana</Button>
+                            <Button variant="ghost" size="sm" onClick={setThisMonth}>Mes</Button>
+                            <Button variant="ghost" size="sm" onClick={setLastMonth}>Mes Pasado</Button>
+                            <Button variant="ghost" size="sm" onClick={setThisYear}>Año</Button>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                <Button
-                    onClick={exportAllReservations}
-                    disabled={isExporting || isLoading}
-                    className="w-full justify-start text-base h-auto py-4"
-                    variant="outline"
-                >
-                    <Download className="mr-3 h-5 w-5" />
-                    Exportar Solo Reservas
-                </Button>
-                <Button
-                    onClick={exportAllCustomers}
-                    disabled={isExporting || isLoading}
-                    className="w-full justify-start text-base h-auto py-4"
-                    variant="outline"
-                >
-                    <Download className="mr-3 h-5 w-5" />
-                    Exportar Solo Clientes
-                </Button>
-                <Button
-                    onClick={exportAllExpenses}
-                    disabled={isExporting || isLoading}
-                    className="w-full justify-start text-base h-auto py-4"
-                    variant="outline"
-                >
-                    <Download className="mr-3 h-5 w-5" />
-                    Exportar Solo Gastos
-                </Button>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Reporte Completo</CardTitle>
+                        <CardDescription>
+                            Exporta un archivo Excel con toda la información de la aplicación, aplicando el filtro de fecha seleccionado.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={exportAllData}
+                            disabled={isExporting || isLoading}
+                            className="w-full sm:w-auto"
+                        >
+                            <Download className="mr-3 h-5 w-5" />
+                            Exportar Reporte Filtrado
+                        </Button>
+                    </CardContent>
+                </Card>
             </main>
         </div>
     );
