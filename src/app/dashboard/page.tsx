@@ -41,6 +41,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Calendar as CalendarIcon,
   User,
   DollarSign,
@@ -72,6 +78,7 @@ import {
   StickyNote,
   BedDouble,
   CheckCircle,
+  MoreVertical,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -186,9 +193,11 @@ export default function RoomsDashboard() {
     const maintenance = roomsData.filter(
       r => r.status === 'Mantenimiento'
     ).length;
+    
+    const notAvailable = roomsData.filter(r => r.status === 'No Disponible').length;
 
     const occupied = occupiedRoomIds.size;
-    const available = roomsData.length - occupied - maintenance;
+    const available = roomsData.length - occupied - maintenance - notAvailable;
 
     const checkOuts = reservationsData.filter(
       res =>
@@ -228,6 +237,9 @@ export default function RoomsDashboard() {
       if (room.status === 'Mantenimiento') {
         statusText = 'Mantenimiento';
         statusColor = 'bg-orange-500/20 text-orange-400 border-orange-500/50';
+      } else if (room.status === 'No Disponible') {
+        statusText = 'No Disponible';
+        statusColor = 'bg-gray-500/20 text-gray-400 border-gray-500/50';
       } else {
         // Find reservations that are active (checked-in and within date range)
         const activeReservation = reservationsData.find(res => {
@@ -280,6 +292,17 @@ export default function RoomsDashboard() {
 
   const handleCloseModal = () => {
     setSelectedRoom(null);
+  };
+
+  const handleStatusChange = (roomId: string, newStatus: Room['status']) => {
+    if (!firestore) return;
+    const roomDocRef = doc(firestore, 'rooms', roomId);
+    updateDocumentNonBlocking(roomDocRef, { status: newStatus }).then(() => {
+        toast({
+            title: 'Estado Actualizado',
+            description: `La habitación ahora está en estado: ${newStatus}.`,
+        });
+    });
   };
   
   const handleAction = (reservationId: string, action: 'checkout' | 'confirm_payment') => {
@@ -444,10 +467,32 @@ export default function RoomsDashboard() {
                           {room.reservation ? room.reservation.type : room.type}
                           </p>
                       </div>
-                      <Badge className={`${room.statusColor} flex items-center gap-1`}>
-                          {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
-                          {room.statusText}
-                      </Badge>
+                      <div className="flex items-center gap-0.5">
+                        <Badge className={cn("flex items-center gap-1", room.statusColor)}>
+                            {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
+                            {room.statusText}
+                        </Badge>
+                        {!room.reservation && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem onSelect={() => handleStatusChange(room.id, 'Disponible')}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500"/> Disponible
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleStatusChange(room.id, 'Mantenimiento')}>
+                                        <Wrench className="mr-2 h-4 w-4 text-orange-500"/> Mantenimiento
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleStatusChange(room.id, 'No Disponible')}>
+                                        <BedDouble className="mr-2 h-4 w-4 text-gray-500"/> No Disponible
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                      </div>
                       </div>
                   </CardHeader>
                   <CardContent className="space-y-3 flex-grow">
@@ -501,6 +546,8 @@ export default function RoomsDashboard() {
                           </>
                       ) : room.statusText === 'Mantenimiento' ? (
                           <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-5 w-5"/><span>En mantenimiento</span></div>
+                      ) : room.statusText === 'No Disponible' ? (
+                          <div className="flex items-center text-sm text-gray-400"><BedDouble className="mr-2 h-5 w-5"/><span>No disponible</span></div>
                       ) : (
                           <div className="text-center flex-grow flex flex-col justify-center items-center">
                               <p className="text-muted-foreground">Limpia y lista</p>

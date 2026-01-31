@@ -238,7 +238,7 @@ export default function RoomSettingsPage() {
     if (!user || !userProfile || !['Admin', 'Socio'].includes(userProfile.role)) return null;
     
     const roomTypes = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
-    const roomStatuses = ["Disponible", "Mantenimiento"];
+    const roomStatuses = ["Disponible", "Mantenimiento", "No Disponible"];
 
 
     return (
