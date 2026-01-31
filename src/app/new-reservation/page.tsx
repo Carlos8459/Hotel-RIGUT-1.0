@@ -128,7 +128,7 @@ function NewReservationFormComponent() {
 
   const availableRooms = useMemo(() => {
     if (!roomsData || !reservationsData || !checkInDate || !checkOutDate) {
-        return roomsData?.filter(room => room.status === 'Disponible') || [];
+        return roomsData?.filter(room => room.status === 'Disponible').sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true })) || [];
     }
 
     const reservedRoomIds = new Set(
@@ -143,9 +143,11 @@ function NewReservationFormComponent() {
             .map(res => res.roomId)
     );
 
-    return roomsData.filter(room => {
+    const filteredRooms = roomsData.filter(room => {
         return room.status === 'Disponible' && !reservedRoomIds.has(room.id);
     });
+
+    return filteredRooms.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
   }, [roomsData, reservationsData, checkInDate, checkOutDate]);
 
   const typePriceMap = useMemo(() => {
@@ -800,3 +802,5 @@ export default function NewReservationPage() {
     </Suspense>
   )
 }
+
+    
