@@ -53,6 +53,7 @@ import {
   LayoutGrid,
   Users,
   Settings,
+  LogIn,
   LogOut,
   Wrench,
   BarChart2,
@@ -158,9 +159,16 @@ export default function RoomsDashboard() {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
   }, []);
 
-    const { occupiedToday, availableToday, checkOutsToday } = useMemo(() => {
+    const { 
+      occupiedToday, 
+      availableToday, 
+      checkOutsToday,
+      checkInsToday,
+      maintenanceRoomsCount,
+      pendingPaymentsCount
+    } = useMemo(() => {
     if (!roomsData || !reservationsData) {
-      return { occupiedToday: 0, availableToday: 0, checkOutsToday: 0 };
+      return { occupiedToday: 0, availableToday: 0, checkOutsToday: 0, checkInsToday: 0, maintenanceRoomsCount: 0, pendingPaymentsCount: 0 };
     }
 
     const today = startOfDay(new Date());
@@ -175,23 +183,34 @@ export default function RoomsDashboard() {
       }
     });
 
-    const maintenanceRoomsCount = roomsData.filter(
+    const maintenance = roomsData.filter(
       r => r.status === 'Mantenimiento'
     ).length;
 
     const occupied = occupiedRoomIds.size;
-    const available = roomsData.length - occupied - maintenanceRoomsCount;
+    const available = roomsData.length - occupied - maintenance;
 
     const checkOuts = reservationsData.filter(
       res =>
         res.status === 'Checked-Out' &&
         isSameDay(parseISO(res.checkOutDate), today)
     ).length;
+    
+    const checkIns = reservationsData.filter(
+        res => res.status === 'Checked-In' && isSameDay(parseISO(res.checkInDate), today)
+    ).length;
+    
+    const pendingPayments = reservationsData.filter(
+        res => res.status === 'Checked-In' && res.payment?.status === 'Pendiente'
+    ).length;
 
     return {
       occupiedToday: occupied,
       availableToday: available,
       checkOutsToday: checkOuts,
+      checkInsToday: checkIns,
+      maintenanceRoomsCount: maintenance,
+      pendingPaymentsCount: pendingPayments
     };
   }, [roomsData, reservationsData]);
 
@@ -357,18 +376,36 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2" title="Habitaciones Ocupadas">
-                <BedDouble className="h-5 w-5 text-red-400" />
-                <span className="font-bold text-foreground">{occupiedToday}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center text-sm text-muted-foreground">
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Ocupadas">
+                <BedDouble className="h-6 w-6 text-red-400" />
+                <span className="font-bold text-lg text-foreground">{occupiedToday}</span>
+                <span className="text-xs">Ocupadas</span>
             </div>
-            <div className="flex items-center gap-2" title="Habitaciones Disponibles">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-                <span className="font-bold text-foreground">{availableToday}</span>
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Disponibles">
+                <CheckCircle className="h-6 w-6 text-green-400" />
+                <span className="font-bold text-lg text-foreground">{availableToday}</span>
+                <span className="text-xs">Disponibles</span>
             </div>
-            <div className="flex items-center gap-2" title="Check-outs de Hoy">
-                <LogOut className="h-5 w-5 text-blue-400" />
-                <span className="font-bold text-foreground">{checkOutsToday}</span>
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-ins de Hoy">
+                <LogIn className="h-6 w-6 text-cyan-400" />
+                <span className="font-bold text-lg text-foreground">{checkInsToday}</span>
+                <span className="text-xs">Check-ins</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-outs de Hoy">
+                <LogOut className="h-6 w-6 text-blue-400" />
+                <span className="font-bold text-lg text-foreground">{checkOutsToday}</span>
+                <span className="text-xs">Check-outs</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones en Mantenimiento">
+                <Wrench className="h-6 w-6 text-orange-400" />
+                <span className="font-bold text-lg text-foreground">{maintenanceRoomsCount}</span>
+                <span className="text-xs">Mantenim.</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Pagos Pendientes">
+                <DollarSign className="h-6 w-6 text-amber-400" />
+                <span className="font-bold text-lg text-foreground">{pendingPaymentsCount}</span>
+                <span className="text-xs">Pagos Pend.</span>
             </div>
         </div>
 
