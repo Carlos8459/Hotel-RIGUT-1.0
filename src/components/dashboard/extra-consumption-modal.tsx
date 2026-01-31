@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Minus, X, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
-import { updateDoc, collection, doc } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -46,6 +46,7 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
   const firestore = useFirestore();
   const { toast } = useToast();
   const [consumptions, setConsumptions] = useState<ExtraConsumption[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const consumptionItemsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'consumption_items') : null, [firestore]);
   const { data: consumptionItemsData, isLoading: consumptionItemsLoading } = useCollection<Omit<ConsumptionItem, 'id'>>(consumptionItemsCollection);
@@ -85,8 +86,9 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
     );
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = () => {
     if (!firestore || !reservation) return;
+    setIsSaving(true);
 
     const resDocRef = doc(firestore, 'reservations', reservation.id);
     const updatedConsumptions = consumptions
@@ -97,21 +99,27 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
     const roomTotal = roomPrice * (nights > 0 ? nights : 1);
     const consumptionsTotal = updatedConsumptions.reduce((total, item) => total + (item.price * item.quantity), 0);
     const newTotalAmount = roomTotal + consumptionsTotal;
-
-    try {
-      await updateDoc(resDocRef, { 
+    
+    const dataToUpdate = { 
         extraConsumptions: updatedConsumptions,
         'payment.amount': newTotalAmount,
-       });
-      toast({
-        title: 'Consumos Actualizados',
-        description: 'Se han guardado los cambios y el total ha sido recalculado.',
-      });
-      onClose();
-    } catch (error) {
-      console.error("Error updating consumptions:", error);
-      toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
-    }
+    };
+
+    updateDocumentNonBlocking(resDocRef, dataToUpdate)
+        .then(() => {
+            toast({
+                title: 'Consumos Actualizados',
+                description: 'Se han guardado los cambios y el total ha sido recalculado.',
+            });
+            onClose();
+        })
+        .catch((error) => {
+            console.error("Error updating consumptions:", error);
+            toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
+        })
+        .finally(() => {
+            setIsSaving(false);
+        });
   };
 
   return (
@@ -153,7 +161,9 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
         </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
+          <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

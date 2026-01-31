@@ -177,15 +177,13 @@ export default function ManageUsersPage() {
                 username: values.name,
                 email: values.email,
                 registrationDate: new Date().toISOString(),
-                role: 'Socio'
+                role: 'Socio' as const
             };
 
             if (firestore) {
-                await setDocumentNonBlocking(doc(firestore, "users", newUser.uid), userProfile, {merge: false});
+                setDocumentNonBlocking(doc(firestore, "users", newUser.uid), userProfile, {merge: false});
             }
             
-            await deleteApp(tempApp);
-
             toast({
                 title: "Socio agregado",
                 description: `${values.name} ha sido agregado exitosamente.`,
@@ -195,7 +193,6 @@ export default function ManageUsersPage() {
 
         } catch (error: any) {
             console.error("Error creating partner:", error);
-            if (tempApp) await deleteApp(tempApp);
             
             if (error.code === 'auth/email-already-in-use') {
                 form.setError("email", { message: "Este correo electrónico ya está en uso." });
@@ -205,6 +202,7 @@ export default function ManageUsersPage() {
                 form.setError("root", { message: "Algo salió mal. Por favor, inténtalo de nuevo." });
             }
         } finally {
+            if (tempApp) await deleteApp(tempApp);
             setIsSaving(false);
         }
     };

@@ -56,11 +56,11 @@ export default function RegisterPage() {
         username: values.username,
         email: values.email,
         registrationDate: new Date().toISOString(),
-        role: "Admin", // Default role for new users
+        role: "Admin" as const, // Default role for new users
       };
       
       const userDocRef = doc(firestore, "users", user.uid);
-      await setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+      setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
       router.push("/dashboard");
 
