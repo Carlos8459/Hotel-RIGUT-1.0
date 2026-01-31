@@ -190,6 +190,7 @@ export default function ExportExcelPage() {
             return {
                 'ID Reserva': res.id,
                 'Huésped': res.guestName,
+                'Sobrenombre / Etiqueta': res.nickname || '',
                 'Cédula': res.cedula || '',
                 'Teléfono': res.phone || '',
                 'Check-In': format(parseISO(res.checkInDate), 'yyyy-MM-dd HH:mm'),
@@ -242,11 +243,11 @@ export default function ExportExcelPage() {
             { 'Métrica': 'Ingresos por Consumos Extra', 'Valor (C$)': totalConsumptionIncome },
         ];
         
-        const customerMap: { [key: string]: { name: string; phone?: string; cedula?: string; visits: number; totalSpent: number, lastVisit: string } } = {};
+        const customerMap: { [key: string]: { name: string; phone?: string; cedula?: string; nickname?: string; visits: number; totalSpent: number, lastVisit: string } } = {};
         filteredReservations.forEach(res => {
             const key = res.cedula || res.guestName;
             if (!customerMap[key]) {
-                customerMap[key] = { name: res.guestName, phone: res.phone, cedula: res.cedula, visits: 0, totalSpent: 0, lastVisit: '1970-01-01T00:00:00.000Z' };
+                customerMap[key] = { name: res.guestName, phone: res.phone, cedula: res.cedula, nickname: res.nickname, visits: 0, totalSpent: 0, lastVisit: '1970-01-01T00:00:00.000Z' };
             }
             customerMap[key].visits += 1;
             if (res.payment?.status === 'Cancelado') customerMap[key].totalSpent += res.payment.amount || 0;
@@ -254,11 +255,16 @@ export default function ExportExcelPage() {
                 customerMap[key].lastVisit = res.checkInDate;
                 customerMap[key].phone = res.phone;
                 customerMap[key].cedula = res.cedula;
+                customerMap[key].nickname = res.nickname;
             }
         });
         const customersSheetData = Object.values(customerMap).map(c => ({
-            'Nombre Cliente': c.name, 'Teléfono': c.phone, 'Cédula': c.cedula,
-            'Número de Visitas': c.visits, 'Gasto Total (C$)': c.totalSpent,
+            'Nombre Cliente': c.name, 
+            'Sobrenombre / Etiqueta': c.nickname || '', 
+            'Teléfono': c.phone, 
+            'Cédula': c.cedula,
+            'Número de Visitas': c.visits, 
+            'Gasto Total (C$)': c.totalSpent,
             'Última Visita': format(parseISO(c.lastVisit), 'yyyy-MM-dd'),
         }));
         
