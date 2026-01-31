@@ -210,13 +210,16 @@ export default function ExportExcelPage() {
         const totalConsumptionIncome = reservationsSheetData.reduce((acc, row) => acc + row['Ingresos por Consumos (C$)'], 0);
         const grandTotalIncome = reservationsSheetData.reduce((acc, row) => acc + row['Monto Total (C$)'], 0);
         
-        reservationsSheetData.push({});
-        reservationsSheetData.push({
-            'Huésped': 'TOTALES',
-            'Ingresos por Habitación (C$)': totalRoomIncome,
-            'Ingresos por Consumos (C$)': totalConsumptionIncome,
-            'Monto Total (C$)': grandTotalIncome,
-        });
+        if (reservationsSheetData.length > 0) {
+            reservationsSheetData.push({});
+            reservationsSheetData.push({
+                'Huésped': 'TOTALES',
+                'Ingresos por Habitación (C$)': totalRoomIncome,
+                'Ingresos por Consumos (C$)': totalConsumptionIncome,
+                'Monto Total (C$)': grandTotalIncome,
+            });
+        }
+
 
         const expensesSheetData = filteredExpenses.map(exp => ({
             'ID Gasto': exp.id,
@@ -228,11 +231,13 @@ export default function ExportExcelPage() {
         }));
         
         const totalExpenses = expensesSheetData.reduce((acc, row) => acc + row['Monto (C$)'], 0);
-        expensesSheetData.push({});
-        expensesSheetData.push({
-            'Descripción': 'TOTAL GASTOS',
-            'Monto (C$)': totalExpenses,
-        });
+        if (expensesSheetData.length > 0) {
+            expensesSheetData.push({});
+            expensesSheetData.push({
+                'Descripción': 'TOTAL GASTOS',
+                'Monto (C$)': totalExpenses,
+            });
+        }
 
         const summarySheetData = [
             { 'Métrica': 'Total Ingresos Brutos', 'Valor (C$)': grandTotalIncome },

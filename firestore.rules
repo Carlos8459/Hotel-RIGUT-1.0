@@ -48,8 +48,8 @@ service cloud.firestore {
       // Any signed-in user can read reservations.
       allow read: if isSignedIn();
 
-      // Only the creator of the reservation or an Admin can update or delete it.
-      allow update, delete: if (resource.data.createdBy == request.auth.uid) || isAdmin();
+      // Only the creator, an Admin, or a Socio can update or delete a reservation.
+      allow update, delete: if (resource.data.createdBy == request.auth.uid) || isAdmin() || hasRole('Socio');
     }
 
     match /notifications/{notificationId} {
@@ -61,7 +61,7 @@ service cloud.firestore {
 
     match /settings/{settingId} {
       // Admins and Socios can read and write settings.
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin() || hasRole('Socio');
     }
 
      match /consumption_items/{itemId} {
