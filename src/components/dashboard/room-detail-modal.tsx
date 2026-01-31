@@ -444,13 +444,13 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                         <Label htmlFor="vehicle-select">Tipo de Vehículo</Label>
                         <Select
                             value={editedGuest.vehicle || ''}
-                            onValueChange={(value: 'car' | 'bike' | 'truck' | '') => setEditedGuest(prev => ({...prev, vehicle: value === '' ? undefined : value}))}
+                            onValueChange={(value) => setEditedGuest(prev => ({...prev, vehicle: value === 'none' ? undefined : value as 'car' | 'bike' | 'truck'}))}
                         >
                             <SelectTrigger id="vehicle-select">
                                 <SelectValue placeholder="Seleccionar vehículo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Ninguno</SelectItem>
+                                <SelectItem value="none">Ninguno</SelectItem>
                                 <SelectItem value="car">Carro</SelectItem>
                                 <SelectItem value="bike">Moto</SelectItem>
                                 <SelectItem value="truck">Camión</SelectItem>
