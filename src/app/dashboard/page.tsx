@@ -286,44 +286,47 @@ export default function RoomsDashboard() {
       if (!firestore || !user || !userProfile) return;
       const resDocRef = doc(firestore, 'reservations', reservationId);
       
-      let dataToUpdate = {};
+      let dataToUpdate: any = {};
+      let promise;
+
       if (action === 'checkout') {
           dataToUpdate = { status: 'Checked-Out' };
-
-          if (notificationConfig?.isEnabled && notificationConfig.onCheckOut) {
-              const reservation = reservationsData?.find(res => res.id === reservationId);
-              const room = roomsData?.find(r => r.id === reservation?.roomId);
-              if (reservation && room) {
-                  const notificationsColRef = collection(firestore, 'notifications');
-                  addDocumentNonBlocking(notificationsColRef, {
-                      message: `realizó el check-out de ${reservation.guestName} de la ${room.title}.`,
-                      createdAt: new Date().toISOString(),
-                      createdBy: user.uid,
-                      creatorName: userProfile.username,
-                      isRead: false,
-                  });
-              }
-          }
-
       } else if (action === 'confirm_payment') {
           dataToUpdate = { 'payment.status': 'Cancelado' };
       }
 
-      updateDocumentNonBlocking(resDocRef, dataToUpdate)
-        .then(() => {
-            toast({
-                title: 'Acción completada',
-                description: `La reservación ha sido actualizada.`,
-            });
-        })
-        .catch(error => {
-            console.error(`Error performing action ${action}:`, error);
-            toast({
-                title: 'Error',
-                description: 'No se pudo completar la acción.',
-                variant: 'destructive',
-            });
-        });
+      promise = updateDocumentNonBlocking(resDocRef, dataToUpdate);
+      
+      promise.then(() => {
+          if (action === 'checkout') {
+              if (notificationConfig?.isEnabled && notificationConfig.onCheckOut) {
+                  const reservation = reservationsData?.find(res => res.id === reservationId);
+                  const room = roomsData?.find(r => r.id === reservation?.roomId);
+                  if (reservation && room) {
+                      const notificationsColRef = collection(firestore, 'notifications');
+                      addDocumentNonBlocking(notificationsColRef, {
+                          message: `realizó el check-out de ${reservation.guestName} de la ${room.title}.`,
+                          createdAt: new Date().toISOString(),
+                          createdBy: user.uid,
+                          creatorName: userProfile.username,
+                          isRead: false,
+                      });
+                  }
+              }
+          }
+
+          toast({
+              title: 'Acción completada',
+              description: `La reservación ha sido actualizada.`,
+          });
+      }).catch(error => {
+          console.error(`Error performing action ${action}:`, error);
+          toast({
+              title: 'Error',
+              description: 'No se pudo completar la acción.',
+              variant: 'destructive',
+          });
+      });
   };
 
   const filteredRooms = processedRooms.filter((room) => {
@@ -380,32 +383,26 @@ export default function RoomsDashboard() {
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Ocupadas">
                 <BedDouble className="h-5 w-5 text-red-400" />
                 <span className="font-bold text-base text-foreground">{occupiedToday}</span>
-                <span className="text-xs">Ocupadas</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Disponibles">
                 <CheckCircle className="h-5 w-5 text-green-400" />
                 <span className="font-bold text-base text-foreground">{availableToday}</span>
-                <span className="text-xs">Disponibles</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-ins de Hoy">
                 <LogIn className="h-5 w-5 text-cyan-400" />
                 <span className="font-bold text-base text-foreground">{checkInsToday}</span>
-                <span className="text-xs">Check-ins</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Check-outs de Hoy">
                 <LogOut className="h-5 w-5 text-blue-400" />
                 <span className="font-bold text-base text-foreground">{checkOutsToday}</span>
-                <span className="text-xs">Check-outs</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones en Mantenimiento">
                 <Wrench className="h-5 w-5 text-orange-400" />
                 <span className="font-bold text-base text-foreground">{maintenanceRoomsCount}</span>
-                <span className="text-xs">Mantenim.</span>
             </div>
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Pagos Pendientes">
                 <DollarSign className="h-5 w-5 text-amber-400" />
                 <span className="font-bold text-base text-foreground">{pendingPaymentsCount}</span>
-                <span className="text-xs">Pagos Pend.</span>
             </div>
         </div>
 
@@ -598,10 +595,6 @@ export default function RoomsDashboard() {
           onClose={handleCloseModal}
         />
       )}
-
-      <div className="text-center text-sm text-muted-foreground mt-12">
-        <p>Desarrollado con ❤️ por <span className="font-bold text-foreground">Carlos Rivera</span></p>
-      </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">
         <div className="flex justify-around">
