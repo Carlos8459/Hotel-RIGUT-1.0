@@ -154,38 +154,31 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       onClose();
   };
   
-    const handleStatusChange = async (newStatus: Room['status']) => {
+    const handleStatusChange = (newStatus: Room['status']) => {
         if (!firestore || !canChangeStatus || !user || !userProfile?.username) return;
         const roomDocRef = doc(firestore, 'rooms', room.id);
-        try {
-            await updateDocumentNonBlocking(roomDocRef, { status: newStatus });
-            
-            if (notificationConfig?.isEnabled) {
-                const notificationsColRef = collection(firestore, 'notifications');
-                addDocumentNonBlocking(notificationsColRef, {
-                    message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
-                    createdAt: new Date().toISOString(),
-                    createdBy: user.uid,
-                    creatorName: userProfile.username,
-                    isRead: false,
-                    roomId: room.id,
-                    type: 'info' as const,
+        
+        updateDocumentNonBlocking(roomDocRef, { status: newStatus })
+            .then(() => {
+                if (notificationConfig?.isEnabled) {
+                    const notificationsColRef = collection(firestore, 'notifications');
+                    addDocumentNonBlocking(notificationsColRef, {
+                        message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
+                        createdAt: new Date().toISOString(),
+                        createdBy: user.uid,
+                        creatorName: userProfile.username,
+                        isRead: false,
+                        roomId: room.id,
+                        type: 'info' as const,
+                    });
+                }
+    
+                toast({
+                    title: 'Estado Actualizado',
+                    description: `La habitación ${room.title} ahora está: ${newStatus}.`,
                 });
-            }
-
-            toast({
-                title: 'Estado Actualizado',
-                description: `La habitación ${room.title} ahora está: ${newStatus}.`,
+                onClose();
             });
-            onClose();
-        } catch (error) {
-            console.error("Error updating room status:", error);
-            toast({
-                title: 'Error',
-                description: 'No se pudo actualizar el estado de la habitación.',
-                variant: 'destructive',
-            });
-        }
     };
 
     const handleStatusSelect = (newStatus: Room['status']) => {
