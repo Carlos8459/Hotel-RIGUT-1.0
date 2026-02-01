@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 
-type PermissionKeys = 'viewStats' | 'manageSettings' | 'manageWhatsapp' | 'accessAdmin' | 'exportData' | 'manageExpenses';
+type PermissionKeys = 'viewStats' | 'manageSettings' | 'manageWhatsapp' | 'accessAdmin' | 'exportData' | 'manageExpenses' | 'manageCustomers';
 
 const permissionLabels: Record<PermissionKeys, string> = {
     viewStats: 'Ver Estadísticas',
@@ -24,6 +24,7 @@ const permissionLabels: Record<PermissionKeys, string> = {
     accessAdmin: 'Acceso a Administración',
     exportData: 'Exportar Datos',
     manageExpenses: 'Registrar Gastos',
+    manageCustomers: 'Editar Datos de Clientes',
 };
 
 type UserData = {
@@ -38,6 +39,7 @@ type UserData = {
         accessAdmin: boolean;
         exportData: boolean;
         manageExpenses: boolean;
+        manageCustomers: boolean;
     };
 };
 
@@ -86,6 +88,7 @@ export default function PermissionsPage() {
                     accessAdmin: false,
                     exportData: false,
                     manageExpenses: false,
+                    manageCustomers: false,
                 },
             }));
             setUsers(processedUsers);

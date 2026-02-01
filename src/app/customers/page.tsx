@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useState, useMemo, useEffect } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { format, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -33,6 +33,12 @@ export default function CustomersPage() {
     const [date, setDate] = useState<Date | undefined>();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRoomId, setSelectedRoomId] = useState('');
+
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        role: 'Admin' | 'Socio' | 'Colaborador';
+        permissions: { manageCustomers?: boolean };
+    }>(userDocRef);
 
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -134,7 +140,7 @@ export default function CustomersPage() {
         setSelectedCustomer(null);
     };
 
-    if (isUserLoading || !user || roomsLoading || reservationsLoading) {
+    if (isUserLoading || !user || roomsLoading || reservationsLoading || isUserProfileLoading) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
                 <p>Cargando...</p>
@@ -259,6 +265,7 @@ export default function CustomersPage() {
           onClose={handleCloseModal}
           customer={selectedCustomer}
           roomMap={roomMap}
+          userProfile={userProfile}
         />
       )}
 
@@ -303,4 +310,3 @@ export default function CustomersPage() {
     
 
     
-

@@ -22,11 +22,17 @@ import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { Reservation, ExtraConsumption, ConsumptionItem } from '@/lib/types';
 
 
+type UserProfile = {
+    role: 'Admin' | 'Socio' | 'Colaborador';
+    permissions: { [key: string]: boolean | undefined };
+} | null | undefined;
+
 type ExtraConsumptionModalProps = {
   reservation: Reservation | undefined;
   roomPrice: number;
   isOpen: boolean;
   onClose: () => void;
+  userProfile: UserProfile;
 };
 
 const consumptionIcons: { [key: string]: React.ReactNode } = {
@@ -42,7 +48,7 @@ const consumptionIcons: { [key: string]: React.ReactNode } = {
     Package: <Package className="h-5 w-5" />,
 };
 
-export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose }: ExtraConsumptionModalProps) {
+export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose, userProfile }: ExtraConsumptionModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [consumptions, setConsumptions] = useState<ExtraConsumption[]>([]);
@@ -75,8 +81,10 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
 
   }, [isOpen, reservation, consumptionItemsData, consumptionItemsLoading]);
 
+  const canPerformActions = userProfile && userProfile.role !== 'Colaborador';
 
   const handleQuantityChange = (itemName: string, delta: number) => {
+    if (!canPerformActions) return;
     setConsumptions(prev =>
       prev.map(item =>
         item.name === itemName
@@ -87,7 +95,7 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
   };
 
   const handleSaveChanges = () => {
-    if (!firestore || !reservation) return;
+    if (!firestore || !reservation || !canPerformActions) return;
     setIsSaving(true);
 
     const resDocRef = doc(firestore, 'reservations', reservation.id);
@@ -147,11 +155,11 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(item.name, -1)}>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(item.name, -1)} disabled={!canPerformActions}>
                         <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-8 text-center font-bold text-lg">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(item.name, 1)}>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(item.name, 1)} disabled={!canPerformActions}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
@@ -161,9 +169,11 @@ export function ExtraConsumptionModal({ reservation, roomPrice, isOpen, onClose 
         </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
+          {canPerformActions && (
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

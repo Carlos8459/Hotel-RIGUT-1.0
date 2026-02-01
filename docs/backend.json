@@ -56,6 +56,10 @@
             "manageExpenses": {
               "type": "boolean",
               "description": "Can register new expenses."
+            },
+            "manageCustomers": {
+              "type": "boolean",
+              "description": "Can modify customer data."
             }
           }
         }

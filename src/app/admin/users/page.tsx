@@ -186,6 +186,7 @@ export default function ManageUsersPage() {
                     accessAdmin: false,
                     exportData: false,
                     manageExpenses: false,
+                    manageCustomers: false,
                 }
             };
 

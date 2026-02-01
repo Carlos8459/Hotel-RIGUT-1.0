@@ -27,14 +27,20 @@ import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, writeBatch, collection, query, where, getDocs } from "firebase/firestore";
 import { useState } from "react";
 
+type UserProfile = {
+    role: 'Admin' | 'Socio' | 'Colaborador';
+    permissions?: { manageCustomers?: boolean };
+} | null | undefined;
+
 type CustomerDetailModalProps = {
     customer: Customer | null;
     isOpen: boolean;
     onClose: () => void;
     roomMap: Map<string, string>;
+    userProfile: UserProfile;
 };
 
-export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: CustomerDetailModalProps) {
+export function CustomerDetailModal({ customer, isOpen, onClose, roomMap, userProfile }: CustomerDetailModalProps) {
   const firestore = useFirestore();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(customer?.name || '');
@@ -47,8 +53,10 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
 
   const { data: customerProfile } = useDoc<CustomerProfile>(customerProfileRef);
 
+  const canEditCustomer = userProfile && (userProfile.role === 'Admin' || userProfile.permissions?.manageCustomers);
+
   const handleSave = async () => {
-    if (!firestore || !customer || !name.trim() || name.trim() === customer.name) {
+    if (!firestore || !customer || !name.trim() || name.trim() === customer.name || !canEditCustomer) {
         setIsEditing(false);
         return;
     }
@@ -108,14 +116,16 @@ export function CustomerDetailModal({ customer, isOpen, onClose, roomMap }: Cust
                 )}
               </div>
               <div className="ml-4">
-                {isEditing ? (
-                    <Button onClick={handleSave} size="icon" variant="default">
-                        <Save className="h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button onClick={() => { setIsEditing(true); setName(customer.name); }} size="icon" variant="ghost">
-                        <Edit className="h-4 w-4" />
-                    </Button>
+                {canEditCustomer && (
+                    isEditing ? (
+                        <Button onClick={handleSave} size="icon" variant="default">
+                            <Save className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button onClick={() => { setIsEditing(true); setName(customer.name); }} size="icon" variant="ghost">
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                    )
                 )}
               </div>
             </div>

@@ -50,12 +50,22 @@ const formatPhoneNumberForDisplay = (phone: string | undefined) => {
     return phone;
 };
 
+type UserProfile = {
+    role: 'Admin' | 'Socio' | 'Colaborador';
+    permissions: { 
+        manageCustomers?: boolean;
+        [key: string]: boolean | undefined;
+    };
+} | null | undefined;
+
+
 type RoomDetailModalProps = {
     room: ProcessedRoom;
     isOpen: boolean;
     onClose: () => void;
     allRooms: Room[];
     allReservations: Reservation[];
+    userProfile: UserProfile;
 }
 
 const consumptionIcons: { [key: string]: React.ReactNode } = {
@@ -71,7 +81,7 @@ const consumptionIcons: { [key: string]: React.ReactNode } = {
     Package: <Package className="h-4 w-4" />,
 };
 
-export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservations }: RoomDetailModalProps) {
+export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservations, userProfile }: RoomDetailModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -79,6 +89,9 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   if (!room) return null;
+  
+  const canPerformActions = userProfile && userProfile.role !== 'Colaborador';
+  const canEditCustomer = userProfile && (userProfile.role === 'Admin' || userProfile.permissions?.manageCustomers);
 
   const getStayDate = (reservation?: Reservation) => {
       if (!reservation) return null;
@@ -146,28 +159,32 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                             )}
                         </div>
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
-                                <Pencil className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {canEditCustomer && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            )}
+                            {canPerformActions && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
                         </div>
                     </div>
                      <Separator />
@@ -261,7 +278,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             </div>
           </ScrollArea>
           
-          {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
+          {canPerformActions && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
               <div className="p-6 pt-2 mt-auto">
                     <Button variant="outline" className="w-full text-base py-6 mb-4" onClick={() => setIsConsumptionModalOpen(true)}>
                         <ShoppingCart className="mr-2 h-5 w-5" />
@@ -299,6 +316,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             onClose={() => setIsEditModalOpen(false)}
             allRooms={allRooms}
             allReservations={allReservations}
+            userProfile={userProfile}
         />
       )}
 
@@ -307,6 +325,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         onClose={() => setIsConsumptionModalOpen(false)}
         reservation={room.reservation}
         roomPrice={room.price}
+        userProfile={userProfile}
       />
     </>
   );

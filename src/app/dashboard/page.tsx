@@ -122,7 +122,11 @@ export default function RoomsDashboard() {
 
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
-  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+    username: string;
+    role: 'Admin' | 'Socio' | 'Colaborador';
+    permissions: { [key: string]: boolean };
+  }>(userDocRef);
   const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
   const { data: notificationsData, isLoading: notificationsLoading } = useCollection<Omit<Notification, 'id'>>(notificationsCollection);
 
@@ -553,54 +557,57 @@ export default function RoomsDashboard() {
 
                   </CardContent>
                   <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                      {room.reservation && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) ? (
-                          room.reservation.payment?.status === 'Pendiente' ? (
-                              <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <Button variant="secondary" className="w-full font-semibold">
-                                  <DollarSign className="mr-2 h-4 w-4" />
-                                  Registrar Pago
-                                  </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-xs rounded-3xl">
-                                  <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                      Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
-                                  </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                              </AlertDialog>
-                          ) : (
-                              <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                                  <LogOut className="mr-2 h-4 w-4" />
-                                  Checkout
-                                  </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-xs rounded-3xl">
-                                  <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                      Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
-                                  </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                              </AlertDialog>
-                          )
-                      ) : room.statusText === 'Disponible' ? (
-                          <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
-                      ) : null }
-
+                      {userProfile && userProfile.role !== 'Colaborador' && (
+                        <>
+                            {room.reservation && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) ? (
+                                room.reservation.payment?.status === 'Pendiente' ? (
+                                    <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="secondary" className="w-full font-semibold">
+                                        <DollarSign className="mr-2 h-4 w-4" />
+                                        Registrar Pago
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="max-w-xs rounded-3xl">
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                    </AlertDialog>
+                                ) : (
+                                    <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Checkout
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="max-w-xs rounded-3xl">
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                    </AlertDialog>
+                                )
+                            ) : room.statusText === 'Disponible' ? (
+                                <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
+                            ) : null }
+                        </>
+                      )}
                   </CardFooter>
                   </Card>
               ))
@@ -611,26 +618,28 @@ export default function RoomsDashboard() {
               )}
         </main>
       </div>
-
-      <Link href="/new-reservation">
-        <Button
-          className={cn(
-            'fixed z-20 bottom-24 right-4 rounded-full shadow-xl transition-all duration-300 ease-in-out md:bottom-8 md:right-8 flex items-center justify-center overflow-hidden',
-            isScrolled ? 'h-12 w-12 p-0' : 'h-auto py-2 px-4 gap-2'
-          )}
-          aria-label="Reservación"
-        >
-          <PlusCircle className={cn('transition-transform duration-300 ease-in-out flex-shrink-0', isScrolled ? 'h-7 w-7' : 'h-5 w-5')} />
-          <span
+        
+      {userProfile && userProfile.role !== 'Colaborador' && (
+        <Link href="/new-reservation">
+            <Button
             className={cn(
-              'text-sm font-semibold whitespace-nowrap transition-all duration-200',
-              isScrolled ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                'fixed z-20 bottom-24 right-4 rounded-full shadow-xl transition-all duration-300 ease-in-out md:bottom-8 md:right-8 flex items-center justify-center overflow-hidden',
+                isScrolled ? 'h-12 w-12 p-0' : 'h-auto py-2 px-4 gap-2'
             )}
-          >
-            Reservación
-          </span>
-        </Button>
-      </Link>
+            aria-label="Reservación"
+            >
+            <PlusCircle className={cn('transition-transform duration-300 ease-in-out flex-shrink-0', isScrolled ? 'h-7 w-7' : 'h-5 w-5')} />
+            <span
+                className={cn(
+                'text-sm font-semibold whitespace-nowrap transition-all duration-200',
+                isScrolled ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                )}
+            >
+                Reservación
+            </span>
+            </Button>
+        </Link>
+      )}
 
       {selectedRoom && (
         <RoomDetailModal
@@ -639,6 +648,7 @@ export default function RoomsDashboard() {
           onClose={handleCloseModal}
           allRooms={roomsData as Room[]}
           allReservations={reservationsData as Reservation[]}
+          userProfile={userProfile}
         />
       )}
 

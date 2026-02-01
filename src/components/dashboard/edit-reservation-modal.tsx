@@ -36,15 +36,21 @@ const editReservationSchema = z.object({
   vehicle: z.enum(['car', 'bike', 'truck']).optional(),
 });
 
+type UserProfile = {
+    role: 'Admin' | 'Socio' | 'Colaborador';
+    permissions: { [key: string]: boolean | undefined };
+} | null | undefined;
+
 type EditReservationModalProps = {
   reservation: Reservation;
   isOpen: boolean;
   onClose: () => void;
   allRooms: Room[];
   allReservations: Reservation[];
+  userProfile: UserProfile;
 };
 
-export function EditReservationModal({ reservation, isOpen, onClose, allRooms, allReservations }: EditReservationModalProps) {
+export function EditReservationModal({ reservation, isOpen, onClose, allRooms, allReservations, userProfile }: EditReservationModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -106,8 +112,10 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
     return filteredRooms.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
   }, [allRooms, allReservations, reservation]);
 
+  const canPerformActions = userProfile && userProfile.role !== 'Colaborador';
+
   const onSubmit = async (data: z.infer<typeof editReservationSchema>) => {
-    if (!firestore) return;
+    if (!firestore || !canPerformActions) return;
     setIsSaving(true);
 
     const resDocRef = doc(firestore, 'reservations', reservation.id);
@@ -290,9 +298,11 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
 
             <DialogFooter className="pt-4 pr-4">
               <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-              </Button>
+              {canPerformActions && (
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>
