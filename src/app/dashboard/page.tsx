@@ -478,13 +478,15 @@ export default function RoomsDashboard() {
                   className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
                   >
                   <CardHeader>
-                      <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg">{room.title}</CardTitle>
-                          <Badge className={cn("flex items-center gap-1", room.statusColor)}>
-                              {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
-                              {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
-                              {room.statusText}
-                          </Badge>
+                      <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                              <CardTitle className="text-lg">{room.title}</CardTitle>
+                              <Badge className={cn("flex items-center gap-1", room.statusColor)}>
+                                  {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
+                                  {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
+                                  {room.statusText}
+                              </Badge>
+                          </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {room.reservation ? room.reservation.type : room.type}
