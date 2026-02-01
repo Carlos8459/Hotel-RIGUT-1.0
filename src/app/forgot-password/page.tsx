@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Eye } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
   developerPin: z.string().refine(pin => pin === '231005', {
     message: "PIN de desarrollador incorrecto."
   }),
@@ -28,11 +29,12 @@ export default function ForgotPasswordPage() {
   const [isPending, setIsPending] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       developerPin: "",
     },
   });
@@ -43,17 +45,32 @@ export default function ForgotPasswordPage() {
     setIsPending(true);
 
     try {
+      // Find user by username
+      const usersRef = collection(firestore, "users");
+      const q = query(usersRef, where("username", "==", values.username));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+          setErrorMessage("No se encontró ninguna cuenta con ese nombre de usuario.");
+          setIsPending(false);
+          return;
+      }
+      
+      const userDoc = querySnapshot.docs[0];
+      const userEmail = userDoc.data().email;
+
+      if (!userEmail) {
+          setErrorMessage("La cuenta de usuario no tiene un correo electrónico asociado. Contacta al administrador.");
+          setIsPending(false);
+          return;
+      }
+      
       // The developer PIN is already validated by the form schema resolver (zod).
-      // If we reach this point, the PIN is correct.
-      await sendPasswordResetEmail(auth, values.email);
-      setSuccessMessage("Se ha enviado un correo de recuperación a la dirección del usuario. El usuario debe revisar su bandeja de entrada.");
+      await sendPasswordResetEmail(auth, userEmail);
+      setSuccessMessage("Se ha enviado un correo de recuperación a la dirección asociada con el usuario. El usuario debe revisar su bandeja de entrada.");
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-        setErrorMessage("No se encontró ninguna cuenta con ese correo electrónico.");
-      } else {
-        setErrorMessage("Algo salió mal. Por favor, inténtalo de nuevo.");
-      }
+      setErrorMessage("Algo salió mal. Por favor, inténtalo de nuevo.");
     } finally {
       setIsPending(false);
     }
@@ -69,7 +86,7 @@ export default function ForgotPasswordPage() {
                     Recuperar PIN
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                    Ingresa el correo del usuario y el PIN de desarrollador para iniciar la recuperación.
+                    Ingresa el nombre del usuario y el PIN de desarrollador para iniciar la recuperación.
                 </p>
             </div>
 
@@ -86,12 +103,12 @@ export default function ForgotPasswordPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Correo Electrónico del Usuario</FormLabel>
+                        <FormLabel>Nombre de Usuario</FormLabel>
                         <FormControl>
-                          <Input placeholder="usuario@correo.com" {...field} />
+                          <Input placeholder="Ej: Juan Perez" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -128,7 +145,7 @@ export default function ForgotPasswordPage() {
                   )}
 
                   <Button type="submit" className="w-full" disabled={isPending}>
-                    {isPending ? "Enviando..." : "Enviar correo de recuperación"}
+                    {isPending ? "Verificando..." : "Enviar correo de recuperación"}
                   </Button>
                 </form>
               </Form>
