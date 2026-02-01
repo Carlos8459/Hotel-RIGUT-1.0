@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useMemo } from "react";
 import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
@@ -82,6 +82,8 @@ const consumptionIcons: { [key: string]: React.ReactNode } = {
     Package: <Package className="h-4 w-4" />,
 };
 
+const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
+
 export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservations, userProfile }: RoomDetailModalProps) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -95,6 +97,21 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
   const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
   const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
   
+  const typePriceMap = useMemo(() => {
+    const customPrices: Record<Room['type'], number> = {
+        "Unipersonal": 400,
+        "Matrimonial": 500,
+        "Doble": 600,
+        "Triple": 700,
+        "Quintuple": 1000,
+        "Unipersonal con A/C": 700,
+        "Matrimonial con A/C": 800,
+    };
+    const map = new Map<string, number>();
+    roomTypes.forEach(type => map.set(type, customPrices[type]));
+    return map;
+  }, []);
+
   if (!room) return null;
   
   const canPerformActions = userProfile && userProfile.role !== 'Colaborador';
@@ -183,6 +200,9 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         setIsConfirmStatusDialogOpen(false);
         setStatusToChange(null);
     };
+  
+    const priceForReservation = room.reservation ? (typePriceMap.get(room.reservation.type) || room.price) : room.price;
+
 
   return (
     <>
@@ -353,7 +373,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                                 Realizar Check-out
                             </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="max-w-xs rounded-3xl">
                             <AlertDialogHeader>
                             <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
                             <AlertDialogDescription>
@@ -393,7 +413,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       </Dialog>
 
       <AlertDialog open={isConfirmStatusDialogOpen} onOpenChange={setIsConfirmStatusDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl">
             <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -422,7 +442,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         isOpen={isConsumptionModalOpen}
         onClose={() => setIsConsumptionModalOpen(false)}
         reservation={room.reservation}
-        roomPrice={room.price}
+        roomPrice={priceForReservation}
         userProfile={userProfile}
       />
     </>

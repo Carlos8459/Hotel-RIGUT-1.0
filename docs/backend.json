@@ -125,6 +125,10 @@
           "type": "string",
           "description": "Name of the guest."
         },
+        "nickname": {
+          "type": "string",
+          "description": "An optional nickname or label for the guest for easier identification."
+        },
         "cedula": {
           "type": "string",
           "description": "Guest's ID card number."

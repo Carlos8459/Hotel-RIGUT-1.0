@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { doc, UpdateData } from 'firebase/firestore';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { parseISO } from 'date-fns';
+import { parseISO, differenceInCalendarDays } from 'date-fns';
 
 import {
   Dialog,
@@ -22,12 +22,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Fingerprint, Phone, Tag, StickyNote, Car, Bike, Truck, Home } from 'lucide-react';
+import { User, Fingerprint, Phone, Tag, StickyNote, Car, Bike, Truck, Home, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Reservation, Room } from '@/lib/types';
 
+const roomTypes: Room['type'][] = ["Unipersonal", "Matrimonial", "Doble", "Triple", "Quintuple", "Unipersonal con A/C", "Matrimonial con A/C"];
+
 const editReservationSchema = z.object({
   roomId: z.string({ required_error: "Debe seleccionar una habitación." }),
+  type: z.enum(roomTypes, { required_error: 'Debe seleccionar un tipo de cobro.' }),
   guestName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
   cedula: z.string().optional(),
   phone: z.string().regex(/^\d{4}-\d{4}$/, { message: "El teléfono debe tener el formato 8888-8888." }).optional().or(z.literal('')),
@@ -59,6 +62,7 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
     resolver: zodResolver(editReservationSchema),
     defaultValues: {
       roomId: '',
+      type: "Unipersonal",
       guestName: '',
       cedula: '',
       phone: '',
@@ -68,10 +72,26 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
     },
   });
 
+  const typePriceMap = useMemo(() => {
+    const customPrices: Record<Room['type'], number> = {
+        "Unipersonal": 400,
+        "Matrimonial": 500,
+        "Doble": 600,
+        "Triple": 700,
+        "Quintuple": 1000,
+        "Unipersonal con A/C": 700,
+        "Matrimonial con A/C": 800,
+    };
+    const map = new Map<string, number>();
+    roomTypes.forEach(type => map.set(type, customPrices[type]));
+    return map;
+  }, []);
+
   useEffect(() => {
     if (reservation) {
       form.reset({
         roomId: reservation.roomId,
+        type: reservation.type,
         guestName: reservation.guestName,
         cedula: reservation.cedula || '',
         phone: reservation.phone || '',
@@ -121,6 +141,12 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
     const resDocRef = doc(firestore, 'reservations', reservation.id);
 
     try {
+        const nights = differenceInCalendarDays(parseISO(reservation.checkOutDate), parseISO(reservation.checkInDate));
+        const priceForType = typePriceMap.get(data.type) || 0;
+        const roomTotal = priceForType * (nights > 0 ? nights : 1);
+        const consumptionsTotal = reservation.extraConsumptions?.reduce((total, item) => total + (item.price * item.quantity), 0) || 0;
+        const newTotalAmount = roomTotal + consumptionsTotal;
+
         const dataToUpdate: UpdateData<Reservation> = {
             guestName: data.guestName,
             cedula: data.cedula,
@@ -128,6 +154,8 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
             nickname: data.nickname,
             notes: data.notes,
             vehicle: data.vehicle,
+            type: data.type,
+            'payment.amount': newTotalAmount,
         };
 
         if (data.roomId !== reservation.roomId) {
@@ -171,33 +199,62 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-4">
-            <FormField
-                control={form.control}
-                name="roomId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cambiar Habitación</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <div className="relative flex items-center">
-                            <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                            <SelectTrigger className="pl-10">
-                                <SelectValue placeholder="Seleccionar nueva habitación" />
-                            </SelectTrigger>
-                        </div>
-                      </FormControl>
-                      <SelectContent>
-                        {availableRooms.map((room) => (
-                          <SelectItem key={room.id} value={room.id}>
-                            {room.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="roomId"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Cambiar Habitación</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                            <div className="relative flex items-center">
+                                <Home className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                                <SelectTrigger className="pl-10">
+                                    <SelectValue placeholder="Seleccionar nueva habitación" />
+                                </SelectTrigger>
+                            </div>
+                        </FormControl>
+                        <SelectContent>
+                            {availableRooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                                {room.title}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Tipo de Cobro</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <div className="relative flex items-center">
+                                        <DollarSign className="absolute left-3 h-5 w-5 text-muted-foreground" />
+                                        <SelectTrigger className="pl-10">
+                                            <SelectValue placeholder="Seleccionar tipo de cobro" />
+                                        </SelectTrigger>
+                                    </div>
+                                </FormControl>
+                                <SelectContent>
+                                    {Array.from(typePriceMap.entries()).map(([type, price]) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type} (C${price})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="guestName"
