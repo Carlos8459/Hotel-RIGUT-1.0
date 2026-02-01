@@ -1,6 +1,6 @@
 import { useState, useEffect, ReactNode, useMemo } from "react";
 import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -166,6 +166,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             return;
         }
 
+        // Immediately close the dialog for better UX and to prevent freezing.
         setIsConfirmStatusDialogOpen(false);
         const newStatus = statusToChange;
         const roomDocRef = doc(firestore, 'rooms', room.id);
@@ -180,7 +181,8 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             
             if (notificationConfig?.isEnabled && user && userProfile?.username) {
                 const notificationsColRef = collection(firestore, 'notifications');
-                addDocumentNonBlocking(notificationsColRef, {
+                // Use standard addDoc, fire-and-forget, to prevent any blocking issues.
+                addDoc(notificationsColRef, {
                     message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
                     createdAt: new Date().toISOString(),
                     createdBy: user.uid,
@@ -190,7 +192,8 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                     type: 'info' as const,
                 });
             }
-            onClose();
+            setStatusToChange(null);
+            onClose(); // Close the main modal on success
         } catch (error) {
             console.error("Error al cambiar el estado de la habitación:", error);
             toast({
@@ -198,7 +201,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                 description: 'No tienes permiso para realizar esta acción.',
                 variant: 'destructive',
             });
-        } finally {
+            // Reset state but keep the main modal open for context.
             setStatusToChange(null);
         }
     };
