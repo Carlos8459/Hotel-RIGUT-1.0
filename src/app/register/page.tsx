@@ -24,7 +24,10 @@ import { doc } from "firebase/firestore";
 const formSchema = z.object({
   username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
-  password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
+  password: z.string().min(6, { message: "El PIN de acceso debe tener al menos 6 caracteres." }),
+  developerPin: z.string().refine(pin => pin === '231005', {
+    message: "PIN de desarrollador incorrecto."
+  }),
 });
 
 export default function RegisterPage() {
@@ -42,6 +45,7 @@ export default function RegisterPage() {
       username: "",
       email: "",
       password: "",
+      developerPin: "",
     },
   });
 
@@ -122,7 +126,7 @@ export default function RegisterPage() {
                 render={({ field }) => (
                 <FormItem className="relative">
                     <FormControl>
-                    <Input type={showPin ? "text" : "password"} placeholder="PIN (6+ caracteres)" {...field} autoComplete="new-password" className="h-14 rounded-full px-6 pr-12 text-base" />
+                    <Input type={showPin ? "text" : "password"} placeholder="PIN de Acceso (6+ caracteres)" {...field} autoComplete="new-password" className="h-14 rounded-full px-6 pr-12 text-base" />
                     </FormControl>
                     <button
                     type="button"
@@ -131,6 +135,19 @@ export default function RegisterPage() {
                     >
                     <Eye className="h-5 w-5" />
                     </button>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+
+            <FormField
+                control={form.control}
+                name="developerPin"
+                render={({ field }) => (
+                <FormItem>
+                    <FormControl>
+                    <Input type="password" placeholder="PIN de Desarrollador" {...field} autoComplete="off" className="h-14 rounded-full px-6 text-base"/>
+                    </FormControl>
                     <FormMessage />
                 </FormItem>
                 )}
