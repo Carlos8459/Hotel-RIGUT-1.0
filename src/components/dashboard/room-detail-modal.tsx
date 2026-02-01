@@ -244,7 +244,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
 
           <ScrollArea className="flex-grow min-h-0 px-6">
             <div className="space-y-6 pb-6">
-                {room.statusText === 'Ocupada' && room.reservation && (
+                {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
                     <>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
@@ -368,7 +368,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             </div>
           </ScrollArea>
           
-          {room.statusText === 'Ocupada' && room.reservation && (
+          {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
               <div className="p-6 pt-2 mt-auto">
                     <Button variant="outline" className="w-full text-base py-6 mb-4" onClick={() => setIsConsumptionModalOpen(true)}>
                         <ShoppingCart className="mr-2 h-5 w-5" />

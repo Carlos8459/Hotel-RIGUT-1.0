@@ -72,6 +72,7 @@ import {
   StickyNote,
   BedDouble,
   CheckCircle,
+  History,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -234,29 +235,25 @@ export default function RoomsDashboard() {
         statusText = 'No Disponible';
         statusColor = 'bg-gray-500/20 text-gray-400 border-gray-500/50';
       } else {
-        // Find reservations that are active (checked-in and within date range)
-        const activeReservation = reservationsData.find(res => {
-            if (res.roomId !== room.id || res.status !== 'Checked-In') return false;
-            const checkIn = startOfDay(parseISO(res.checkInDate));
-            const checkOut = startOfDay(parseISO(res.checkOutDate));
-            return startOfSelected >= checkIn && startOfSelected < checkOut;
-        });
-        
-        // Find reservations with a pending checkout today, but only if there isn't an active one.
-        const pendingCheckoutReservation = !activeReservation ? reservationsData.find(res => {
-            if (res.roomId !== room.id || res.status !== 'Checked-In') return false;
-            const checkOut = startOfDay(parseISO(res.checkOutDate));
-            return isSameDay(startOfSelected, checkOut);
-        }) : undefined;
+        const checkedInReservation = reservationsData.find(res => res.roomId === room.id && res.status === 'Checked-In');
 
-        if (activeReservation) {
-            reservation = activeReservation as Reservation;
-            statusText = 'Ocupada';
-            statusColor = 'bg-red-500/20 text-red-400 border-red-500/50';
-        } else if (pendingCheckoutReservation) {
-            reservation = pendingCheckoutReservation as Reservation;
-            statusText = 'Check-out Pendiente';
-            statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+        if (checkedInReservation) {
+            const checkIn = startOfDay(parseISO(checkedInReservation.checkInDate));
+            const checkOut = startOfDay(parseISO(checkedInReservation.checkOutDate));
+            
+            if (startOfSelected >= checkIn && startOfSelected < checkOut) {
+                reservation = checkedInReservation as Reservation;
+                statusText = 'Ocupada';
+                statusColor = 'bg-red-500/20 text-red-400 border-red-500/50';
+            } else if (isSameDay(startOfSelected, checkOut)) {
+                reservation = checkedInReservation as Reservation;
+                statusText = 'Check-out Pendiente';
+                statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+            } else if (startOfSelected > checkOut) {
+                reservation = checkedInReservation as Reservation;
+                statusText = 'Checkout Vencido';
+                statusColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+            }
         }
       }
       
@@ -451,6 +448,7 @@ export default function RoomsDashboard() {
                       </div>
                       <Badge className={cn("flex items-center gap-1", room.statusColor)}>
                           {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
+                          {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
                           {room.statusText}
                       </Badge>
                       </div>
@@ -516,7 +514,7 @@ export default function RoomsDashboard() {
 
                   </CardContent>
                   <CardFooter className="mt-auto flex flex-col gap-2 pt-4">
-                      {room.reservation && ['Ocupada', 'Check-out Pendiente'].includes(room.statusText) ? (
+                      {room.reservation && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) ? (
                           room.reservation.payment?.status === 'Pendiente' ? (
                               <AlertDialog>
                               <AlertDialogTrigger asChild>
