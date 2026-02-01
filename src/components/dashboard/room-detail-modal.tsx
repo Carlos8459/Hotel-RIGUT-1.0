@@ -160,18 +160,18 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
     };
 
     const handleConfirmStatusChange = async () => {
+        setIsConfirmStatusDialogOpen(false); // Close dialog immediately
+
         if (!statusToChange || !firestore || !canChangeStatus) {
-            setIsConfirmStatusDialogOpen(false);
             setStatusToChange(null);
             return;
         }
 
-        // Immediately close the dialog for better UX and to prevent freezing.
-        setIsConfirmStatusDialogOpen(false);
         const newStatus = statusToChange;
         const roomDocRef = doc(firestore, 'rooms', room.id);
         
         try {
+            // Use the raw updateDoc and await it here, inside a try/catch.
             await updateDoc(roomDocRef, { status: newStatus });
             
             toast({
@@ -179,10 +179,10 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                 description: `La habitación ${room.title} ahora está: ${newStatus}.`,
             });
             
+            // This part is fire-and-forget, so it's fine.
             if (notificationConfig?.isEnabled && user && userProfile?.username) {
                 const notificationsColRef = collection(firestore, 'notifications');
-                // Use standard addDoc, fire-and-forget, to prevent any blocking issues.
-                addDoc(notificationsColRef, {
+                addDocumentNonBlocking(notificationsColRef, {
                     message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
                     createdAt: new Date().toISOString(),
                     createdBy: user.uid,
@@ -192,16 +192,18 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                     type: 'info' as const,
                 });
             }
-            setStatusToChange(null);
             onClose(); // Close the main modal on success
         } catch (error) {
+            // This is the crucial part. We catch the permission error here locally.
             console.error("Error al cambiar el estado de la habitación:", error);
             toast({
                 title: 'Error de Permisos',
                 description: 'No tienes permiso para realizar esta acción.',
                 variant: 'destructive',
             });
-            // Reset state but keep the main modal open for context.
+            // Do not re-throw the error. The component stays alive.
+        } finally {
+            // Always reset the statusToChange state
             setStatusToChange(null);
         }
     };
