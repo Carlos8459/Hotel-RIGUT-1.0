@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode, useMemo } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
@@ -165,11 +165,11 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             setStatusToChange(null);
             return;
         }
-    
+
         setIsConfirmStatusDialogOpen(false);
         const newStatus = statusToChange;
         const roomDocRef = doc(firestore, 'rooms', room.id);
-    
+        
         try {
             await updateDoc(roomDocRef, { status: newStatus });
             
@@ -177,7 +177,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                 title: 'Estado Actualizado',
                 description: `La habitación ${room.title} ahora está: ${newStatus}.`,
             });
-    
+            
             if (notificationConfig?.isEnabled && user && userProfile?.username) {
                 const notificationsColRef = collection(firestore, 'notifications');
                 addDocumentNonBlocking(notificationsColRef, {
