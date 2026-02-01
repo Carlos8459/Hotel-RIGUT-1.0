@@ -26,12 +26,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { RoomHistoryModal } from "./room-history-modal";
 import { ExtraConsumptionModal } from "./extra-consumption-modal";
 import { EditReservationModal } from "./edit-reservation-modal";
@@ -91,6 +85,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
   const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
@@ -409,25 +404,10 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                     </AlertDialog>
                 </div>
             ) : !isRoomOccupied && canChangeStatus ? (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" className="w-full">
-                            <Wand2 className="mr-2 h-4 w-4" />
-                            Cambiar Estado
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Disponible')}>Disponible</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Limpieza Pendiente')}>Limpieza Pendiente</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Mantenimiento')}>Mantenimiento</DropdownMenuItem>
-                        {userProfile?.role !== 'Colaborador' && (
-                            <>
-                                <Separator />
-                                <DropdownMenuItem onSelect={() => handleStatusChange('No Disponible')}>No Disponible</DropdownMenuItem>
-                            </>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                 <Button variant="secondary" className="w-full" onClick={() => setIsStatusModalOpen(true)}>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Cambiar Estado
+                </Button>
             ) : null}
         </DialogFooter>
         </DialogContent>
@@ -451,6 +431,60 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         roomPrice={priceForReservation}
         userProfile={userProfile}
       />
+      
+      <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
+        <DialogContent className="sm:max-w-xs rounded-3xl">
+            <DialogHeader>
+                <DialogTitle>Cambiar estado de {room.title}</DialogTitle>
+                <DialogDescription>
+                Selecciona el nuevo estado para esta habitación.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col space-y-2 py-4">
+                <Button
+                    variant={room.status === 'Disponible' ? 'default' : 'outline'}
+                    onClick={() => {
+                        handleStatusChange('Disponible');
+                        setIsStatusModalOpen(false);
+                    }}
+                >
+                    Disponible
+                </Button>
+                <Button
+                    variant={room.status === 'Limpieza Pendiente' ? 'default' : 'outline'}
+                    onClick={() => {
+                        handleStatusChange('Limpieza Pendiente');
+                        setIsStatusModalOpen(false);
+                    }}
+                >
+                    Limpieza Pendiente
+                </Button>
+                <Button
+                    variant={room.status === 'Mantenimiento' ? 'default' : 'outline'}
+                    onClick={() => {
+                        handleStatusChange('Mantenimiento');
+                        setIsStatusModalOpen(false);
+                    }}
+                >
+                    Mantenimiento
+                </Button>
+                {userProfile?.role !== 'Colaborador' && (
+                <>
+                    <Separator />
+                    <Button
+                        variant={room.status === 'No Disponible' ? 'destructive' : 'outline'}
+                        onClick={() => {
+                            handleStatusChange('No Disponible');
+                            setIsStatusModalOpen(false);
+                        }}
+                    >
+                        No Disponible
+                    </Button>
+                </>
+                )}
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
