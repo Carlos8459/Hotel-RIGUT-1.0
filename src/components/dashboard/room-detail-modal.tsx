@@ -120,12 +120,12 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         <DialogContent className="bg-card text-foreground sm:max-w-md border-border flex flex-col max-h-[90vh] rounded-3xl p-0">
           <DialogHeader className="p-6 pb-4">
             <div className="flex items-start justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
-                <p className="text-base text-muted-foreground">{room.type}</p>
-              </div>
-              <Badge className={`${room.statusColor} text-sm ml-4`}>{room.statusText}</Badge>
+                <div className="flex items-center gap-3">
+                    <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
+                    <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
+                </div>
             </div>
+            <p className="text-base text-muted-foreground">{room.type}</p>
           </DialogHeader>
 
           <ScrollArea className="flex-grow min-h-0 px-6">
