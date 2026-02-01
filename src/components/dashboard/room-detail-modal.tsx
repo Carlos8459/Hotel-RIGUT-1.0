@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
@@ -122,68 +122,63 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
                 <p className="text-base text-muted-foreground">{room.type}</p>
               </div>
-              <Badge className={`${room.statusColor} text-sm mr-4`}>{room.statusText}</Badge>
+              <Badge className={`${room.statusColor} text-sm ml-4`}>{room.statusText}</Badge>
             </div>
           </DialogHeader>
 
           <ScrollArea className="flex-grow min-h-0 px-6">
-            <div className="space-y-6 pb-6">
+            <div className="space-y-4 pb-6">
                 {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
                     <>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
-                            <div className="flex items-center">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                            <AvatarFallback className="text-xl">{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-grow space-y-0.5">
+                            <p className="font-semibold text-lg">{room.reservation.guestName}</p>
+                            {room.reservation.phone && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                <Phone className="mr-2 h-4 w-4" />
+                                <span>{formatPhoneNumberForDisplay(room.reservation.phone)}</span>
                             </div>
+                            )}
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16">
-                                <AvatarFallback className="text-2xl">{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div className="space-y-1">
-                                <p className="font-semibold text-lg">{room.reservation.guestName}</p>
-                                {room.reservation.phone && (
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                    <Phone className="mr-2 h-4 w-4" />
-                                    <span>{formatPhoneNumberForDisplay(room.reservation.phone)}</span>
-                                </div>
-                                )}
-                            </div>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                      <Separator />
-                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center"><CalendarIcon className="mr-2 h-5 w-5" />Estadía</h3>
-                        <div className="grid gap-2 text-sm">
+                     <div className="space-y-3">
+                        <h3 className="font-semibold text-base flex items-center"><CalendarIcon className="mr-2 h-4 w-4" />Estadía</h3>
+                        <div className="grid gap-1.5 text-sm pl-6">
                             <div className="flex items-center text-muted-foreground">
-                                <span className="w-28 font-medium text-foreground">Duración:</span>
+                                <span className="w-24 font-medium text-foreground">Duración:</span>
                                 <span>{getStayDate(room.reservation)}</span>
                             </div>
                             {room.reservation.payment && (
                                 <div className={`flex items-center`}>
-                                    <span className="w-28 font-medium text-foreground">Pago:</span>
+                                    <span className="w-24 font-medium text-foreground">Pago:</span>
                                     <span className={room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}>
                                         {room.reservation.payment.status}
                                         {room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}
@@ -192,7 +187,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             )}
                             {room.reservation.vehicle && (
                                 <div className="flex items-center text-muted-foreground">
-                                    <span className="w-28 font-medium text-foreground">Vehículo:</span>
+                                    <span className="w-24 font-medium text-foreground">Vehículo:</span>
                                     <div className="flex items-center">
                                         {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
                                         {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
@@ -208,9 +203,9 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     {room.reservation.notes && (
                         <>
                             <Separator />
-                            <div className="space-y-3">
-                                <h3 className="font-semibold text-lg flex items-center"><StickyNote className="mr-2 h-5 w-5" />Notas</h3>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{room.reservation.notes}</p>
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-base flex items-center"><StickyNote className="mr-2 h-4 w-4" />Notas</h3>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">{room.reservation.notes}</p>
                             </div>
                         </>
                     )}
@@ -221,8 +216,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                     <>
                         <Separator />
                         <div className="space-y-3">
-                            <h3 className="font-semibold text-lg flex items-center"><ShoppingCart className="mr-2 h-5 w-5" />Consumos</h3>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <h3 className="font-semibold text-base flex items-center"><ShoppingCart className="mr-2 h-4 w-4" />Consumos</h3>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm pl-6">
                                 {room.reservation.extraConsumptions.map(item => (
                                     <div key={item.name} className="flex items-center text-muted-foreground">
                                         {consumptionIcons[item.icon] || <Package className="h-4 w-4" />}
