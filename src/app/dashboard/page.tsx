@@ -239,7 +239,10 @@ export default function RoomsDashboard() {
       let statusColor: ProcessedRoom['statusColor'] = 'bg-green-500/20 text-green-400 border-green-500/50';
       let reservation: Reservation | undefined = undefined;
 
-      if (room.status === 'Mantenimiento') {
+      if (room.status === 'Limpieza Pendiente') {
+        statusText = 'Limpieza Pendiente';
+        statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+      } else if (room.status === 'Mantenimiento') {
         statusText = 'Mantenimiento';
         statusColor = 'bg-orange-500/20 text-orange-400 border-orange-500/50';
       } else if (room.status === 'No Disponible') {
@@ -259,7 +262,7 @@ export default function RoomsDashboard() {
             } else if (isSameDay(startOfSelected, checkOut)) {
                 reservation = checkedInReservation as Reservation;
                 statusText = 'Check-out Pendiente';
-                statusColor = 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+                statusColor = 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50';
             } else if (startOfSelected > checkOut) {
                 reservation = checkedInReservation as Reservation;
                 statusText = 'Checkout Vencido';
@@ -337,6 +340,11 @@ export default function RoomsDashboard() {
 
       if (action === 'checkout') {
           dataToUpdate = { status: 'Checked-Out' };
+          const reservation = reservationsData?.find(res => res.id === reservationId);
+          if (reservation?.roomId) {
+              const roomDocRef = doc(firestore, 'rooms', reservation.roomId);
+              updateDocumentNonBlocking(roomDocRef, { status: 'Limpieza Pendiente' });
+          }
       } else if (action === 'confirm_payment') {
           dataToUpdate = { 'payment.status': 'Cancelado' };
       }
@@ -396,7 +404,7 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-10 flex items-center gap-4 border-b bg-background/50 px-4 pt-6 pb-4 backdrop-blur-sm sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-10 flex items-center gap-4 border-b bg-background/50 px-4 pt-4 pb-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div className="relative w-full flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -488,6 +496,7 @@ export default function RoomsDashboard() {
                               <Badge className={cn("flex items-center gap-1", room.statusColor)}>
                                   {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
                                   {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
+                                  {room.statusText === 'Limpieza Pendiente' && <Droplets className="h-3 w-3" />}
                                   {room.statusText}
                               </Badge>
                           </div>
@@ -547,6 +556,8 @@ export default function RoomsDashboard() {
                           </>
                       ) : room.statusText === 'Mantenimiento' ? (
                           <div className="flex items-center text-sm text-orange-400"><Wrench className="mr-2 h-5 w-5"/><span>En mantenimiento</span></div>
+                      ) : room.statusText === 'Limpieza Pendiente' ? (
+                           <div className="flex items-center text-sm text-blue-400"><Droplets className="mr-2 h-5 w-5"/><span>Limpieza pendiente</span></div>
                       ) : room.statusText === 'No Disponible' ? (
                           <div className="flex items-center text-sm text-gray-400"><BedDouble className="mr-2 h-5 w-5"/><span>No disponible</span></div>
                       ) : (
@@ -593,7 +604,7 @@ export default function RoomsDashboard() {
                                         <AlertDialogHeader>
                                         <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación como disponible.
+                                            Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación para limpieza.
                                         </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>

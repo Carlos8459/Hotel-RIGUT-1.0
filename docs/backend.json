@@ -102,6 +102,7 @@
           "description": "The maintenance status of the room.",
           "enum": [
             "Disponible",
+            "Limpieza Pendiente",
             "Mantenimiento",
             "No Disponible"
           ]

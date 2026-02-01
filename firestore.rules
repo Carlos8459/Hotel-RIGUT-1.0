@@ -37,8 +37,11 @@ service cloud.firestore {
     match /rooms/{roomId} {
       // Any signed-in user can read room information.
       allow read: if isSignedIn();
-      // Only Admins and Socios can write (create, update, delete) room documents.
-      allow write: if isAdmin() || hasRole('Socio');
+      // Only Admins and Socios can create or delete rooms.
+      allow create, delete: if isAdmin() || hasRole('Socio');
+      // Admins/Socios can update anything. Colaboradores can ONLY update status.
+      allow update: if (isAdmin() || hasRole('Socio')) ||
+                       (hasRole('Colaborador') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
     }
 
     match /reservations/{reservationId} {

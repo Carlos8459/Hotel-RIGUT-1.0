@@ -3,7 +3,7 @@ export type Room = {
     title: string;
     price: number;
     type: 'Unipersonal' | 'Matrimonial' | 'Doble' | 'Triple' | 'Quintuple' | 'Unipersonal con A/C' | 'Matrimonial con A/C';
-    status: 'Disponible' | 'Mantenimiento' | 'No Disponible';
+    status: 'Disponible' | 'Limpieza Pendiente' | 'Mantenimiento' | 'No Disponible';
 };
 
 export type ExtraConsumption = {

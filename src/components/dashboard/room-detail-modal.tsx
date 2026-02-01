@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote, BedDouble } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote, BedDouble, Wand2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,7 +91,8 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
   if (!room) return null;
   
   const canPerformActions = userProfile && userProfile.role !== 'Colaborador';
-  const canEditCustomer = userProfile && (userProfile.role === 'Admin' || userProfile.permissions?.manageCustomers);
+  const canChangeStatus = userProfile && ['Admin', 'Socio', 'Colaborador'].includes(userProfile.role);
+  const isRoomOccupied = ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText);
 
   const getStayDate = (reservation?: Reservation) => {
       if (!reservation) return null;
@@ -119,6 +120,8 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       let dataToUpdate = {};
       if (action === 'checkout') {
           dataToUpdate = { status: 'Checked-Out' };
+          const roomDocRef = doc(firestore, 'rooms', room.id);
+          await updateDocumentNonBlocking(roomDocRef, { status: 'Limpieza Pendiente' });
       } else if (action === 'confirm_payment') {
           dataToUpdate = { 'payment.status': 'Cancelado' };
       }
@@ -126,6 +129,27 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       await updateDocumentNonBlocking(resDocRef, dataToUpdate);
       onClose();
   };
+  
+    const handleStatusChange = async (newStatus: Room['status']) => {
+        if (!firestore || !canChangeStatus) return;
+        const roomDocRef = doc(firestore, 'rooms', room.id);
+        try {
+            await updateDocumentNonBlocking(roomDocRef, { status: newStatus });
+            toast({
+                title: 'Estado Actualizado',
+                description: `La habitación ${room.title} ahora está: ${newStatus}.`,
+            });
+            onClose();
+        } catch (error) {
+            console.error("Error updating room status:", error);
+            toast({
+                title: 'Error',
+                description: 'No se pudo actualizar el estado de la habitación.',
+                variant: 'destructive',
+            });
+        }
+    };
+
 
   return (
     <>
@@ -143,7 +167,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
 
           <ScrollArea className="flex-grow min-h-0 px-6">
             <div className="space-y-4 pb-6">
-                {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
+                {isRoomOccupied && room.reservation && (
                     <>
                     <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -159,7 +183,7 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                             )}
                         </div>
                         <div className="flex items-center">
-                            {canEditCustomer && (
+                            {canPerformActions && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
                                     <Pencil className="h-4 w-4" />
                                 </Button>
@@ -267,10 +291,11 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                     </>
                 )}
             
-                {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento' || room.statusText === 'No Disponible') && (
+                {!isRoomOccupied && (
                     <div className="text-center flex-grow flex flex-col justify-center items-center py-8">
                         {room.statusText === 'Disponible' && <p className="text-muted-foreground text-lg">Limpia y lista</p>}
                         {room.statusText === 'Mantenimiento' && <p className="text-muted-foreground text-lg flex items-center"><Wrench className="mr-2 h-5 w-5"/>En Mantenimiento</p>}
+                        {room.statusText === 'Limpieza Pendiente' && <p className="text-muted-foreground text-lg flex items-center"><Droplets className="mr-2 h-5 w-5"/>Limpieza Pendiente</p>}
                         {room.statusText === 'No Disponible' && <p className="text-muted-foreground text-lg flex items-center"><BedDouble className="mr-2 h-5 w-5"/>No Disponible</p>}
                     </div>
                 )}
@@ -278,34 +303,56 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             </div>
           </ScrollArea>
           
-          {canPerformActions && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
-              <div className="p-6 pt-2 mt-auto">
-                    <Button variant="outline" className="w-full text-base py-6 mb-4" onClick={() => setIsConsumptionModalOpen(true)}>
-                        <ShoppingCart className="mr-2 h-5 w-5" />
+          <DialogFooter className="p-6 pt-2 mt-auto">
+            {isRoomOccupied && canPerformActions && room.reservation ? (
+                <div className="w-full space-y-2">
+                    <Button variant="outline" className="w-full" onClick={() => setIsConsumptionModalOpen(true)}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
                         Consumos Extras
                     </Button>
-                  <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                          <Button variant="destructive" className="w-full text-base py-6">
-                              <LogOut className="mr-2 h-5 w-5" />
-                              Realizar Check-out
-                          </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                          <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              Esta acción marcará la habitación como disponible y finalizará la estadía del huésped. No podrás deshacer esta acción.
-                          </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
-              </div>
-          )}
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="w-full">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Realizar Check-out
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                La habitación pasará a estado de "Limpieza Pendiente".
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            ) : !isRoomOccupied && canChangeStatus ? (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" className="w-full">
+                            <Wand2 className="mr-2 h-4 w-4" />
+                            Cambiar Estado
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                        <DropdownMenuItem onSelect={() => handleStatusChange('Disponible')}>Disponible</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusChange('Limpieza Pendiente')}>Limpieza Pendiente</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusChange('Mantenimiento')}>Mantenimiento</DropdownMenuItem>
+                        {userProfile?.role !== 'Colaborador' && (
+                            <>
+                                <Separator />
+                                <DropdownMenuItem onSelect={() => handleStatusChange('No Disponible')}>No Disponible</DropdownMenuItem>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ) : null}
+        </DialogFooter>
         </DialogContent>
       </Dialog>
       
