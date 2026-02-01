@@ -12,10 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Eye } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
+  developerPin: z.string().refine(pin => pin === '231005', {
+    message: "PIN de desarrollador incorrecto."
+  }),
 });
 
 
@@ -23,12 +26,14 @@ export default function ForgotPasswordPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const auth = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
+      developerPin: "",
     },
   });
 
@@ -38,8 +43,10 @@ export default function ForgotPasswordPage() {
     setIsPending(true);
 
     try {
+      // The developer PIN is already validated by the form schema resolver (zod).
+      // If we reach this point, the PIN is correct.
       await sendPasswordResetEmail(auth, values.email);
-      setSuccessMessage("Se ha enviado un correo de recuperación a tu dirección. Revisa tu bandeja de entrada.");
+      setSuccessMessage("Se ha enviado un correo de recuperación a la dirección del usuario. El usuario debe revisar su bandeja de entrada.");
     } catch (error: any) {
       console.error(error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
@@ -62,7 +69,7 @@ export default function ForgotPasswordPage() {
                     Recuperar PIN
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                    Ingresa tu correo electrónico para recibir un enlace de recuperación.
+                    Ingresa el correo del usuario y el PIN de desarrollador para iniciar la recuperación.
                 </p>
             </div>
 
@@ -82,12 +89,33 @@ export default function ForgotPasswordPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Correo Electrónico</FormLabel>
+                        <FormLabel>Correo Electrónico del Usuario</FormLabel>
                         <FormControl>
-                          <Input placeholder="tu@correo.com" {...field} />
+                          <Input placeholder="usuario@correo.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="developerPin"
+                    render={({ field }) => (
+                    <FormItem className="relative">
+                        <FormLabel>PIN de Desarrollador</FormLabel>
+                        <FormControl>
+                          <Input type={showPin ? "text" : "password"} placeholder="PIN de seguridad" {...field} />
+                        </FormControl>
+                         <button
+                            type="button"
+                            onClick={() => setShowPin(!showPin)}
+                            className="absolute bottom-2 right-0 flex items-center pr-3 text-gray-400"
+                            >
+                            <Eye className="h-5 w-5" />
+                        </button>
+                        <FormMessage />
+                    </FormItem>
                     )}
                   />
 
