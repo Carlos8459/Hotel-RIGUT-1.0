@@ -53,6 +53,61 @@ type EditReservationModalProps = {
   userProfile: UserProfile;
 };
 
+function calculateProratedTotal({
+  reservation,
+  newType,
+  typePriceMap,
+  moveDate,
+}: {
+  reservation: Reservation;
+  newType: Room['type'];
+  typePriceMap: Map<string, number>;
+  moveDate: Date;
+}): number {
+  const checkIn = parseISO(reservation.checkInDate);
+  const checkOut = parseISO(reservation.checkOutDate);
+  let totalCost = 0;
+  let lastDate = checkIn;
+
+  // Calculate cost for all fully past segments stored in history
+  for (const segment of (reservation.roomHistory || [])) {
+    if (segment.type) {
+      const movedAt = parseISO(segment.movedAt);
+      const nights = differenceInCalendarDays(movedAt, lastDate);
+      const price = typePriceMap.get(segment.type) || 0;
+      if (nights > 0) {
+        totalCost += price * nights;
+      }
+      lastDate = movedAt;
+    }
+  }
+
+  // Calculate cost for the segment that is ending now
+  const nightsInCurrentSegment = differenceInCalendarDays(moveDate, lastDate);
+  const currentSegmentPrice = typePriceMap.get(reservation.type) || 0;
+  if (nightsInCurrentSegment > 0) {
+    totalCost += currentSegmentPrice * nightsInCurrentSegment;
+  }
+
+  // Calculate cost for the future part of the stay with the new type
+  const futureNights = differenceInCalendarDays(checkOut, moveDate);
+  const futurePrice = typePriceMap.get(newType) || 0;
+  if (futureNights > 0) {
+    totalCost += futurePrice * futureNights;
+  }
+
+  const totalNights = differenceInCalendarDays(checkOut, checkIn);
+  if (totalNights > 0 && totalCost === 0) {
+    return futurePrice * totalNights;
+  }
+  if (totalNights <= 0) {
+    return Math.max(totalCost, futurePrice);
+  }
+
+  return totalCost;
+}
+
+
 export function EditReservationModal({ reservation, isOpen, onClose, allRooms, allReservations, userProfile }: EditReservationModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -141,11 +196,26 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
     const resDocRef = doc(firestore, 'reservations', reservation.id);
 
     try {
-        const nights = differenceInCalendarDays(parseISO(reservation.checkOutDate), parseISO(reservation.checkInDate));
-        const priceForType = typePriceMap.get(data.type) || 0;
-        const roomTotal = priceForType * (nights > 0 ? nights : 1);
+        let newTotalAmount;
         const consumptionsTotal = reservation.extraConsumptions?.reduce((total, item) => total + (item.price * item.quantity), 0) || 0;
-        const newTotalAmount = roomTotal + consumptionsTotal;
+        
+        const hasBillingChanged = data.roomId !== reservation.roomId || data.type !== reservation.type;
+
+        if (hasBillingChanged) {
+            const roomTotal = calculateProratedTotal({
+                reservation,
+                newType: data.type,
+                typePriceMap,
+                moveDate: new Date(),
+            });
+            newTotalAmount = roomTotal + consumptionsTotal;
+        } else {
+            // If room and type didn't change, only other details did. Recalculate simply.
+            const nights = differenceInCalendarDays(parseISO(reservation.checkOutDate), parseISO(reservation.checkInDate));
+            const priceForType = typePriceMap.get(data.type) || 0;
+            const roomTotal = priceForType * (nights > 0 ? nights : 1);
+            newTotalAmount = roomTotal + consumptionsTotal;
+        }
 
         const dataToUpdate: UpdateData<Reservation> = {
             guestName: data.guestName,
@@ -159,15 +229,16 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
         };
 
         if (data.roomId !== reservation.roomId) {
-            dataToUpdate.roomId = data.roomId;
             const historyEntry = {
                 roomId: reservation.roomId,
                 movedAt: new Date().toISOString(),
+                type: reservation.type, // Store the type of the segment that just ended
             };
             dataToUpdate.roomHistory = [
                 ...(reservation.roomHistory || []),
                 historyEntry
             ];
+            dataToUpdate.roomId = data.roomId;
         }
 
       await updateDocumentNonBlocking(resDocRef, dataToUpdate);

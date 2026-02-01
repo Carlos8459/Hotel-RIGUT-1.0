@@ -43,6 +43,7 @@ export type Reservation = {
   roomHistory?: {
     roomId: string;
     movedAt: string; // ISO String
+    type?: Room['type'];
   }[];
 };
 
