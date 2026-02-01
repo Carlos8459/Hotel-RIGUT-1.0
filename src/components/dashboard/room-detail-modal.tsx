@@ -165,18 +165,19 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
             setStatusToChange(null);
             return;
         }
-
+    
         setIsConfirmStatusDialogOpen(false);
         const newStatus = statusToChange;
         const roomDocRef = doc(firestore, 'rooms', room.id);
-
+    
         try {
             await updateDoc(roomDocRef, { status: newStatus });
+            
             toast({
                 title: 'Estado Actualizado',
                 description: `La habitación ${room.title} ahora está: ${newStatus}.`,
             });
-
+    
             if (notificationConfig?.isEnabled && user && userProfile?.username) {
                 const notificationsColRef = collection(firestore, 'notifications');
                 addDocumentNonBlocking(notificationsColRef, {
