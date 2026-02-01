@@ -490,26 +490,26 @@ export default function RoomsDashboard() {
                   className="bg-card border-border text-foreground flex flex-col cursor-pointer hover:border-primary transition-colors"
                   >
                   <CardHeader>
-                      <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                              <CardTitle className="text-lg">{room.title}</CardTitle>
-                              <Badge className={cn("flex items-center gap-1", room.statusColor)}>
-                                  {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
-                                  {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
-                                  {room.statusText === 'Limpieza Pendiente' && <Droplets className="h-3 w-3" />}
-                                  {room.statusText}
-                              </Badge>
+                      <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-lg">{room.title}</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {
+                                  room.reservation 
+                                  ? room.reservation.type 
+                                  : ["Doble", "Triple", "Quintuple"].includes(room.type) 
+                                      ? room.type 
+                                      : <>&nbsp;</>
+                              }
+                            </p>
                           </div>
+                          <Badge className={cn("flex items-center gap-1 flex-shrink-0", room.statusColor)}>
+                              {room.statusText === 'Check-out Pendiente' && <LogOut className="h-3 w-3" />}
+                              {room.statusText === 'Checkout Vencido' && <History className="h-3 w-3" />}
+                              {room.statusText === 'Limpieza Pendiente' && <Droplets className="h-3 w-3" />}
+                              {room.statusText}
+                          </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {
-                            room.reservation 
-                            ? room.reservation.type 
-                            : ["Doble", "Triple", "Quintuple"].includes(room.type) 
-                                ? room.type 
-                                : <>&nbsp;</>
-                        }
-                      </p>
                   </CardHeader>
                   <CardContent className="space-y-3 flex-grow">
                       {room.reservation ? (
