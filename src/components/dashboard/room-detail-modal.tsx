@@ -120,7 +120,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
                 <p className="text-base text-muted-foreground">{room.type}</p>
               </div>
-              <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
+              <Badge className={`${room.statusColor} text-sm mr-4`}>{room.statusText}</Badge>
             </div>
           </DialogHeader>
 
