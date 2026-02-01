@@ -409,7 +409,7 @@ export default function RoomsDashboard() {
             />
             <div
               className={cn(
-                'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-300',
+                'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-300 z-10',
                 isSearchFocused && 'opacity-0 pointer-events-none'
               )}
             >
