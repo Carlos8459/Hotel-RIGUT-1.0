@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useMemo, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import {
   format,
   parseISO,
@@ -29,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Reservation } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface ConsumptionStats {
@@ -108,6 +110,7 @@ export default function ExtraConsumptionsStatsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const firestore = useFirestore();
+    const { toast } = useToast();
     
     // State
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -116,6 +119,12 @@ export default function ExtraConsumptionsStatsPage() {
     });
     
     // Data fetching
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        role: 'Admin' | 'Socio' | 'Colaborador',
+        permissions?: { viewStats?: boolean }
+    }>(userDocRef);
+
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
     
@@ -123,7 +132,15 @@ export default function ExtraConsumptionsStatsPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false) {
+            toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para ver las estadísticas.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     const setToday = () => {
         const today = new Date();
@@ -190,7 +207,7 @@ export default function ExtraConsumptionsStatsPage() {
         maximumFractionDigits: 0,
     });
 
-    const isLoading = isUserLoading || reservationsLoading;
+    const isLoading = isUserLoading || isUserProfileLoading || reservationsLoading;
 
     if (isLoading) {
         return (
@@ -212,6 +229,10 @@ export default function ExtraConsumptionsStatsPage() {
                  </main>
             </div>
         );
+    }
+
+    if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false)) {
+        return null;
     }
     
     return (
@@ -273,5 +294,3 @@ export default function ExtraConsumptionsStatsPage() {
         </div>
     );
 }
-
-    

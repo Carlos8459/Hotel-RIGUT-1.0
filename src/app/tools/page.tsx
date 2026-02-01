@@ -1,9 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useEffect } from 'react';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,6 +23,16 @@ import {
 export default function ToolsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+    
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        role: 'Admin' | 'Socio' | 'Colaborador';
+        permissions: {
+            manageExpenses: boolean;
+            exportData: boolean;
+        };
+    }>(userDocRef);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -28,7 +40,7 @@ export default function ToolsPage() {
         }
     }, [user, isUserLoading, router]);
 
-    const isLoading = isUserLoading;
+    const isLoading = isUserLoading || isUserProfileLoading;
 
     if (isLoading || !user) {
         return (
@@ -58,34 +70,38 @@ export default function ToolsPage() {
                         </CardHeader>
                     </Card>
                 </Link>
-
-                <Link href="/expenses" className="block w-full">
-                    <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                        <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
-                             <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
-                                <Receipt className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg">Registro de Gastos</CardTitle>
-                                <CardDescription>Lleva un control detallado de los gastos del hotel.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
                 
-                <Link href="/tools/export-excel" className="block w-full">
-                    <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                        <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
-                             <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
-                                <FileSpreadsheet className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg">Datos en Excel</CardTitle>
-                                <CardDescription>Exporta la información de la aplicación a hojas de cálculo.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
+                {(userProfile?.role === 'Admin' || userProfile?.permissions?.manageExpenses) && (
+                    <Link href="/expenses" className="block w-full">
+                        <Card className="hover:border-primary transition-colors cursor-pointer h-full">
+                            <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
+                                <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
+                                    <Receipt className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg">Registro de Gastos</CardTitle>
+                                    <CardDescription>Lleva un control detallado de los gastos del hotel.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                )}
+                
+                {(userProfile?.role === 'Admin' || userProfile?.permissions?.exportData) && (
+                    <Link href="/tools/export-excel" className="block w-full">
+                        <Card className="hover:border-primary transition-colors cursor-pointer h-full">
+                            <CardHeader className="flex flex-col items-start gap-4 space-y-0 p-4">
+                                <div className="flex items-center justify-center bg-primary/10 p-3 rounded-lg">
+                                    <FileSpreadsheet className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg">Datos en Excel</CardTitle>
+                                    <CardDescription>Exporta la información de la aplicación a hojas de cálculo.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                )}
 
             </main>
 
@@ -126,5 +142,3 @@ export default function ToolsPage() {
         </div>
     );
 }
-
-    

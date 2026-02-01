@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   format,
@@ -32,6 +33,7 @@ import { cn } from '@/lib/utils';
 import type { Expense } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 // Component for date range picker
 function DateRangePicker({
@@ -92,6 +94,13 @@ export default function ExpensesStatsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+      role: 'Admin' | 'Socio' | 'Colaborador',
+      permissions?: { viewStats?: boolean }
+  }>(userDocRef);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
@@ -106,7 +115,15 @@ export default function ExpensesStatsPage() {
     if (!isUserLoading && !user) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+    if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false) {
+        toast({
+            title: "Acceso Denegado",
+            description: "No tienes permiso para ver las estadísticas.",
+            variant: "destructive",
+        });
+        router.push('/dashboard');
+    }
+  }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
   const setToday = () => {
     const today = new Date();
@@ -159,7 +176,7 @@ export default function ExpensesStatsPage() {
     maximumFractionDigits: 2,
   });
 
-  const isLoading = isUserLoading || expensesLoading;
+  const isLoading = isUserLoading || isUserProfileLoading || expensesLoading;
 
   if (isLoading) {
     return (
@@ -187,6 +204,10 @@ export default function ExpensesStatsPage() {
         </main>
       </div>
     );
+  }
+  
+  if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false)) {
+      return null;
   }
 
   return (
@@ -309,5 +330,3 @@ export default function ExpensesStatsPage() {
     </>
   );
 }
-
-    

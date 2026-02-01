@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import {
   format,
@@ -57,6 +58,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from '@/hooks/use-toast';
 
 
 function DateRangePicker({
@@ -115,6 +117,13 @@ export default function StatsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+      role: 'Admin' | 'Socio' | 'Colaborador',
+      permissions?: { viewStats?: boolean }
+  }>(userDocRef);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
@@ -143,7 +152,15 @@ export default function StatsPage() {
     if (!isUserLoading && !user) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+    if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false) {
+        toast({
+            title: "Acceso Denegado",
+            description: "No tienes permiso para ver las estadísticas.",
+            variant: "destructive",
+        });
+        router.push('/dashboard');
+    }
+  }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
   const setToday = () => {
     const today = new Date();
@@ -304,7 +321,7 @@ export default function StatsPage() {
     }
   };
   
-  const isLoading = isUserLoading || !user || reservationsLoading || expensesLoading || roomsLoading;
+  const isLoading = isUserLoading || isUserProfileLoading || !user || reservationsLoading || expensesLoading || roomsLoading;
 
   if (isLoading) {
     return (
@@ -312,6 +329,10 @@ export default function StatsPage() {
         <p>Cargando...</p>
       </div>
     );
+  }
+
+  if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false)) {
+      return null;
   }
 
   return (

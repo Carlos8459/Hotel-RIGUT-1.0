@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import {
   format,
   parseISO,
@@ -30,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Reservation, Room } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface RoomStats extends Room {
@@ -96,6 +98,7 @@ export default function RoomStatsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const firestore = useFirestore();
+    const { toast } = useToast();
     
     // State
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -104,6 +107,12 @@ export default function RoomStatsPage() {
     });
     
     // Data fetching
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        role: 'Admin' | 'Socio' | 'Colaborador',
+        permissions?: { viewStats?: boolean }
+    }>(userDocRef);
+
     const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
 
@@ -114,7 +123,15 @@ export default function RoomStatsPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false) {
+            toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para ver las estadísticas.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     const setToday = () => {
         const today = new Date();
@@ -180,7 +197,7 @@ export default function RoomStatsPage() {
         maximumFractionDigits: 0,
     });
 
-    const isLoading = isUserLoading || roomsLoading || reservationsLoading;
+    const isLoading = isUserLoading || isUserProfileLoading || roomsLoading || reservationsLoading;
 
     if (isLoading) {
         return (
@@ -204,6 +221,10 @@ export default function RoomStatsPage() {
         );
     }
     
+    if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.viewStats === false)) {
+        return null;
+    }
+
     return (
         <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8">
              <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
@@ -275,5 +296,3 @@ export default function RoomStatsPage() {
         </div>
     );
 }
-
-    

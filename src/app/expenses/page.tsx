@@ -80,7 +80,11 @@ export default function ExpensesPage() {
 
   // User profile data
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string, role: string}>(userDocRef);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        username: string,
+        role: 'Admin' | 'Socio' | 'Colaborador',
+        permissions: { manageExpenses: boolean }
+    }>(userDocRef);
 
   // Expenses data
   const expensesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'expenses'), orderBy('date', 'desc')) : null, [firestore]);
@@ -103,7 +107,15 @@ export default function ExpensesPage() {
     if (!isUserLoading && !user) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+     if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.manageExpenses === false) {
+        toast({
+            title: "Acceso Denegado",
+            description: "No tienes permiso para registrar o ver gastos.",
+            variant: "destructive",
+        });
+        router.push('/dashboard');
+    }
+  }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
   function onSubmit(data: z.infer<typeof expenseFormSchema>) {
     if (!firestore || !user || !userProfile) return;
@@ -183,6 +195,10 @@ export default function ExpensesPage() {
         <p>Cargando...</p>
       </div>
     );
+  }
+
+  if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.manageExpenses === false)) {
+    return null;
   }
 
   return (

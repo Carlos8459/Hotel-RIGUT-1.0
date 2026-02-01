@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { format, parseISO, differenceInCalendarDays, isWithinInterval, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -87,6 +88,12 @@ export default function ExportExcelPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{
+        permissions?: { exportData?: boolean }
+        role: 'Admin' | 'Socio' | 'Colaborador';
+    }>(userDocRef);
+
     // Data fetching
     const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
     const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -110,7 +117,15 @@ export default function ExportExcelPage() {
         if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, isUserLoading, router]);
+        if (!isUserProfileLoading && userProfile && userProfile.role !== 'Admin' && userProfile.permissions?.exportData === false) {
+             toast({
+                title: "Acceso Denegado",
+                description: "No tienes permiso para exportar datos.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+        }
+    }, [user, isUserLoading, userProfile, isUserProfileLoading, router, toast]);
 
     // Date preset functions
     const setToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
@@ -288,7 +303,7 @@ export default function ExportExcelPage() {
         ], 'Reporte_Hotel_RIGUT');
     };
 
-    const isLoading = isUserLoading || reservationsLoading || roomsLoading || expensesLoading || usersLoading || consumptionItemsLoading;
+    const isLoading = isUserLoading || isUserProfileLoading || reservationsLoading || roomsLoading || expensesLoading || usersLoading || consumptionItemsLoading;
 
     if (isLoading) {
         return (
@@ -303,6 +318,10 @@ export default function ExportExcelPage() {
                 </main>
             </div>
         );
+    }
+
+    if (!userProfile || (userProfile.role !== 'Admin' && userProfile.permissions?.exportData === false)) {
+        return null;
     }
     
     return (
