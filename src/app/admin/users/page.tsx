@@ -67,11 +67,12 @@ type User = {
 type UserDocument = {
     username: string;
     email: string;
-    role: 'Admin' | 'Socio';
+    role: 'Admin' | 'Socio' | 'Colaborador';
     registrationDate: string;
+    permissions?: { [key: string]: boolean };
 }
 
-const addPartnerSchema = z.object({
+const addUserSchema = z.object({
   name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
   password: z.string().min(6, { message: "El PIN debe tener al menos 6 caracteres." }),
@@ -102,11 +103,11 @@ export default function ManageUsersPage() {
 
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [newRole, setNewRole] = useState('');
-    const [isAddPartnerDialogOpen, setIsAddPartnerDialogOpen] = useState(false);
+    const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const form = useForm<z.infer<typeof addPartnerSchema>>({
-        resolver: zodResolver(addPartnerSchema),
+    const form = useForm<z.infer<typeof addUserSchema>>({
+        resolver: zodResolver(addUserSchema),
         defaultValues: {
             name: "",
             email: "",
@@ -151,8 +152,8 @@ export default function ManageUsersPage() {
         const userDocRef = doc(firestore, "users", userId);
         deleteDocumentNonBlocking(userDocRef).then(() => {
             toast({
-                title: "Socio eliminado",
-                description: `El documento del socio ha sido eliminado de la base de datos.`,
+                title: "Usuario eliminado",
+                description: `El documento del usuario ha sido eliminado de la base de datos.`,
             });
         });
     };
@@ -161,7 +162,7 @@ export default function ManageUsersPage() {
         setEditingUser(null);
     };
 
-    const onAddPartnerSubmit = async (values: z.infer<typeof addPartnerSchema>) => {
+    const onAddUserSubmit = async (values: z.infer<typeof addUserSchema>) => {
         setIsSaving(true);
         form.clearErrors();
         let tempApp;
@@ -173,11 +174,19 @@ export default function ManageUsersPage() {
             const userCredential = await createUserWithEmailAndPassword(tempAuth, values.email, values.password);
             const newUser = userCredential.user;
 
-            const userProfile = {
+            const userProfile: UserDocument = {
                 username: values.name,
                 email: values.email,
                 registrationDate: new Date().toISOString(),
-                role: 'Socio' as const
+                role: 'Colaborador',
+                permissions: {
+                    viewStats: false,
+                    manageSettings: false,
+                    manageWhatsapp: false,
+                    accessAdmin: false,
+                    exportData: false,
+                    manageExpenses: false,
+                }
             };
 
             if (firestore) {
@@ -185,14 +194,14 @@ export default function ManageUsersPage() {
             }
             
             toast({
-                title: "Socio agregado",
+                title: "Usuario agregado",
                 description: `${values.name} ha sido agregado exitosamente.`,
             });
-            setIsAddPartnerDialogOpen(false);
+            setIsAddUserDialogOpen(false);
             form.reset();
 
         } catch (error: any) {
-            console.error("Error creating partner:", error);
+            console.error("Error creating user:", error);
             
             if (error.code === 'auth/email-already-in-use') {
                 form.setError("email", { message: "Este correo electrónico ya está en uso." });
@@ -227,32 +236,32 @@ export default function ManageUsersPage() {
                     <span className="sr-only">Volver</span>
                 </Button>
                 <div className="flex-grow">
-                    <h1 className="text-2xl font-bold">Gestionar Socios</h1>
-                    <p className="text-muted-foreground">Agrega, elimina o edita los socios de tu equipo.</p>
+                    <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
+                    <p className="text-muted-foreground">Agrega, elimina o edita los usuarios de tu equipo.</p>
                 </div>
-                <Dialog open={isAddPartnerDialogOpen} onOpenChange={setIsAddPartnerDialogOpen}>
+                <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
                     <DialogTrigger asChild>
                          <Button>
                             <UserPlus className="mr-2 h-4 w-4" />
-                            Agregar Socio
+                            Agregar Usuario
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Agregar Nuevo Socio</DialogTitle>
+                            <DialogTitle>Agregar Nuevo Usuario</DialogTitle>
                             <DialogDescription>
-                                Crea una cuenta para que el nuevo socio pueda acceder a la aplicación.
+                                Crea una cuenta para que el nuevo miembro del equipo pueda acceder a la aplicación.
                             </DialogDescription>
                         </DialogHeader>
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onAddPartnerSubmit)} className="space-y-4 pt-4">
+                            <form onSubmit={form.handleSubmit(onAddUserSubmit)} className="space-y-4 pt-4">
                                 <FormField
                                     control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Nombre de Usuario</FormLabel>
-                                            <FormControl><Input placeholder="Ej: Socio Uno" {...field} /></FormControl>
+                                            <FormControl><Input placeholder="Ej: Juan Perez" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -263,7 +272,7 @@ export default function ManageUsersPage() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Correo Electrónico</FormLabel>
-                                            <FormControl><Input type="email" placeholder="socio@example.com" {...field} /></FormControl>
+                                            <FormControl><Input type="email" placeholder="usuario@example.com" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -288,7 +297,7 @@ export default function ManageUsersPage() {
                                 )}
                                 <DialogFooter>
                                     <Button type="submit" disabled={isSaving}>
-                                        {isSaving ? "Creando..." : "Crear Socio"}
+                                        {isSaving ? "Creando..." : "Crear Usuario"}
                                     </Button>
                                 </DialogFooter>
                             </form>
@@ -319,7 +328,7 @@ export default function ManageUsersPage() {
                                     <Alert variant="destructive">
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertTitle>Error de Permisos</AlertTitle>
-                                        <AlertDescription>No tienes permisos para ver la lista de socios. Contacta a un administrador.</AlertDescription>
+                                        <AlertDescription>No tienes permisos para ver la lista de usuarios. Contacta a un administrador.</AlertDescription>
                                     </Alert>
                                 </div>
                             )}
@@ -358,7 +367,7 @@ export default function ManageUsersPage() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Esta acción eliminará el perfil del socio en la base de datos de la app. Para revocar su acceso por completo, también debes eliminar su cuenta desde la Consola de Firebase.
+                                                                Esta acción eliminará el perfil del usuario en la base de datos de la app. Para revocar su acceso por completo, también debes eliminar su cuenta desde la Consola de Firebase.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
@@ -392,8 +401,9 @@ export default function ManageUsersPage() {
                                 <SelectValue placeholder="Seleccionar un rol" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Socio">Socio</SelectItem>
                                 <SelectItem value="Admin">Admin</SelectItem>
+                                <SelectItem value="Socio">Socio</SelectItem>
+                                <SelectItem value="Colaborador">Colaborador</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

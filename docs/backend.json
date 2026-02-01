@@ -25,14 +25,46 @@
           "description": "The role of the user.",
           "enum": [
             "Admin",
-            "Socio"
+            "Socio",
+            "Colaborador"
           ]
+        },
+        "permissions": {
+          "type": "object",
+          "description": "User-specific feature permissions.",
+          "properties": {
+            "viewStats": {
+              "type": "boolean",
+              "description": "Can view statistics pages."
+            },
+            "manageSettings": {
+              "type": "boolean",
+              "description": "Can manage rooms and consumption items."
+            },
+            "manageWhatsapp": {
+              "type": "boolean",
+              "description": "Can manage WhatsApp automation."
+            },
+            "accessAdmin": {
+              "type": "boolean",
+              "description": "Can access the admin management section to delete records."
+            },
+            "exportData": {
+              "type": "boolean",
+              "description": "Can export data to Excel."
+            },
+            "manageExpenses": {
+              "type": "boolean",
+              "description": "Can register new expenses."
+            }
+          }
         }
       },
       "required": [
         "username",
         "email",
-        "registrationDate"
+        "registrationDate",
+        "role"
       ]
     },
     "Room": {

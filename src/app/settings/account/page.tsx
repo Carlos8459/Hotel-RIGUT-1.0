@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, KeyRound, LogOut, AlertCircle, Users, Pencil } from 'lucide-react';
+import { ArrowLeft, KeyRound, LogOut, AlertCircle, Users, Pencil, ShieldCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -47,7 +47,7 @@ const changePinSchema = z.object({
 const profileFormSchema = z.object({
     username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
     email: z.string().email(),
-    role: z.enum(['Admin', 'Socio']),
+    role: z.enum(['Admin', 'Socio', 'Colaborador']),
 });
 
 
@@ -59,7 +59,7 @@ export default function AccountSettingsPage() {
     const { toast } = useToast();
 
     const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio', username: string}>(userDocRef);
+    const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{role: 'Admin' | 'Socio' | 'Colaborador', username: string}>(userDocRef);
 
     const [isPending, setIsPending] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -134,7 +134,7 @@ export default function AccountSettingsPage() {
     const onProfileSubmit = (values: z.infer<typeof profileFormSchema>) => {
         if (!firestore || !user || !userDocRef) return;
         
-        const dataToUpdate: {username: string; role?: 'Admin' | 'Socio'} = {
+        const dataToUpdate: {username: string; role?: 'Admin' | 'Socio' | 'Colaborador'} = {
             username: values.username,
         };
 
@@ -213,14 +213,20 @@ export default function AccountSettingsPage() {
                 {userProfile?.role === 'Admin' && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Gestión de Socios</CardTitle>
-                            <CardDescription>Agrega o administra las cuentas de tus socios.</CardDescription>
+                            <CardTitle>Gestión de Equipo</CardTitle>
+                            <CardDescription>Administra los usuarios y sus permisos de acceso.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                        <Button asChild>
+                        <CardContent className="grid sm:grid-cols-2 gap-4">
+                        <Button asChild variant="outline">
                             <Link href="/admin/users">
                                 <Users className="mr-2 h-4 w-4" />
-                                Gestionar Socios
+                                Gestionar Usuarios
+                            </Link>
+                        </Button>
+                         <Button asChild>
+                            <Link href="/admin/permissions">
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Gestionar Permisos
                             </Link>
                         </Button>
                         </CardContent>
@@ -345,8 +351,9 @@ export default function AccountSettingsPage() {
                                         <Select onValueChange={field.onChange} value={field.value} disabled={userProfile?.role !== 'Admin'}>
                                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                             <SelectContent>
-                                                <SelectItem value="Socio">Socio</SelectItem>
                                                 <SelectItem value="Admin">Admin</SelectItem>
+                                                <SelectItem value="Socio">Socio</SelectItem>
+                                                <SelectItem value="Colaborador">Colaborador</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
