@@ -637,6 +637,8 @@ export default function RoomsDashboard() {
           room={selectedRoom}
           isOpen={!!selectedRoom}
           onClose={handleCloseModal}
+          allRooms={roomsData as Room[]}
+          allReservations={reservationsData as Reservation[]}
         />
       )}
 

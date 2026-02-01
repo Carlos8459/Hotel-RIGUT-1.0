@@ -54,6 +54,8 @@ type RoomDetailModalProps = {
     room: ProcessedRoom;
     isOpen: boolean;
     onClose: () => void;
+    allRooms: Room[];
+    allReservations: Reservation[];
 }
 
 const consumptionIcons: { [key: string]: React.ReactNode } = {
@@ -69,7 +71,7 @@ const consumptionIcons: { [key: string]: React.ReactNode } = {
     Package: <Package className="h-4 w-4" />,
 };
 
-export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps) {
+export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservations }: RoomDetailModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -130,12 +132,12 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             <div className="space-y-4 pb-6">
                 {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
                     <>
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                            <AvatarFallback className="text-xl">{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                            <AvatarFallback>{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow space-y-0.5">
-                            <p className="font-semibold text-lg">{room.reservation.guestName}</p>
+                            <p className="font-semibold">{room.reservation.guestName}</p>
                             {room.reservation.phone && (
                             <div className="flex items-center text-sm text-muted-foreground">
                                 <Phone className="mr-2 h-4 w-4" />
@@ -200,6 +202,24 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                             )}
                         </div>
                     </div>
+                    {room.reservation.roomHistory && room.reservation.roomHistory.length > 0 && (
+                        <>
+                            <Separator />
+                            <div className="space-y-3">
+                                <h3 className="font-semibold text-base flex items-center"><History className="mr-2 h-4 w-4" />Historial de Habitaciones</h3>
+                                <div className="grid gap-1.5 text-sm pl-6">
+                                    {room.reservation.roomHistory.map((historyItem, index) => {
+                                        const pastRoom = allRooms.find(r => r.id === historyItem.roomId);
+                                        return (
+                                            <div key={index} className="flex items-center text-muted-foreground">
+                                                <span>{pastRoom?.title || historyItem.roomId} (hasta {format(parseISO(historyItem.movedAt), 'd LLL yy', {locale: es})})</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </>
+                    )}
                     {room.reservation.notes && (
                         <>
                             <Separator />
@@ -277,6 +297,8 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
             reservation={room.reservation}
             isOpen={isEditModalOpen}
             onClose={() => setIsEditModalOpen(false)}
+            allRooms={allRooms}
+            allReservations={allReservations}
         />
       )}
 

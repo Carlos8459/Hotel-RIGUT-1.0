@@ -205,6 +205,28 @@
         "notes": {
           "type": "string",
           "description": "Additional notes about the guest or reservation."
+        },
+        "roomHistory": {
+          "type": "array",
+          "description": "A history of rooms this reservation has occupied.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "roomId": {
+                "type": "string",
+                "description": "The ID of the room."
+              },
+              "movedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the guest was moved out of this room."
+              }
+            },
+            "required": [
+              "roomId",
+              "movedAt"
+            ]
+          }
         }
       },
       "required": [

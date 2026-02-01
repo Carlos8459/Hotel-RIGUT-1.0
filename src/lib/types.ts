@@ -40,6 +40,10 @@ export type Reservation = {
   extraConsumptions?: ExtraConsumption[];
   notes?: string;
   nickname?: string;
+  roomHistory?: {
+    roomId: string;
+    movedAt: string; // ISO String
+  }[];
 };
 
 export type Customer = {
