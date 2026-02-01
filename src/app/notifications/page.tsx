@@ -60,7 +60,7 @@ function NotificationDetailModal({ notification, isOpen, onClose }: { notificati
                                 <div className="p-3 border rounded-lg bg-background/50 space-y-2">
                                     <h4 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4"/> Habitación</h4>
                                     <p className="pl-6">{room.title}</p>
-                                    <p className="text-sm text-muted-foreground pl-6">{room.type}</p>
+                                    <p className="text-sm text-foreground pl-6">{room.type}</p>
                                 </div>
                             )}
                             {!reservation && !room && (
