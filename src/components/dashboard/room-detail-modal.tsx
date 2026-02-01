@@ -218,26 +218,60 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 </div>
                  <div className="flex items-center gap-1 mr-6">
                     <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
-                    {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => setPendingStatus('Disponible')}>
-                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500"/> Disponible
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setPendingStatus('Mantenimiento')}>
-                                    <Wrench className="mr-2 h-4 w-4 text-orange-500"/> Mantenimiento
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setPendingStatus('No Disponible')}>
-                                    <BedDouble className="mr-2 h-4 w-4 text-gray-500"/> No Disponible
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
+                                <>
+                                    <DropdownMenuItem onSelect={handleOpenEditModal}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        <span>Editar Estadía</span>
+                                    </DropdownMenuItem>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <span>Eliminar Reservación</span>
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Eliminar Reservación?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción no se puede deshacer. Se eliminará permanentemente la reservación y la habitación quedará disponible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    className="bg-destructive hover:bg-destructive/90"
+                                                    onClick={() => handleDeleteReservation(room.reservation!.id)}>
+                                                    Eliminar
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </>
+                            )}
+                             {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && room.statusText !== 'Checkout Vencido' && (
+                                <>
+                                    <DropdownMenuItem onSelect={() => setPendingStatus('Disponible')}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500"/> Disponible
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setPendingStatus('Mantenimiento')}>
+                                        <Wrench className="mr-2 h-4 w-4 text-orange-500"/> Mantenimiento
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setPendingStatus('No Disponible')}>
+                                        <BedDouble className="mr-2 h-4 w-4 text-gray-500"/> No Disponible
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
           </DialogHeader>
@@ -247,39 +281,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
                     <>
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
-                            <div className="flex items-center">
-                                <Button variant="ghost" size="icon" onClick={handleOpenEditModal}>
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Editar datos del cliente</span>
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                            <span className="sr-only">Eliminar reservación</span>
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Eliminar Reservación?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta acción no se puede deshacer. Se eliminará permanentemente la reservación y la habitación quedará disponible.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                className="bg-destructive hover:bg-destructive/90"
-                                                onClick={() => handleDeleteReservation(room.reservation!.id)}>
-                                                Eliminar
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
+                        <h3 className="font-semibold text-lg flex items-center"><User className="mr-2 h-5 w-5" />Huésped</h3>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
                                 <AvatarFallback className="text-2xl">{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
