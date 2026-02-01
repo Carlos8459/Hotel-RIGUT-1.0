@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, doc, updateDoc, deleteField } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote, MoreVertical, CheckCircle, BedDouble } from "lucide-react";
+import { Calendar as CalendarIcon, DollarSign, Phone, Car, Bike, Truck, LogOut, History, User, Pencil, Wrench, Trash2, ShoppingCart, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package, StickyNote } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,28 +34,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RoomHistoryModal } from "./room-history-modal";
 import { ExtraConsumptionModal } from "./extra-consumption-modal";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import type { ProcessedRoom } from "@/app/dashboard/page";
 import type { Room, Reservation, ExtraConsumption } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "../ui/textarea";
 
 const formatPhoneNumberForDisplay = (phone: string | undefined) => {
     if (!phone) return '';
@@ -70,16 +53,6 @@ type RoomDetailModalProps = {
     room: ProcessedRoom;
     isOpen: boolean;
     onClose: () => void;
-}
-
-type EditableGuestData = {
-    name: string;
-    cedula: string;
-    phone: string;
-    roomId: string;
-    vehicle?: 'car' | 'bike' | 'truck';
-    checkOutDate: Date | undefined;
-    notes: string;
 }
 
 const consumptionIcons: { [key: string]: React.ReactNode } = {
@@ -99,21 +72,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<Room['status'] | null>(null);
-  const [editedGuest, setEditedGuest] = useState<EditableGuestData>({
-    name: "",
-    cedula: "",
-    phone: "",
-    roomId: "",
-    vehicle: undefined,
-    checkOutDate: undefined,
-    notes: "",
-  });
-
-  const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
-  const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   
   if (!room) return null;
 
@@ -150,61 +109,6 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
       await updateDocumentNonBlocking(resDocRef, dataToUpdate);
       onClose();
   };
-  
-  const handleOpenEditModal = () => {
-    if (!room.reservation) return;
-    setEditedGuest({
-      name: room.reservation.guestName,
-      phone: room.reservation.phone || '',
-      cedula: room.reservation.cedula || '',
-      roomId: room.reservation.roomId,
-      vehicle: room.reservation.vehicle,
-      checkOutDate: parseISO(room.reservation.checkOutDate),
-      notes: room.reservation.notes || '',
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveChanges = async () => {
-    if (!firestore || !room.reservation?.id) return;
-    
-    const resDocRef = doc(firestore, 'reservations', room.reservation.id);
-    
-    const updatedData: { [key: string]: any } = {
-        guestName: editedGuest.name,
-        cedula: editedGuest.cedula,
-        phone: editedGuest.phone,
-        roomId: editedGuest.roomId,
-        checkOutDate: editedGuest.checkOutDate?.toISOString(),
-        notes: editedGuest.notes,
-        vehicle: editedGuest.vehicle ? editedGuest.vehicle : deleteField(),
-    };
-
-    Object.keys(updatedData).forEach(key => {
-        if (updatedData[key] === undefined) {
-            delete updatedData[key];
-        }
-    });
-
-    await updateDocumentNonBlocking(resDocRef, updatedData);
-    toast({ title: "Cambios guardados", description: "La información de la estadía ha sido actualizada." });
-    setIsEditModalOpen(false);
-    onClose();
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (!firestore || !pendingStatus || !room) return;
-
-    const roomDocRef = doc(firestore, 'rooms', room.id);
-    await updateDocumentNonBlocking(roomDocRef, { status: pendingStatus });
-    toast({
-        title: 'Estado Actualizado',
-        description: `La habitación "${room.title}" ahora está en estado: ${pendingStatus}.`,
-    });
-    setPendingStatus(null);
-    onClose(); // Close the main modal
-  };
-
 
   return (
     <>
@@ -212,67 +116,11 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         <DialogContent className="bg-card text-foreground sm:max-w-md border-border flex flex-col max-h-[90vh] rounded-3xl p-0">
           <DialogHeader className="p-6 pb-4">
             <div className="flex items-start justify-between">
-                <div>
-                    <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
-                    <p className="text-base text-muted-foreground">{room.type}</p>
-                </div>
-                 <div className="flex items-center gap-1 mr-6">
-                    <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) && room.reservation && (
-                                <>
-                                    <DropdownMenuItem onSelect={handleOpenEditModal}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        <span>Editar Estadía</span>
-                                    </DropdownMenuItem>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                <span>Eliminar Reservación</span>
-                                            </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>¿Eliminar Reservación?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Esta acción no se puede deshacer. Se eliminará permanentemente la reservación y la habitación quedará disponible.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    className="bg-destructive hover:bg-destructive/90"
-                                                    onClick={() => handleDeleteReservation(room.reservation!.id)}>
-                                                    Eliminar
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </>
-                            )}
-                             {room.statusText !== 'Ocupada' && room.statusText !== 'Check-out Pendiente' && room.statusText !== 'Checkout Vencido' && (
-                                <>
-                                    <DropdownMenuItem onSelect={() => setPendingStatus('Disponible')}>
-                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500"/> Disponible
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setPendingStatus('Mantenimiento')}>
-                                        <Wrench className="mr-2 h-4 w-4 text-orange-500"/> Mantenimiento
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setPendingStatus('No Disponible')}>
-                                        <BedDouble className="mr-2 h-4 w-4 text-gray-500"/> No Disponible
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold">{room.title}</DialogTitle>
+                <p className="text-base text-muted-foreground">{room.type}</p>
+              </div>
+              <Badge className={`${room.statusColor} text-sm`}>{room.statusText}</Badge>
             </div>
           </DialogHeader>
 
@@ -360,7 +208,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                 )}
             
                 {(room.statusText === 'Disponible' || room.statusText === 'Mantenimiento' || room.statusText === 'No Disponible') && (
-                    <div className="text-center flex-grow flex flex-col justify-center items-center py-4">
+                    <div className="text-center flex-grow flex flex-col justify-center items-center py-8">
                         {room.statusText === 'Disponible' && <p className="text-muted-foreground text-lg">Limpia y lista</p>}
                         {room.statusText === 'Mantenimiento' && <p className="text-muted-foreground text-lg flex items-center"><Wrench className="mr-2 h-5 w-5"/>En Mantenimiento</p>}
                         {room.statusText === 'No Disponible' && <p className="text-muted-foreground text-lg flex items-center"><BedDouble className="mr-2 h-5 w-5"/>No Disponible</p>}
@@ -383,7 +231,7 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
                               Realizar Check-out
                           </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="max-w-xs rounded-3xl">
+                      <AlertDialogContent>
                           <AlertDialogHeader>
                           <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
                           <AlertDialogDescription>
@@ -407,149 +255,6 @@ export function RoomDetailModal({ room, isOpen, onClose }: RoomDetailModalProps)
         reservation={room.reservation}
         roomPrice={room.price}
       />
-
-       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Editar Datos de Estadía</DialogTitle>
-                <DialogDescription>
-                    Realiza cambios en la información del huésped y su estadía.
-                </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] -mx-6 px-6">
-                <div className="space-y-4 py-4 px-1">
-                    <div className="space-y-2">
-                        <Label htmlFor="guest-name">Nombre del Huésped</Label>
-                        <Input 
-                            id="guest-name" 
-                            value={editedGuest.name}
-                            onChange={(e) => setEditedGuest(prev => ({...prev, name: e.target.value}))}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="guest-cedula">Cédula</Label>
-                        <Input 
-                            id="guest-cedula" 
-                            placeholder="001-000000-0000X"
-                            value={editedGuest.cedula}
-                            onChange={(e) => setEditedGuest(prev => ({...prev, cedula: e.target.value}))}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="guest-phone">Teléfono</Label>
-                        <Input
-                            id="guest-phone"
-                            placeholder="8888-8888"
-                            value={editedGuest.phone}
-                            onChange={(e) => {
-                                const input = e.target.value;
-                                const digitsOnly = input.replace(/[^0-9]/g, '');
-                                if (digitsOnly.length <= 8) {
-                                    let formatted = digitsOnly;
-                                    if (digitsOnly.length > 4) {
-                                        formatted = `${digitsOnly.substring(0, 4)}-${digitsOnly.substring(4)}`;
-                                    }
-                                    setEditedGuest(prev => ({...prev, phone: formatted}));
-                                }
-                            }}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="room-select">Cambiar Habitación</Label>
-                        <Select
-                            value={editedGuest.roomId}
-                            onValueChange={(value) => setEditedGuest(prev => ({...prev, roomId: value}))}
-                        >
-                            <SelectTrigger id="room-select">
-                                <SelectValue placeholder="Seleccionar habitación" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={String(room.id)}>{room.title} (Actual)</SelectItem>
-                                {roomsData
-                                    ?.filter(r => r.status === 'Disponible')
-                                    .map(r => (
-                                        <SelectItem key={r.id} value={String(r.id)}>{r.title} - {r.type}</SelectItem>
-                                    ))
-                                }
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="vehicle-select">Tipo de Vehículo</Label>
-                        <Select
-                            value={editedGuest.vehicle || ''}
-                            onValueChange={(value) => setEditedGuest(prev => ({...prev, vehicle: value === 'none' ? undefined : value as 'car' | 'bike' | 'truck'}))}
-                        >
-                            <SelectTrigger id="vehicle-select">
-                                <SelectValue placeholder="Seleccionar vehículo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Ninguno</SelectItem>
-                                <SelectItem value="car">Carro</SelectItem>
-                                <SelectItem value="bike">Moto</SelectItem>
-                                <SelectItem value="truck">Camión</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Extender Estadía (Fecha de Check-out)</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={'outline'}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !editedGuest.checkOutDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {editedGuest.checkOutDate ? format(editedGuest.checkOutDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={editedGuest.checkOutDate}
-                                    onSelect={(date) => setEditedGuest(prev => ({...prev, checkOutDate: date as Date | undefined}))}
-                                    initialFocus
-                                    locale={es}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="guest-notes">Notas Adicionales</Label>
-                        <Textarea
-                            id="guest-notes"
-                            placeholder="Anotaciones sobre el huésped..."
-                            value={editedGuest.notes}
-                            onChange={(e) => setEditedGuest(prev => ({...prev, notes: e.target.value}))}
-                            className="min-h-[100px]"
-                        />
-                    </div>
-                </div>
-            </ScrollArea>
-            <DialogFooter className="mt-4">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
-                <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={!!pendingStatus} onOpenChange={(isOpen) => !isOpen && setPendingStatus(null)}>
-        <AlertDialogContent className="rounded-3xl">
-            <AlertDialogHeader>
-                <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esto cambiará el estado de la <strong>{room.title}</strong> a <strong>"{pendingStatus}"</strong>.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmStatusChange}>Confirmar</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
     </>
   );
 }
