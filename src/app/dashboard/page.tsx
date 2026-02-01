@@ -107,6 +107,7 @@ export default function RoomsDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -391,29 +392,41 @@ export default function RoomsDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Buscar"
-                    className="bg-card border-border pl-10 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        <div className="flex items-center justify-end">
+          <div className="relative flex items-center">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+            <Input
+              type="search"
+              placeholder="Buscar"
+              className={cn(
+                'relative h-10 pl-10 pr-4 transition-all duration-300 ease-in-out bg-card border-border rounded-md',
+                isSearchFocused ? 'w-64' : 'w-40 sm:w-64 sm:pr-24'
+              )}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+            <div
+              className={cn(
+                'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-300',
+                isSearchFocused && 'opacity-0 pointer-events-none'
+              )}
+            >
+              <Link href="/whatsapp" tabIndex={isSearchFocused ? -1 : 0}>
+                <Button variant="ghost" size="icon">
+                  <WhatsAppIcon className="h-6 w-6" />
+                  <span className="sr-only">WhatsApp Automation</span>
+                </Button>
+              </Link>
+              <Link href="/notifications" tabIndex={isSearchFocused ? -1 : 0}>
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-6 w-6" />
+                  <span className="sr-only">Notificaciones</span>
+                </Button>
+              </Link>
             </div>
-            <Link href="/whatsapp">
-                <Button variant="ghost" size="icon">
-                    <WhatsAppIcon className="h-6 w-6" />
-                    <span className="sr-only">WhatsApp Automation</span>
-                </Button>
-            </Link>
-            <Link href="/notifications">
-                <Button variant="ghost" size="icon">
-                    <Bell className="h-6 w-6" />
-                    <span className="sr-only">Notificaciones</span>
-                </Button>
-            </Link>
+          </div>
         </div>
       </header>
 
