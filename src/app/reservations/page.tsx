@@ -99,7 +99,7 @@ function ReservationList({ reservations, rooms, isLoading }: { reservations: Res
                 .sort(([dateA], [dateB]) => parseISO(dateA).getTime() - parseISO(dateB).getTime())
                 .map(([dateStr, dailyReservations]) => (
                 <div key={dateStr}>
-                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-40 bg-background py-2 z-10">
+                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-24 bg-background py-2 z-10">
                         {format(parseISO(dateStr), "EEEE, d 'de' MMMM", { locale: es })}
                     </h2>
                     <div className="space-y-3">
@@ -181,7 +181,7 @@ export default function ReservationsPage() {
     <Tabs defaultValue="upcoming">
       <div className="dark min-h-screen bg-background text-foreground pb-24">
         <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 pt-4 pb-2 border-b">
-          <div className="flex items-center justify-between pt-12">
+          <div className="flex items-center justify-between pt-8">
               <h1 className="text-2xl font-bold">Reservas</h1>
               <div className="flex items-center gap-2">
                 <Button asChild variant="outline" size="icon">
