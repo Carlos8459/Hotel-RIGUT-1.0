@@ -63,8 +63,10 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      // Admins and Socios can read and write settings.
-      allow read, write: if isAdmin() || hasRole('Socio');
+      // Any signed-in user can read settings.
+      allow read: if isSignedIn();
+      // Admins and Socios can write settings.
+      allow write: if isAdmin() || hasRole('Socio');
     }
 
      match /consumption_items/{itemId} {
