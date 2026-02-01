@@ -99,7 +99,7 @@ function ReservationList({ reservations, rooms, isLoading }: { reservations: Res
                 .sort(([dateA], [dateB]) => parseISO(dateA).getTime() - parseISO(dateB).getTime())
                 .map(([dateStr, dailyReservations]) => (
                 <div key={dateStr}>
-                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-16 bg-background py-2 z-10">
+                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-24 bg-background py-2 z-10">
                         {format(parseISO(dateStr), "EEEE, d 'de' MMMM", { locale: es })}
                     </h2>
                     <div className="space-y-3">
@@ -178,9 +178,9 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground p-4 pt-16 sm:p-6 lg:p-8 pb-24">
-      <header className="sticky top-16 z-20 bg-background/80 backdrop-blur-sm -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 mb-4 px-4 sm:px-6 lg:px-8 py-4 border-b">
-        <div className="flex items-center justify-between">
+    <div className="dark min-h-screen bg-background text-foreground pb-24">
+      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4 border-b">
+        <div className="flex items-center justify-between pt-12">
             <h1 className="text-2xl font-bold">Reservas</h1>
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" size="icon">
@@ -202,7 +202,7 @@ export default function ReservationsPage() {
         </div>
       </header>
 
-      <main>
+      <main className="p-4 sm:p-6 lg:p-8">
         {reservationsError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -278,5 +278,3 @@ export default function ReservationsPage() {
     </div>
   );
 }
-
-    
