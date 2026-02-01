@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, updateDoc, addDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc, query, orderBy, deleteField } from 'firebase/firestore';
 import {
   parseISO,
   format,
@@ -41,6 +41,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Calendar as CalendarIcon,
   User,
   DollarSign,
@@ -73,6 +79,7 @@ import {
   BedDouble,
   CheckCircle,
   History,
+  MoreVertical,
 } from 'lucide-react';
 import { RoomDetailModal } from '@/components/dashboard/room-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -227,8 +234,8 @@ export default function RoomsDashboard() {
     const startOfSelected = startOfDay(selectedDate);
 
     return roomsData.map((room) => {
-      let statusText = 'Disponible';
-      let statusColor = 'bg-green-500/20 text-green-400 border-green-500/50';
+      let statusText: ProcessedRoom['statusText'] = 'Disponible';
+      let statusColor: ProcessedRoom['statusColor'] = 'bg-green-500/20 text-green-400 border-green-500/50';
       let reservation: Reservation | undefined = undefined;
 
       if (room.status === 'Mantenimiento') {
@@ -388,19 +395,20 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b bg-background/50 px-4 pt-8 backdrop-blur-sm sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-bold">Bienvenido, {userProfile?.username}!</h1>
+      <header className="sticky top-0 z-30 flex h-24 items-center justify-between gap-4 border-b bg-background/50 px-4 pt-8 backdrop-blur-sm sm:px-6 lg:px-8">
+        <div className={cn("transition-all duration-300 ease-in-out", isSearchFocused ? 'w-0 opacity-0 invisible' : 'w-auto opacity-100 visible')}>
+          <h1 className="text-2xl font-bold whitespace-nowrap">Bienvenido, {userProfile?.username}!</h1>
         </div>
-        <div className="flex items-center justify-end">
-          <div className="relative flex items-center">
+        
+        <div className={cn("flex items-center justify-end transition-all duration-300 ease-in-out", isSearchFocused ? 'w-full' : 'w-auto')}>
+          <div className="relative flex items-center w-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
             <Input
               type="search"
-              placeholder="Buscar"
+              placeholder="Buscar habitación, huésped..."
               className={cn(
-                'relative h-10 pl-10 pr-4 transition-all duration-300 ease-in-out bg-card border-border rounded-md',
-                isSearchFocused ? 'w-64' : 'w-40 sm:w-64 sm:pr-24'
+                'h-10 pl-10 transition-all duration-300 ease-in-out bg-card border-border rounded-md',
+                isSearchFocused ? 'w-full pr-4' : 'w-40 sm:w-64 pr-24'
               )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -431,7 +439,7 @@ export default function RoomsDashboard() {
       </header>
 
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-6 gap-2 text-center text-xs text-muted-foreground">
+        <div className="grid grid-cols-6 gap-2 text-center text-xs">
             <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card" title="Habitaciones Ocupadas">
                 <BedDouble className="h-5 w-5 text-red-400" />
                 <span className="font-bold text-base text-foreground">{occupiedToday}</span>
@@ -681,7 +689,10 @@ export default function RoomsDashboard() {
             </Button>
           </Link>
           <Link href="/stats">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+            >
               <BarChart2 className="h-5 w-5 mb-1" />
               <span className="text-xs font-medium">Estadísticas</span>
             </Button>
