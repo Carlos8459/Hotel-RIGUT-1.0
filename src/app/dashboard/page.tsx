@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -394,39 +392,30 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-10 flex flex-col gap-4 border-b bg-background/50 px-4 pt-8 backdrop-blur-sm sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">
-              Bienvenido, {userProfile?.username || 'Usuario'}
-            </h1>
-            <p className="text-sm text-muted-foreground">Resumen del hotel para hoy.</p>
-          </div>
-          <div className="flex items-center gap-1">
-            <Link href="/whatsapp">
-              <Button variant="ghost" size="icon">
-                <WhatsAppIcon className="h-6 w-6" />
-                <span className="sr-only">WhatsApp Automation</span>
-              </Button>
-            </Link>
-            <Link href="/notifications">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-6 w-6" />
-                <span className="sr-only">Notificaciones</span>
-              </Button>
-            </Link>
-          </div>
+      <header className="sticky top-0 z-10 flex items-center gap-4 border-b bg-background/50 px-4 pt-6 pb-4 backdrop-blur-sm sm:px-6 lg:px-8">
+        <div className="relative w-full flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder="Buscar habitación, huésped..."
+                className="h-10 pl-10 w-full bg-card border-border rounded-md"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
         </div>
-
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar habitación, huésped..."
-            className="h-10 pl-10 w-full bg-card border-border rounded-md"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-1">
+          <Link href="/whatsapp">
+            <Button variant="ghost" size="icon">
+              <WhatsAppIcon className="h-6 w-6" />
+              <span className="sr-only">WhatsApp Automation</span>
+            </Button>
+          </Link>
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon">
+              <Bell className="h-6 w-6" />
+              <span className="sr-only">Notificaciones</span>
+            </Button>
+          </Link>
         </div>
       </header>
 
@@ -703,4 +692,3 @@ export default function RoomsDashboard() {
     </div>
   );
 }
-
