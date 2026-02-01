@@ -577,49 +577,64 @@ export default function RoomsDashboard() {
                       {userProfile && userProfile.role !== 'Colaborador' && (
                         <>
                             {room.reservation && ['Ocupada', 'Check-out Pendiente', 'Checkout Vencido'].includes(room.statusText) ? (
-                                room.reservation.payment?.status === 'Pendiente' ? (
+                                <div className="w-full space-y-2">
+                                    {room.reservation.payment?.status === 'Pendiente' && (
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="secondary" className="w-full font-semibold">
+                                                <DollarSign className="mr-2 h-4 w-4" />
+                                                Registrar Pago
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    )}
                                     <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="secondary" className="w-full font-semibold">
-                                        <DollarSign className="mr-2 h-4 w-4" />
-                                        Registrar Pago
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="max-w-xs rounded-3xl">
-                                        <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
-                                        </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
+                                        <AlertDialogTrigger asChild>
+                                            <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
+                                                <LogOut className="mr-2 h-4 w-4" />
+                                                Checkout
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        {room.reservation.payment?.status === 'Pendiente' ? (
+                                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Pago Pendiente</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Primero se debe cancelar la cuenta de la habitación para poder proceder con el check-out.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogAction>Entendido</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        ) : (
+                                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación para limpieza.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        )}
                                     </AlertDialog>
-                                ) : (
-                                    <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button className="w-full bg-secondary hover:bg-accent text-secondary-foreground">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Checkout
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="max-w-xs rounded-3xl">
-                                        <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Confirmar Check-out?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esto finalizará la estadía de {room.reservation.guestName} y marcará la habitación para limpieza.
-                                        </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                    </AlertDialog>
-                                )
+                                </div>
                             ) : room.statusText === 'Disponible' ? (
                                 <Button asChild className="w-full bg-secondary hover:bg-accent text-secondary-foreground"><Link href="/new-reservation"><PlusCircle className="mr-2 h-4 w-4" />Crear Reserva</Link></Button>
                             ) : null }

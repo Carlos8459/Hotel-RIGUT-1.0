@@ -366,6 +366,28 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Consumos Extras
                     </Button>
+                     {room.reservation.payment?.status === 'Pendiente' && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="secondary" className="w-full">
+                                    <DollarSign className="mr-2 h-4 w-4" />
+                                    Registrar Pago
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>¿Confirmar pago?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta acción marcará la cuenta de {room.reservation.guestName} como pagada.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'confirm_payment')}>Confirmar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" className="w-full">
@@ -373,18 +395,32 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                                 Realizar Check-out
                             </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="max-w-xs rounded-3xl">
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                La habitación pasará a estado de "Limpieza Pendiente".
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
+                        {room.reservation.payment?.status === 'Pendiente' ? (
+                             <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Pago Pendiente</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Primero se debe cancelar la cuenta para proceder con el check-out.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogAction>Entendido</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        ) : (
+                            <AlertDialogContent className="max-w-xs rounded-3xl">
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro de hacer check-out?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    La habitación pasará a estado de "Limpieza Pendiente".
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleAction(room.reservation!.id, 'checkout')}>Confirmar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        )}
                     </AlertDialog>
                 </div>
             ) : !isRoomOccupied && canChangeStatus ? (
