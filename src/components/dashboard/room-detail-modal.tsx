@@ -154,56 +154,52 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       onClose();
   };
   
-  const handleStatusChange = async (newStatus: Room['status']) => {
-    if (!firestore || !canChangeStatus) return;
-
-    const roomDocRef = doc(firestore, 'rooms', room.id);
-
-    try {
-        await updateDoc(roomDocRef, { status: newStatus });
-
-        toast({
-            title: 'Estado Actualizado',
-            description: `La habitación ${room.title} ahora está: ${newStatus}.`,
-        });
-
-        if (notificationConfig?.isEnabled && user && userProfile?.username) {
-            const notificationsColRef = collection(firestore, 'notifications');
-            addDocumentNonBlocking(notificationsColRef, {
-                message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
-                createdAt: new Date().toISOString(),
-                createdBy: user.uid,
-                creatorName: userProfile.username,
-                isRead: false,
-                roomId: room.id,
-                type: 'info' as const,
-            });
-        }
-        
-        onClose();
-        
-    } catch (error) {
-        console.error("Error al cambiar el estado de la habitación:", error);
-        toast({
-            title: 'Error de Permisos',
-            description: 'No tienes permiso para realizar esta acción.',
-            variant: 'destructive',
-        });
-        onClose();
-    }
-  };
-
     const handleStatusSelect = (newStatus: Room['status']) => {
       setStatusToChange(newStatus);
       setIsConfirmStatusDialogOpen(true);
     };
 
-    const handleConfirmStatusChange = () => {
-        if (statusToChange) {
-            handleStatusChange(statusToChange);
+    const handleConfirmStatusChange = async () => {
+        if (!statusToChange || !firestore || !canChangeStatus) {
+            setIsConfirmStatusDialogOpen(false);
+            setStatusToChange(null);
+            return;
         }
+
         setIsConfirmStatusDialogOpen(false);
-        setStatusToChange(null);
+        const newStatus = statusToChange;
+        const roomDocRef = doc(firestore, 'rooms', room.id);
+
+        try {
+            await updateDoc(roomDocRef, { status: newStatus });
+            toast({
+                title: 'Estado Actualizado',
+                description: `La habitación ${room.title} ahora está: ${newStatus}.`,
+            });
+
+            if (notificationConfig?.isEnabled && user && userProfile?.username) {
+                const notificationsColRef = collection(firestore, 'notifications');
+                addDocumentNonBlocking(notificationsColRef, {
+                    message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
+                    createdAt: new Date().toISOString(),
+                    createdBy: user.uid,
+                    creatorName: userProfile.username,
+                    isRead: false,
+                    roomId: room.id,
+                    type: 'info' as const,
+                });
+            }
+            onClose();
+        } catch (error) {
+            console.error("Error al cambiar el estado de la habitación:", error);
+            toast({
+                title: 'Error de Permisos',
+                description: 'No tienes permiso para realizar esta acción.',
+                variant: 'destructive',
+            });
+        } finally {
+            setStatusToChange(null);
+        }
     };
   
     const priceForReservation = room.reservation ? (typePriceMap.get(room.reservation.type) || room.price) : room.price;
