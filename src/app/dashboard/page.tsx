@@ -114,7 +114,6 @@ export default function RoomsDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Fetch data from Firestore
   const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
@@ -396,45 +395,30 @@ export default function RoomsDashboard() {
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
       <header className="sticky top-0 z-30 flex h-24 items-center justify-between gap-4 border-b bg-background/50 px-4 pt-8 backdrop-blur-sm sm:px-6 lg:px-8">
-        <div className={cn("transition-all duration-300 ease-in-out", isSearchFocused ? 'w-0 opacity-0 invisible' : 'w-auto opacity-100 visible')}>
-          <h1 className="text-2xl font-bold whitespace-nowrap">Bienvenido, {userProfile?.username}!</h1>
+        <div className="relative flex-grow">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+          <Input
+            type="search"
+            placeholder="Buscar habitación, huésped..."
+            className="h-10 pl-10 w-full bg-card border-border rounded-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         
-        <div className={cn("flex items-center justify-end transition-all duration-300 ease-in-out", isSearchFocused ? 'w-full' : 'w-auto')}>
-          <div className="relative flex items-center w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-            <Input
-              type="search"
-              placeholder="Buscar habitación, huésped..."
-              className={cn(
-                'h-10 pl-10 transition-all duration-300 ease-in-out bg-card border-border rounded-md',
-                isSearchFocused ? 'w-full pr-4' : 'w-40 sm:w-64 pr-24'
-              )}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-            />
-            <div
-              className={cn(
-                'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-300 z-10',
-                isSearchFocused && 'opacity-0 pointer-events-none'
-              )}
-            >
-              <Link href="/whatsapp" tabIndex={isSearchFocused ? -1 : 0}>
-                <Button variant="ghost" size="icon">
-                  <WhatsAppIcon className="h-6 w-6" />
-                  <span className="sr-only">WhatsApp Automation</span>
-                </Button>
-              </Link>
-              <Link href="/notifications" tabIndex={isSearchFocused ? -1 : 0}>
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-6 w-6" />
-                  <span className="sr-only">Notificaciones</span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+        <div className="flex items-center gap-1">
+          <Link href="/whatsapp">
+            <Button variant="ghost" size="icon">
+              <WhatsAppIcon className="h-6 w-6" />
+              <span className="sr-only">WhatsApp Automation</span>
+            </Button>
+          </Link>
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon">
+              <Bell className="h-6 w-6" />
+              <span className="sr-only">Notificaciones</span>
+            </Button>
+          </Link>
         </div>
       </header>
 
