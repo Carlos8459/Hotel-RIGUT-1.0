@@ -287,14 +287,17 @@ export default function RoomsDashboard() {
 
       if (!alreadyNotifiedToday) {
         const notificationsColRef = collection(firestore, 'notifications');
-        addDocumentNonBlocking(notificationsColRef, {
+        const notificationData = {
             message: message,
-            type: 'warning',
+            type: 'warning' as const,
             createdAt: new Date().toISOString(),
             createdBy: 'system', // Special UID for system
             creatorName: 'Sistema', // System notification
             isRead: false,
-        });
+            reservationId: reservation.id,
+            roomId: room.id,
+        };
+        addDocumentNonBlocking(notificationsColRef, notificationData);
       }
     });
   }, [processedRooms, notificationsData, firestore, user, userProfile]);
@@ -344,6 +347,8 @@ export default function RoomsDashboard() {
                           createdBy: user.uid,
                           creatorName: userProfile.username,
                           isRead: false,
+                          reservationId: reservation.id,
+                          roomId: room.id,
                       });
                   }
               }

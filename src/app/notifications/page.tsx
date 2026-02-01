@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Notification } from '@/lib/types';
+import type { Notification, Reservation, Room } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,11 +14,72 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ArrowLeft, Bell, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Home, User as UserIcon } from 'lucide-react';
+
+function NotificationDetailModal({ notification, isOpen, onClose }: { notification: Notification, isOpen: boolean, onClose: () => void }) {
+    const firestore = useFirestore();
+
+    const reservationRef = useMemoFirebase(
+        () => (firestore && notification.reservationId) ? doc(firestore, 'reservations', notification.reservationId) : null,
+        [firestore, notification.reservationId]
+    );
+    const { data: reservation, isLoading: reservationLoading } = useDoc<Reservation>(reservationRef);
+
+    const roomRef = useMemoFirebase(
+        () => (firestore && notification.roomId) ? doc(firestore, 'rooms', notification.roomId) : null,
+        [firestore, notification.roomId]
+    );
+    const { data: room, isLoading: roomLoading } = useDoc<Room>(roomRef);
+
+    const isLoading = reservationLoading || roomLoading;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-md bg-card border-border rounded-3xl">
+                <DialogHeader>
+                    <DialogTitle>Detalle de la Notificación</DialogTitle>
+                    <DialogDescription className="pt-2">{notification.creatorName} {notification.message}</DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                        </div>
+                    ) : (
+                        <>
+                            {reservation && (
+                                <div className="p-3 border rounded-lg bg-background/50 space-y-2">
+                                    <h4 className="font-semibold flex items-center gap-2"><UserIcon className="h-4 w-4"/> Cliente</h4>
+                                    <p className="pl-6">{reservation.guestName}</p>
+                                    {reservation.cedula && <p className="text-sm text-muted-foreground pl-6">{reservation.cedula}</p>}
+                                </div>
+                            )}
+                            {room && (
+                                <div className="p-3 border rounded-lg bg-background/50 space-y-2">
+                                    <h4 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4"/> Habitación</h4>
+                                    <p className="pl-6">{room.title}</p>
+                                    <p className="text-sm text-muted-foreground pl-6">{room.type}</p>
+                                </div>
+                            )}
+                            {!reservation && !room && (
+                                <p className="text-muted-foreground text-sm text-center py-4">No hay detalles adicionales para esta notificación.</p>
+                            )}
+                        </>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 export default function NotificationsPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const firestore = useFirestore();
+    const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
     const notificationsQuery = useMemoFirebase(
         () => (firestore ? query(collection(firestore, 'notifications'), orderBy('createdAt', 'desc')) : null),
@@ -80,7 +140,7 @@ export default function NotificationsPage() {
                     )}
                     {!notificationsLoading && notifications && notifications.length > 0 ? (
                         notifications.map(notif => (
-                            <Card key={notif.id} className={cn(getCardClass(notif.type))}>
+                            <Card key={notif.id} className={cn("cursor-pointer transition-colors hover:border-primary", getCardClass(notif.type))} onClick={() => setSelectedNotification(notif as Notification)}>
                                 <CardContent className="p-4 flex items-start gap-4">
                                     <Avatar className="mt-1">
                                          {notif.creatorName === 'Sistema' ? (
@@ -119,8 +179,13 @@ export default function NotificationsPage() {
                     )}
                 </div>
             </main>
+            {selectedNotification && (
+                <NotificationDetailModal
+                    notification={selectedNotification}
+                    isOpen={!!selectedNotification}
+                    onClose={() => setSelectedNotification(null)}
+                />
+            )}
         </div>
     );
 }
-
-    

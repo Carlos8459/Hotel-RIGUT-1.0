@@ -253,6 +253,14 @@
             "warning",
             "alert"
           ]
+        },
+        "reservationId": {
+          "type": "string",
+          "description": "ID of the related reservation, if applicable."
+        },
+        "roomId": {
+          "type": "string",
+          "description": "ID of the related room, if applicable."
         }
       },
       "required": [

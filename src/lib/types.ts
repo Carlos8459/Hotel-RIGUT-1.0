@@ -61,6 +61,8 @@ export type Notification = {
   creatorName: string;
   isRead: boolean;
   type?: 'info' | 'warning' | 'alert';
+  reservationId?: string;
+  roomId?: string;
 };
 
 export type WhatsappConfig = {

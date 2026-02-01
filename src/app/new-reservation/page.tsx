@@ -262,13 +262,11 @@ function NewReservationFormComponent() {
     setIsSubmitting(true);
 
     const { roomIds, checkInDate, checkOutDate, type: billingType } = data;
-
     const nights = differenceInCalendarDays(checkOutDate, checkInDate);
     const priceForType = typePriceMap.get(billingType);
 
-    const promises = roomIds.map(roomId => {
+    const reservationPromises = roomIds.map(async (roomId) => {
         const room = roomsData.find(r => r.id === roomId);
-        
         const priceToUse = priceForType ?? room?.price ?? 0;
         const totalAmount = priceToUse * (nights > 0 ? nights : 1);
         
@@ -291,11 +289,26 @@ function NewReservationFormComponent() {
           createdAt: new Date().toISOString(),
           createdBy: user.uid,
         };
-        return addDocumentNonBlocking(reservationsCollection, reservationData);
+
+        const reservationRef = await addDocumentNonBlocking(reservationsCollection, reservationData);
+        
+        if (notificationConfig?.isEnabled && notificationConfig.onNewReservation) {
+            const notificationsColRef = collection(firestore, 'notifications');
+            const notificationData = {
+                message: `registró un nuevo check-in para ${data.guestName} en la habitación: ${room?.title}.`,
+                createdAt: new Date().toISOString(),
+                createdBy: user.uid,
+                creatorName: userProfile.username,
+                isRead: false,
+                reservationId: reservationRef.id,
+                roomId: roomId,
+            };
+            addDocumentNonBlocking(notificationsColRef, notificationData);
+        }
     });
 
     try {
-        await Promise.all(promises);
+        await Promise.all(reservationPromises);
 
         const roomTitles = roomIds.map(id => roomsData.find(r => r.id === id)?.title || `Habitación ${id}`).join(', ');
 
@@ -303,19 +316,6 @@ function NewReservationFormComponent() {
             title: 'Check-in Realizado',
             description: `${data.guestName} ha sido registrado en: ${roomTitles}.`,
         });
-
-        if (notificationConfig?.isEnabled && notificationConfig.onNewReservation) {
-            const notificationsColRef = collection(firestore, 'notifications');
-            const notificationData = {
-                message: `registró un nuevo check-in para ${data.guestName} en las habitaciones: ${roomTitles}.`,
-                createdAt: new Date().toISOString(),
-                createdBy: user.uid,
-                creatorName: userProfile.username,
-                isRead: false,
-            };
-            addDocumentNonBlocking(notificationsColRef, notificationData);
-        }
-
         router.push('/dashboard');
     } catch (error) {
         console.error("Error creating reservations:", error);
