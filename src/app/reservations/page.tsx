@@ -99,7 +99,7 @@ function ReservationList({ reservations, rooms, isLoading }: { reservations: Res
                 .sort(([dateA], [dateB]) => parseISO(dateA).getTime() - parseISO(dateB).getTime())
                 .map(([dateStr, dailyReservations]) => (
                 <div key={dateStr}>
-                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-24 bg-background py-2 z-10">
+                    <h2 className="text-base font-semibold text-muted-foreground mb-3 sticky top-40 bg-background py-2 z-10">
                         {format(parseISO(dateStr), "EEEE, d 'de' MMMM", { locale: es })}
                     </h2>
                     <div className="space-y-3">
@@ -178,103 +178,105 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4 border-b">
-        <div className="flex items-center justify-between pt-12">
-            <h1 className="text-2xl font-bold">Reservas</h1>
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="icon">
-                <Link href="/reservations/scan">
-                  <Camera className="h-5 w-5" />
-                  <span className="sr-only">Escanear Cédula</span>
+    <Tabs defaultValue="upcoming">
+      <div className="dark min-h-screen bg-background text-foreground pb-24">
+        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 pt-4 pb-2 border-b">
+          <div className="flex items-center justify-between pt-12">
+              <h1 className="text-2xl font-bold">Reservas</h1>
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="icon">
+                  <Link href="/reservations/scan">
+                    <Camera className="h-5 w-5" />
+                    <span className="sr-only">Escanear Cédula</span>
+                  </Link>
+                </Button>
+                <Button
+                asChild
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                <Link href="/new-reservation">
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Nueva
                 </Link>
-              </Button>
+                </Button>
+              </div>
+          </div>
+          <TabsList className="grid w-full grid-cols-2 mt-4">
+              <TabsTrigger value="upcoming">Próximas</TabsTrigger>
+              <TabsTrigger value="past">Pasadas</TabsTrigger>
+          </TabsList>
+        </header>
+
+        <main className="p-4 sm:p-6 lg:p-8">
+          {reservationsError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error de Permisos</AlertTitle>
+                <AlertDescription>
+                  No tienes permisos para ver las reservas. Contacta a un
+                  administrador.
+                </AlertDescription>
+              </Alert>
+          )}
+          {!reservationsError && (
+              <>
+                  <TabsContent value="upcoming" className="mt-0">
+                      <ReservationList reservations={upcomingReservations as Reservation[]} rooms={roomsData as Room[]} isLoading={reservationsLoading || roomsLoading} />
+                  </TabsContent>
+                  <TabsContent value="past" className="mt-0">
+                      <ReservationList reservations={pastReservations as Reservation[]} rooms={roomsData as Room[]} isLoading={reservationsLoading || roomsLoading} />
+                  </TabsContent>
+              </>
+          )}
+        </main>
+
+        <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">
+          <div className="flex justify-around">
+            <Link href="/dashboard">
               <Button
-              asChild
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                variant="ghost"
+                className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
               >
-              <Link href="/new-reservation">
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Nueva
-              </Link>
+                <LayoutGrid className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Habitaciones</span>
               </Button>
-            </div>
-        </div>
-      </header>
-
-      <main className="p-4 sm:p-6 lg:p-8">
-        {reservationsError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error de Permisos</AlertTitle>
-              <AlertDescription>
-                No tienes permisos para ver las reservas. Contacta a un
-                administrador.
-              </AlertDescription>
-            </Alert>
-        )}
-        {!reservationsError && (
-            <Tabs defaultValue="upcoming" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="upcoming">Próximas</TabsTrigger>
-                    <TabsTrigger value="past">Pasadas</TabsTrigger>
-                </TabsList>
-                <TabsContent value="upcoming" className="mt-6">
-                    <ReservationList reservations={upcomingReservations as Reservation[]} rooms={roomsData as Room[]} isLoading={reservationsLoading || roomsLoading} />
-                </TabsContent>
-                <TabsContent value="past" className="mt-6">
-                    <ReservationList reservations={pastReservations as Reservation[]} rooms={roomsData as Room[]} isLoading={reservationsLoading || roomsLoading} />
-                </TabsContent>
-            </Tabs>
-        )}
-      </main>
-
-      <footer className="fixed bottom-0 left-0 right-0 bg-background/50 border-t border-border p-2 z-10 backdrop-blur-sm md:hidden">
-        <div className="flex justify-around">
-          <Link href="/dashboard">
-            <Button
-              variant="ghost"
-              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
-            >
-              <LayoutGrid className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Habitaciones</span>
-            </Button>
-          </Link>
-          <Link href="/reservations">
-            <Button
-              variant="ghost"
-              className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1"
-            >
-              <CalendarIcon className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Reservas</span>
-            </Button>
-          </Link>
-          <Link href="/tools">
-            <Button
-              variant="ghost"
-              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
-            >
-              <Wrench className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Herramientas</span>
-            </Button>
-          </Link>
-          <Link href="/stats">
-            <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
-              <BarChart2 className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Estadísticas</span>
-            </Button>
-          </Link>
-          <Link href="/settings">
-            <Button
-              variant="ghost"
-              className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
-            >
-              <Settings className="h-5 w-5 mb-1" />
-              <span className="text-xs font-medium">Ajustes</span>
-            </Button>
-          </Link>
-        </div>
-      </footer>
-    </div>
+            </Link>
+            <Link href="/reservations">
+              <Button
+                variant="ghost"
+                className="flex flex-col h-auto items-center text-primary bg-primary/10 rounded-lg px-2 py-1"
+              >
+                <CalendarIcon className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Reservas</span>
+              </Button>
+            </Link>
+            <Link href="/tools">
+              <Button
+                variant="ghost"
+                className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+              >
+                <Wrench className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Herramientas</span>
+              </Button>
+            </Link>
+            <Link href="/stats">
+              <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1">
+                <BarChart2 className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Estadísticas</span>
+              </Button>
+            </Link>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                className="flex flex-col h-auto items-center text-muted-foreground px-2 py-1"
+              >
+                <Settings className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Ajustes</span>
+              </Button>
+            </Link>
+          </div>
+        </footer>
+      </div>
+    </Tabs>
   );
 }
