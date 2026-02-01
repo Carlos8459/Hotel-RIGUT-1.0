@@ -89,6 +89,8 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [statusToChange, setStatusToChange] = useState<Room['status'] | null>(null);
+  const [isConfirmStatusDialogOpen, setIsConfirmStatusDialogOpen] = useState(false);
 
   const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
   const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
@@ -169,6 +171,18 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         }
     };
 
+    const handleStatusSelect = (newStatus: Room['status']) => {
+      setStatusToChange(newStatus);
+      setIsConfirmStatusDialogOpen(true);
+    };
+
+    const handleConfirmStatusChange = () => {
+        if (statusToChange) {
+            handleStatusChange(statusToChange);
+        }
+        setIsConfirmStatusDialogOpen(false);
+        setStatusToChange(null);
+    };
 
   return (
     <>
@@ -359,13 +373,13 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Disponible')}>Disponible</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Limpieza Pendiente')}>Limpieza Pendiente</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleStatusChange('Mantenimiento')}>Mantenimiento</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusSelect('Disponible')}>Disponible</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusSelect('Limpieza Pendiente')}>Limpieza Pendiente</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStatusSelect('Mantenimiento')}>Mantenimiento</DropdownMenuItem>
                         {userProfile?.role !== 'Colaborador' && (
                             <>
                                 <Separator />
-                                <DropdownMenuItem onSelect={() => handleStatusChange('No Disponible')}>No Disponible</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleStatusSelect('No Disponible')}>No Disponible</DropdownMenuItem>
                             </>
                         )}
                     </DropdownMenuContent>
@@ -374,6 +388,21 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
         </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isConfirmStatusDialogOpen} onOpenChange={setIsConfirmStatusDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esto cambiará el estado de la habitación <strong>{room.title}</strong> a <strong>{statusToChange}</strong>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setStatusToChange(null)}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmStatusChange}>Confirmar</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
       
       {room.reservation && (
         <EditReservationModal
