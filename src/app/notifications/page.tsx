@@ -12,8 +12,9 @@ import type { Notification } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, Bell } from 'lucide-react';
+import { ArrowLeft, Bell, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export default function NotificationsPage() {
     const { user, isUserLoading } = useUser();
@@ -31,6 +32,17 @@ export default function NotificationsPage() {
             router.push('/');
         }
     }, [user, isUserLoading, router]);
+
+    const getCardClass = (type?: 'info' | 'warning' | 'alert') => {
+        switch(type) {
+            case 'warning':
+                return 'bg-amber-500/10 border-amber-500/50';
+            case 'alert':
+                return 'bg-destructive/10 border-destructive/50';
+            default:
+                return 'bg-card';
+        }
+    }
 
     if (isUserLoading || !user) {
         return (
@@ -68,13 +80,27 @@ export default function NotificationsPage() {
                     )}
                     {!notificationsLoading && notifications && notifications.length > 0 ? (
                         notifications.map(notif => (
-                            <Card key={notif.id} className="bg-card">
+                            <Card key={notif.id} className={cn(getCardClass(notif.type))}>
                                 <CardContent className="p-4 flex items-start gap-4">
                                     <Avatar className="mt-1">
-                                        <AvatarFallback>{notif.creatorName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                         {notif.creatorName === 'Sistema' ? (
+                                            <AvatarFallback className="bg-transparent text-amber-500"><AlertTriangle className="h-6 w-6"/></AvatarFallback>
+                                        ) : (
+                                            <AvatarFallback>{notif.creatorName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                        )}
                                     </Avatar>
                                     <div>
-                                        <p><span className="font-semibold">{notif.creatorName}</span> {notif.message}</p>
+                                        <p>
+                                            {notif.creatorName === 'Sistema' ? (
+                                                <>
+                                                    <span className="font-semibold text-amber-400">Alerta del Sistema:</span> {notif.message}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="font-semibold">{notif.creatorName}</span> {notif.message}
+                                                </>
+                                            )}
+                                        </p>
                                         <p className="text-sm text-muted-foreground">
                                             {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: es })}
                                         </p>
@@ -98,4 +124,3 @@ export default function NotificationsPage() {
 }
 
     
-

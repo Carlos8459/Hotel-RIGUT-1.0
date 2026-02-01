@@ -244,6 +244,15 @@
         "isRead": {
           "type": "boolean",
           "description": "Whether the notification has been read."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of notification, for styling purposes.",
+          "enum": [
+            "info",
+            "warning",
+            "alert"
+          ]
         }
       },
       "required": [

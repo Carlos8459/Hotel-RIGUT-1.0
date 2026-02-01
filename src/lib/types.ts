@@ -60,6 +60,7 @@ export type Notification = {
   createdBy: string; // UID
   creatorName: string;
   isRead: boolean;
+  type?: 'info' | 'warning' | 'alert';
 };
 
 export type WhatsappConfig = {

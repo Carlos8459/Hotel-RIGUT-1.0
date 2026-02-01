@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc, query, orderBy } from 'firebase/firestore';
 import {
   parseISO,
   format,
@@ -17,7 +17,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import type { Room, Reservation, NotificationConfig } from '@/lib/types';
+import type { Room, Reservation, NotificationConfig, Notification } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -113,11 +113,13 @@ export default function RoomsDashboard() {
   const reservationsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'reservations') : null, [firestore]);
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const notificationConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'notification_config') : null, [firestore]);
+  const notificationsCollection = useMemoFirebase(() => firestore ? query(collection(firestore, 'notifications'), orderBy('createdAt', 'desc')) : null, [firestore]);
 
   const { data: roomsData, isLoading: roomsLoading } = useCollection<Omit<Room, 'id'>>(roomsCollection);
   const { data: reservationsData, isLoading: reservationsLoading } = useCollection<Omit<Reservation, 'id'>>(reservationsCollection);
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<{username: string}>(userDocRef);
   const { data: notificationConfig } = useDoc<Omit<NotificationConfig, 'id'>>(notificationConfigRef);
+  const { data: notificationsData, isLoading: notificationsLoading } = useCollection<Omit<Notification, 'id'>>(notificationsCollection);
 
   const consumptionIcons: { [key: string]: React.ReactNode } = {
     Utensils: <Utensils className="h-4 w-4" />,
@@ -267,8 +269,38 @@ export default function RoomsDashboard() {
     }).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
   }, [roomsData, reservationsData, selectedDate]);
 
+  useEffect(() => {
+    if (!firestore || !user || !userProfile || !processedRooms || !notificationsData) return;
 
-  if (isUserLoading || !user || roomsLoading || reservationsLoading || isUserProfileLoading) {
+    const overdueRooms = processedRooms.filter(r => r.statusText === 'Checkout Vencido' && r.reservation);
+
+    overdueRooms.forEach(room => {
+      if (!room.reservation) return;
+      const reservation = room.reservation;
+      
+      const message = `Checkout vencido para ${reservation.guestName} en la ${room.title}. Se requiere acción manual.`;
+      
+      // Check if a similar notification was created today
+      const alreadyNotifiedToday = notificationsData.some(n => 
+          n.message === message && isSameDay(parseISO(n.createdAt), new Date())
+      );
+
+      if (!alreadyNotifiedToday) {
+        const notificationsColRef = collection(firestore, 'notifications');
+        addDocumentNonBlocking(notificationsColRef, {
+            message: message,
+            type: 'warning',
+            createdAt: new Date().toISOString(),
+            createdBy: 'system', // Special UID for system
+            creatorName: 'Sistema', // System notification
+            isRead: false,
+        });
+      }
+    });
+  }, [processedRooms, notificationsData, firestore, user, userProfile]);
+
+
+  if (isUserLoading || !user || roomsLoading || reservationsLoading || isUserProfileLoading || notificationsLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
         <p>Cargando...</p>
