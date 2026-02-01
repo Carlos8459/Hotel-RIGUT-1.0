@@ -502,7 +502,7 @@ export default function RoomsDashboard() {
                           </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {room.reservation ? room.reservation.type : room.type}
+                        {room.reservation ? room.reservation.type : <>&nbsp;</>}
                       </p>
                   </CardHeader>
                   <CardContent className="space-y-3 flex-grow">
