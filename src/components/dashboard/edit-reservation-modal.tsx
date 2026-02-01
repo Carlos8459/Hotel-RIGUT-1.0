@@ -168,7 +168,7 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
                 name="roomId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Habitación</FormLabel>
+                    <FormLabel>Cambiar Habitación</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <div className="relative flex items-center">
