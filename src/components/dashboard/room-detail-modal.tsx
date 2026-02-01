@@ -196,134 +196,137 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
                 </div>
             </div>
             <p className="text-base text-muted-foreground">{room.type}</p>
+            {isRoomOccupied && room.reservation && (
+            <div className="flex items-center gap-3 pt-4">
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div className="flex-grow space-y-0.5">
+                    <p className="font-semibold">{room.reservation.guestName}</p>
+                    {room.reservation.phone && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        <Phone className="mr-2 h-4 w-4" />
+                        <span>{formatPhoneNumberForDisplay(room.reservation.phone)}</span>
+                    </div>
+                    )}
+                </div>
+                <div className="flex items-center">
+                    {canPerformActions && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {canPerformActions && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
+            </div>
+            )}
           </DialogHeader>
 
           <ScrollArea className="flex-grow min-h-0 px-6">
             <div className="space-y-4 pb-6">
                 {isRoomOccupied && room.reservation && (
                     <>
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                            <AvatarFallback>{room.reservation.guestName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-grow space-y-0.5">
-                            <p className="font-semibold">{room.reservation.guestName}</p>
-                            {room.reservation.phone && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <Phone className="mr-2 h-4 w-4" />
-                                <span>{formatPhoneNumberForDisplay(room.reservation.phone)}</span>
+                    <Separator />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm pt-2">
+                        <div className="flex items-start col-span-full">
+                            <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                                <p className="font-medium text-foreground">Estadía</p>
+                                <p className="text-muted-foreground">{getStayDate(room.reservation)}</p>
                             </div>
-                            )}
                         </div>
-                        <div className="flex items-center">
-                            {canPerformActions && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                            )}
-                            {canPerformActions && (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Eliminar Reserva?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta acción eliminará permanentemente la reserva de <strong>{room.reservation.guestName}</strong>. Esta acción no se puede deshacer.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReservation(room.reservation!.id)}>Eliminar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            )}
-                        </div>
-                    </div>
-                     <Separator />
-                     <div className="space-y-3">
-                        <h3 className="font-semibold text-base flex items-center"><CalendarIcon className="mr-2 h-4 w-4" />Estadía</h3>
-                        <div className="grid gap-1.5 text-sm pl-6">
-                            <div className="flex items-center text-muted-foreground">
-                                <span className="w-24 font-medium text-foreground">Duración:</span>
-                                <span>{getStayDate(room.reservation)}</span>
-                            </div>
-                            {room.reservation.payment && (
-                                <div className={`flex items-center`}>
-                                    <span className="w-24 font-medium text-foreground">Pago:</span>
-                                    <span className={room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}>
+
+                        {room.reservation.payment && (
+                            <div className="flex items-start">
+                                <DollarSign className="mr-3 h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-foreground">Pago</p>
+                                    <p className={room.reservation.payment.status === 'Pendiente' ? 'text-red-400' : 'text-green-400'}>
                                         {room.reservation.payment.status}
                                         {room.reservation.payment.amount && ` (C$${room.reservation.payment.amount})`}
-                                    </span>
-                                </div>
-                            )}
-                            {room.reservation.vehicle && (
-                                <div className="flex items-center text-muted-foreground">
-                                    <span className="w-24 font-medium text-foreground">Vehículo:</span>
-                                    <div className="flex items-center">
-                                        {room.reservation.vehicle === 'car' && <Car className="mr-2 h-4 w-4" />}
-                                        {room.reservation.vehicle === 'bike' && <Bike className="mr-2 h-4 w-4" />}
-                                        {room.reservation.vehicle === 'truck' && <Truck className="mr-2 h-4 w-4" />}
-                                        <span>
-                                            {room.reservation.vehicle === 'car' ? 'Carro' : room.reservation.vehicle === 'bike' ? 'Moto' : 'Camión'}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    {room.reservation.roomHistory && room.reservation.roomHistory.length > 0 && (
-                        <>
-                            <Separator />
-                            <div className="space-y-3">
-                                <h3 className="font-semibold text-base flex items-center"><History className="mr-2 h-4 w-4" />Historial de Habitaciones</h3>
-                                <div className="grid gap-1.5 text-sm pl-6">
-                                    {room.reservation.roomHistory.map((historyItem, index) => {
-                                        const pastRoom = allRooms.find(r => r.id === historyItem.roomId);
-                                        return (
-                                            <div key={index} className="flex items-center text-muted-foreground">
-                                                <span>{pastRoom?.title || historyItem.roomId} (hasta {format(parseISO(historyItem.movedAt), 'd LLL yy', {locale: es})})</span>
-                                            </div>
-                                        )
-                                    })}
+                                    </p>
                                 </div>
                             </div>
+                        )}
+                        
+                        {room.reservation.vehicle && (
+                            <div className="flex items-start">
+                                <Car className="mr-3 h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-foreground">Vehículo</p>
+                                    <p className="text-muted-foreground">
+                                        {room.reservation.vehicle === 'car' ? 'Carro' : room.reservation.vehicle === 'bike' ? 'Moto' : 'Camión'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {room.reservation.roomHistory && room.reservation.roomHistory.length > 0 && (
+                        <>
+                        <Separator/>
+                        <div className="space-y-2 pt-2">
+                            <h3 className="font-semibold text-base flex items-center"><History className="mr-2 h-4 w-4" />Historial de Hab.</h3>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                                {room.reservation.roomHistory.map((historyItem, index) => {
+                                    const pastRoom = allRooms.find(r => r.id === historyItem.roomId);
+                                    return <p key={index}>{pastRoom?.title || historyItem.roomId} (hasta {format(parseISO(historyItem.movedAt), 'd LLL yy', {locale: es})})</p>
+                                })}
+                            </div>
+                        </div>
                         </>
                     )}
+
                     {room.reservation.notes && (
                         <>
                             <Separator />
-                            <div className="space-y-2">
+                            <div className="space-y-2 pt-2">
                                 <h3 className="font-semibold text-base flex items-center"><StickyNote className="mr-2 h-4 w-4" />Notas</h3>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">{room.reservation.notes}</p>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{room.reservation.notes}</p>
+                            </div>
+                        </>
+                    )}
+
+                    {room.reservation.extraConsumptions && room.reservation.extraConsumptions.length > 0 && (
+                        <>
+                            <Separator />
+                            <div className="space-y-3 pt-2">
+                                <h3 className="font-semibold text-base flex items-center"><ShoppingCart className="mr-2 h-4 w-4" />Consumos</h3>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                                    {room.reservation.extraConsumptions.map(item => (
+                                        <div key={item.name} className="flex items-center text-muted-foreground">
+                                            {consumptionIcons[item.icon] || <Package className="h-4 w-4" />}
+                                            <span className="ml-2 mr-1 font-medium text-foreground">{item.quantity}x</span>
+                                            <span className="truncate">{item.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </>
                     )}
                     </>
                 )}
 
-                {room.reservation?.extraConsumptions && room.reservation.extraConsumptions.length > 0 && (
-                    <>
-                        <Separator />
-                        <div className="space-y-3">
-                            <h3 className="font-semibold text-base flex items-center"><ShoppingCart className="mr-2 h-4 w-4" />Consumos</h3>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm pl-6">
-                                {room.reservation.extraConsumptions.map(item => (
-                                    <div key={item.name} className="flex items-center text-muted-foreground">
-                                        {consumptionIcons[item.icon] || <Package className="h-4 w-4" />}
-                                        <span className="ml-2 mr-1 font-medium text-foreground">{item.quantity}x</span>
-                                        <span className="truncate">{item.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                )}
-            
                 {!isRoomOccupied && (
                     <div className="text-center flex-grow flex flex-col justify-center items-center py-8">
                         {room.statusText === 'Disponible' && <p className="text-muted-foreground text-lg">Limpia y lista</p>}
