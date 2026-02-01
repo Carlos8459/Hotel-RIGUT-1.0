@@ -258,7 +258,17 @@ export function EditReservationModal({ reservation, isOpen, onClose, allRooms, a
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-card border-border rounded-3xl">
+      <DialogContent
+        className="sm:max-w-lg bg-card border-border rounded-3xl"
+        onPointerDownOutside={(event) => {
+          const target = event.target as HTMLElement;
+          // This is a workaround to allow interaction with the Popover/Calendar inside the modal Dialog.
+          // It prevents the Dialog from closing when a click occurs inside the Popover's content.
+          if (target.closest('[data-radix-popover-content]')) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Editar Estadía</DialogTitle>
           <DialogDescription>
