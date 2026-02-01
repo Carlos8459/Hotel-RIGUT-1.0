@@ -502,7 +502,13 @@ export default function RoomsDashboard() {
                           </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {room.reservation ? room.reservation.type : <>&nbsp;</>}
+                        {
+                            room.reservation 
+                            ? room.reservation.type 
+                            : ["Doble", "Triple", "Quintuple"].includes(room.type) 
+                                ? room.type 
+                                : <>&nbsp;</>
+                        }
                       </p>
                   </CardHeader>
                   <CardContent className="space-y-3 flex-grow">
