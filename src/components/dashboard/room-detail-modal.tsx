@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode, useMemo } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import {
   Dialog,
@@ -154,31 +154,47 @@ export function RoomDetailModal({ room, isOpen, onClose, allRooms, allReservatio
       onClose();
   };
   
-    const handleStatusChange = (newStatus: Room['status']) => {
+    const handleStatusChange = async (newStatus: Room['status']) => {
         if (!firestore || !canChangeStatus || !user || !userProfile?.username) return;
         const roomDocRef = doc(firestore, 'rooms', room.id);
-        
-        updateDocumentNonBlocking(roomDocRef, { status: newStatus })
-            .then(() => {
-                if (notificationConfig?.isEnabled) {
-                    const notificationsColRef = collection(firestore, 'notifications');
-                    addDocumentNonBlocking(notificationsColRef, {
-                        message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
-                        createdAt: new Date().toISOString(),
-                        createdBy: user.uid,
-                        creatorName: userProfile.username,
-                        isRead: false,
-                        roomId: room.id,
-                        type: 'info' as const,
-                    });
-                }
-    
-                toast({
-                    title: 'Estado Actualizado',
-                    description: `La habitación ${room.title} ahora está: ${newStatus}.`,
+
+        try {
+            await updateDoc(roomDocRef, { status: newStatus });
+            
+            if (notificationConfig?.isEnabled) {
+                const notificationsColRef = collection(firestore, 'notifications');
+                addDocumentNonBlocking(notificationsColRef, {
+                    message: `cambió el estado de la habitación ${room.title} a "${newStatus}".`,
+                    createdAt: new Date().toISOString(),
+                    createdBy: user.uid,
+                    creatorName: userProfile.username,
+                    isRead: false,
+                    roomId: room.id,
+                    type: 'info' as const,
                 });
-                onClose();
+            }
+    
+            toast({
+                title: 'Estado Actualizado',
+                description: `La habitación ${room.title} ahora está: ${newStatus}.`,
             });
+            onClose();
+        } catch (error) {
+            console.error("Error al cambiar el estado de la habitación:", error);
+            errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                  path: roomDocRef.path,
+                  operation: 'update',
+                  requestResourceData: { status: newStatus },
+                })
+            );
+            toast({
+                title: 'Error de Permisos',
+                description: 'No tienes permiso para realizar esta acción.',
+                variant: 'destructive',
+            });
+        }
     };
 
     const handleStatusSelect = (newStatus: Room['status']) => {
