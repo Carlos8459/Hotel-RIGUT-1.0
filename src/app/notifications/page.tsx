@@ -53,7 +53,7 @@ function NotificationDetailModal({ notification, isOpen, onClose }: { notificati
                                 <div className="p-3 border rounded-lg bg-background/50 space-y-2">
                                     <h4 className="font-semibold flex items-center gap-2"><UserIcon className="h-4 w-4"/> Cliente</h4>
                                     <p className="pl-6">{reservation.guestName}</p>
-                                    {reservation.cedula && <p className="text-sm text-muted-foreground pl-6">{reservation.cedula}</p>}
+                                    {reservation.cedula && <p className="text-sm text-foreground pl-6">{reservation.cedula}</p>}
                                 </div>
                             )}
                             {room && (
