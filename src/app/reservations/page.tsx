@@ -180,8 +180,8 @@ export default function ReservationsPage() {
   return (
     <Tabs defaultValue="upcoming">
       <div className="dark min-h-screen bg-background text-foreground pb-24">
-        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 pb-2 border-b">
-          <div className="flex items-center justify-between pt-4">
+        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm px-4 pt-12 sm:px-6 lg:px-8 pb-2 border-b">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Reservas</h1>
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" size="icon">
