@@ -404,7 +404,7 @@ export default function RoomsDashboard() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-10 flex items-center gap-4 border-b bg-background/50 px-4 pt-4 pb-4 backdrop-blur-sm sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-10 flex items-center gap-4 border-b bg-background/50 px-4 pt-12 pb-4 backdrop-blur-sm sm:px-6 lg:px-8">
         <div className="relative w-full flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
