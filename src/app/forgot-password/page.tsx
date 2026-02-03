@@ -1,4 +1,4 @@
-"use client";
+'''"use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -17,9 +17,7 @@ import { AlertCircle, CheckCircle, Eye } from 'lucide-react';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
-  developerPin: z.string().refine(pin => pin === '231005', {
-    message: "PIN de desarrollador incorrecto."
-  }),
+  developerPin: z.string(), // Eliminamos la restricción de Zod aquí
 });
 
 
@@ -44,6 +42,13 @@ export default function ForgotPasswordPage() {
     setSuccessMessage(null);
     setIsPending(true);
 
+    // Verificación manual del PIN de desarrollador
+    if (values.developerPin !== '231005') {
+      setErrorMessage("PIN de desarrollador incorrecto.");
+      setIsPending(false);
+      return;
+    }
+
     try {
       // Find user by username
       const usersRef = collection(firestore, "users");
@@ -65,7 +70,6 @@ export default function ForgotPasswordPage() {
           return;
       }
       
-      // The developer PIN is already validated by the form schema resolver (zod).
       await sendPasswordResetEmail(auth, userEmail);
       setSuccessMessage("Se ha enviado un correo de recuperación a la dirección asociada con el usuario. El usuario debe revisar su bandeja de entrada.");
     } catch (error: any) {
@@ -96,7 +100,7 @@ export default function ForgotPasswordPage() {
                   <AlertTitle className="text-green-500">Correo Enviado</AlertTitle>
                   <AlertDescription>
                       {successMessage}
-                  </AlertDescription>
+                  </AlerDescription>
               </Alert>
             ) : (
               <Form {...form}>
@@ -163,3 +167,4 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
+'''
