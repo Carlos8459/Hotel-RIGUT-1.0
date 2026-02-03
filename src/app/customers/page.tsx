@@ -242,7 +242,7 @@ export default function CustomersPage() {
                     </div>
                     <div className="flex items-center gap-2">
                         {customer.notes && customer.notes.length > 0 && (
-                            <StickyNote className="h-5 w-5 text-muted-foreground" title="Este cliente tiene notas" />
+                            <span title="Este cliente tiene notas"><StickyNote className="h-5 w-5 text-muted-foreground" /></span>
                         )}
                         {filter === 'frequent' && (
                         <div className="text-sm text-muted-foreground font-medium pr-2">
@@ -307,6 +307,6 @@ export default function CustomersPage() {
   );
 }
 
-    
 
-    
+
+
