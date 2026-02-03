@@ -17,7 +17,7 @@ import { AlertCircle, CheckCircle, Eye } from 'lucide-react';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
-  developerPin: z.string(), // Eliminamos la restricción de Zod aquí
+  developerPin: z.string(), // Tipo de dato corregido a un string general
 });
 
 
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
-      developerPin: "",
+      developerPin: "", // Esto ahora es válido
     },
   });
 
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
     setSuccessMessage(null);
     setIsPending(true);
 
-    // Verificación manual del PIN de desarrollador
+    // Validación manual del PIN de desarrollador
     if (values.developerPin !== '231005') {
       setErrorMessage("PIN de desarrollador incorrecto.");
       setIsPending(false);
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
                   <AlertTitle className="text-green-500">Correo Enviado</AlertTitle>
                   <AlertDescription>
                       {successMessage}
-                  </AlerDescription>
+                  </AlertDescription>
               </Alert>
             ) : (
               <Form {...form}>
