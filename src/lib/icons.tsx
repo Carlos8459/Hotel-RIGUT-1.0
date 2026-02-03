@@ -1,7 +1,7 @@
 import React from 'react';
 import { Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
 
-const availableIcons: { [key: string]: React.ReactNode } = {
+export const availableIcons: { [key: string]: React.ReactNode } = {
     Utensils: <Utensils className="h-5 w-5" />,
     GlassWater: <GlassWater className="h-5 w-5" />,
     Droplet: <Droplet className="h-5 w-5" />,
