@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, PlusCircle, Trash2, Edit, DollarSign, Utensils, GlassWater, Droplet, Droplets, Beer, Coffee, Sandwich, CakeSlice, IceCream, Package } from 'lucide-react';
+import { ArrowLeft, Save, PlusCircle, Trash2, Edit, DollarSign } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,6 +44,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { Room, ConsumptionItem } from '@/lib/types';
+import { availableIcons } from '@/lib/icons';
 
 
 type EditableRoom = Room & { originalPrice: number; originalType: string; originalStatus: string; };
@@ -64,20 +65,6 @@ const consumptionItemSchema = z.object({
   price: z.coerce.number().positive({ message: 'El precio debe ser un número positivo.' }),
   icon: z.string().min(1, { message: 'Debe seleccionar un ícono.' }),
 });
-
-export const availableIcons: { [key: string]: React.ReactNode } = {
-    Utensils: <Utensils className="h-5 w-5" />,
-    GlassWater: <GlassWater className="h-5 w-5" />,
-    Droplet: <Droplet className="h-5 w-5" />,
-    Droplets: <Droplets className="h-5 w-5" />,
-    Beer: <Beer className="h-5 w-5" />,
-    Coffee: <Coffee className="h-5 w-5" />,
-    Sandwich: <Sandwich className="h-5 w-5" />,
-    CakeSlice: <CakeSlice className="h-5 w-5" />,
-    IceCream: <IceCream className="h-5 w-5" />,
-    Package: <Package className="h-5 w-5" />,
-};
-export type IconName = keyof typeof availableIcons;
 
 export default function RoomSettingsPage() {
     const { user, isUserLoading } = useUser();
