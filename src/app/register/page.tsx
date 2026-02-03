@@ -25,9 +25,15 @@ const formSchema = z.object({
   username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
   password: z.string().min(6, { message: "El PIN de acceso debe tener al menos 6 caracteres." }),
-  developerPin: z.string().refine(pin => pin === '231005', {
-    message: "PIN de desarrollador incorrecto."
-  }),
+  developerPin: z.string(),
+}).superRefine((data, ctx) => {
+  if (data.developerPin !== \'231005\') {
+    ctx.addIssue({
+      path: [\'developerPin\'],
+      code: \'custom\',
+      message: "PIN de desarrollador incorrecto.",
+    });
+  }
 });
 
 export default function RegisterPage() {
@@ -69,13 +75,13 @@ export default function RegisterPage() {
       router.push("/dashboard");
 
     } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') {
-            setErrorMessage('Este correo electrónico ya está en uso.');
-        } else if (error.code === 'auth/weak-password') {
-            setErrorMessage('El PIN es demasiado débil. Debe tener al menos 6 caracteres.');
+        if (error.code === \'auth/email-already-in-use\') {
+            setErrorMessage(\'Este correo electrónico ya está en uso.\');
+        } else if (error.code === \'auth/weak-password\') {
+            setErrorMessage(\'El PIN es demasiado débil. Debe tener al menos 6 caracteres.\');
         }
         else {
-            setErrorMessage('Algo salió mal. Por favor, inténtalo de nuevo.');
+            setErrorMessage(\'Algo salió mal. Por favor, inténtalo de nuevo.\');
         }
     } finally {
         setIsPending(false);
@@ -158,7 +164,7 @@ export default function RegisterPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error de registro</AlertTitle>
                 <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
+                </Aler>
             )}
 
             <Button type="submit" className="w-full h-14 rounded-full bg-button-gradient text-lg font-bold text-primary-foreground shadow-lg" disabled={isPending}>
@@ -169,7 +175,7 @@ export default function RegisterPage() {
         
         <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-                ¿Ya tienes una cuenta?{' '}
+                ¿Ya tienes una cuenta?{\' \'}\
                 <Link href="/" className="font-semibold text-primary hover:underline">
                     Inicia sesión
                 </Link>
